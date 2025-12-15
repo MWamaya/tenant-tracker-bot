@@ -3,8 +3,10 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { CollectionProgress } from '@/components/dashboard/CollectionProgress';
 import { RecentPayments } from '@/components/dashboard/RecentPayments';
 import { HouseStatusChart } from '@/components/dashboard/HouseStatusChart';
-import { getDashboardStats } from '@/lib/mockData';
+import { getDashboardStats, balances, tenants } from '@/lib/mockData';
 import { Home, CheckCircle, AlertCircle, XCircle, Banknote } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 
 const Dashboard = () => {
   const stats = getDashboardStats();
@@ -15,6 +17,15 @@ const Dashboard = () => {
       currency: 'KES',
       minimumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const unpaidHouses = balances.filter(b => b.status === 'unpaid');
+  const partialHouses = balances.filter(b => b.status === 'partial');
+  const paidHouses = balances.filter(b => b.status === 'paid');
+
+  const getTenantName = (houseId: string) => {
+    const tenant = tenants.find(t => t.houseId === houseId);
+    return tenant?.name || 'Vacant';
   };
 
   return (
@@ -81,6 +92,84 @@ const Dashboard = () => {
             icon={Banknote}
             variant="danger"
           />
+        </div>
+
+        {/* House Status Tabs */}
+        <div className="stat-card animate-slide-up">
+          <h3 className="text-lg font-semibold mb-4">House Payment Status</h3>
+          <Tabs defaultValue="unpaid" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="unpaid" className="flex gap-2">
+                <XCircle className="h-4 w-4" />
+                Unpaid ({unpaidHouses.length})
+              </TabsTrigger>
+              <TabsTrigger value="partial" className="flex gap-2">
+                <AlertCircle className="h-4 w-4" />
+                Partial ({partialHouses.length})
+              </TabsTrigger>
+              <TabsTrigger value="paid" className="flex gap-2">
+                <CheckCircle className="h-4 w-4" />
+                Paid ({paidHouses.length})
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="unpaid" className="mt-4">
+              <div className="flex flex-wrap gap-3">
+                {unpaidHouses.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No unpaid houses</p>
+                ) : (
+                  unpaidHouses.map((house) => (
+                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
+                      <XCircle className="h-4 w-4 text-destructive" />
+                      <div>
+                        <p className="font-medium text-sm">{house.houseNo}</p>
+                        <p className="text-xs text-muted-foreground">{getTenantName(house.houseId)}</p>
+                        <p className="text-xs text-destructive font-medium">{formatCurrency(house.balance)} due</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="partial" className="mt-4">
+              <div className="flex flex-wrap gap-3">
+                {partialHouses.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No partially paid houses</p>
+                ) : (
+                  partialHouses.map((house) => (
+                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <div>
+                        <p className="font-medium text-sm">{house.houseNo}</p>
+                        <p className="text-xs text-muted-foreground">{getTenantName(house.houseId)}</p>
+                        <p className="text-xs text-yellow-600 font-medium">{formatCurrency(house.balance)} remaining</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="paid" className="mt-4">
+              <div className="flex flex-wrap gap-3">
+                {paidHouses.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">No fully paid houses</p>
+                ) : (
+                  paidHouses.map((house) => (
+                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-green-500/30 bg-green-500/5">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <div>
+                        <p className="font-medium text-sm">{house.houseNo}</p>
+                        <p className="text-xs text-muted-foreground">{getTenantName(house.houseId)}</p>
+                        <p className="text-xs text-green-600 font-medium">{formatCurrency(house.paidAmount)} paid</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
 
         {/* Charts and Tables */}
