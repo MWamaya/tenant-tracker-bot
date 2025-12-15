@@ -7,7 +7,7 @@ import {
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Calendar, CreditCard, Home, User, Phone, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calendar, CreditCard, Home, User, Phone, TrendingUp, TrendingDown, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 import { House, Tenant, Balance, Payment } from '@/lib/mockData';
 
 interface HouseDetailDialogProps {
@@ -18,6 +18,57 @@ interface HouseDetailDialogProps {
   balance: Balance | undefined;
   payments: Payment[];
 }
+
+const months = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+// Mock yearly data generator
+const generateYearlyData = (houseId: string, expectedRent: number) => {
+  const currentMonth = 0; // January (0-indexed)
+  
+  return months.map((month, index) => {
+    // Only show data up to current month (January 2025)
+    if (index > currentMonth) {
+      return {
+        month,
+        monthIndex: index,
+        expectedRent,
+        paidAmount: 0,
+        balance: expectedRent,
+        status: 'upcoming' as const,
+        payments: [],
+      };
+    }
+
+    // Mock data for demonstration - varies by house
+    const mockPaidAmounts: Record<string, number[]> = {
+      '1': [8000], // Fully paid
+      '2': [5000], // Partial
+      '3': [10000], // Fully paid
+      '4': [10000], // Fully paid
+      '5': [12000], // Fully paid
+      '6': [8000], // Partial
+      '7': [15000], // Fully paid
+      '8': [0], // Unpaid
+    };
+
+    const paidAmount = mockPaidAmounts[houseId]?.[index] ?? 0;
+    const balance = expectedRent - paidAmount;
+    const status = paidAmount === 0 ? 'unpaid' : paidAmount >= expectedRent ? 'paid' : 'partial';
+
+    return {
+      month,
+      monthIndex: index,
+      expectedRent,
+      paidAmount,
+      balance: Math.max(0, balance),
+      status: status as 'paid' | 'partial' | 'unpaid',
+      payments: [],
+    };
+  });
+};
 
 export const HouseDetailDialog = ({
   open,
@@ -37,29 +88,55 @@ export const HouseDetailDialog = ({
     }).format(amount);
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-KE', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
+  const yearlyData = generateYearlyData(house.id, house.expectedRent);
+  
+  const yearSummary = yearlyData.reduce(
+    (acc, month) => {
+      if (month.status !== 'upcoming') {
+        acc.totalExpected += month.expectedRent;
+        acc.totalPaid += month.paidAmount;
+        acc.totalBalance += month.balance;
+      }
+      return acc;
+    },
+    { totalExpected: 0, totalPaid: 0, totalBalance: 0 }
+  );
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <CheckCircle2 className="h-5 w-5 text-success" />;
+      case 'partial':
+        return <AlertCircle className="h-5 w-5 text-warning" />;
+      case 'unpaid':
+        return <XCircle className="h-5 w-5 text-destructive" />;
+      default:
+        return <Calendar className="h-5 w-5 text-muted-foreground" />;
+    }
   };
 
-  const progressPercentage = balance 
-    ? Math.min((balance.paidAmount / balance.expectedRent) * 100, 100)
-    : 0;
+  const getStatusBg = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return 'bg-success/10 border-success/20';
+      case 'partial':
+        return 'bg-warning/10 border-warning/20';
+      case 'unpaid':
+        return 'bg-destructive/10 border-destructive/20';
+      default:
+        return 'bg-muted/50 border-muted';
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl">
             <div className="p-2 rounded-lg bg-primary/10">
               <Home className="h-5 w-5 text-primary" />
             </div>
-            House {house.houseNo} - January 2025 Tracker
+            House {house.houseNo} - 2025 Yearly Tracker
           </DialogTitle>
         </DialogHeader>
 
@@ -103,89 +180,93 @@ export const HouseDetailDialog = ({
             </div>
           </div>
 
-          <Separator />
-
-          {/* January Balance Summary */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-primary" />
-                January 2025 Summary
-              </h3>
-              {balance && <StatusBadge status={balance.status} />}
+          {/* Year Summary */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Year Expected</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(yearSummary.totalExpected)}</p>
             </div>
-
-            {balance ? (
-              <div className="space-y-4">
-                {/* Progress Bar */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Collection Progress</span>
-                    <span className="font-medium">{Math.round(progressPercentage)}%</span>
-                  </div>
-                  <Progress value={progressPercentage} className="h-3" />
-                </div>
-
-                {/* Stats Grid */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Expected</p>
-                    <p className="text-lg font-bold text-foreground">{formatCurrency(balance.expectedRent)}</p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-success/10 border border-success/20 text-center">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Paid</p>
-                    <p className="text-lg font-bold text-success flex items-center justify-center gap-1">
-                      <TrendingUp className="h-4 w-4" />
-                      {formatCurrency(balance.paidAmount)}
-                    </p>
-                  </div>
-                  <div className={`p-4 rounded-xl text-center ${balance.balance > 0 ? 'bg-destructive/10 border border-destructive/20' : 'bg-success/10 border border-success/20'}`}>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Balance</p>
-                    <p className={`text-lg font-bold flex items-center justify-center gap-1 ${balance.balance > 0 ? 'text-destructive' : 'text-success'}`}>
-                      {balance.balance > 0 && <TrendingDown className="h-4 w-4" />}
-                      {formatCurrency(balance.balance)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-muted-foreground">No balance data for January 2025</p>
-            )}
+            <div className="p-4 rounded-xl bg-success/10 border border-success/20 text-center">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Year Collected</p>
+              <p className="text-xl font-bold text-success flex items-center justify-center gap-1">
+                <TrendingUp className="h-4 w-4" />
+                {formatCurrency(yearSummary.totalPaid)}
+              </p>
+            </div>
+            <div className={`p-4 rounded-xl text-center ${yearSummary.totalBalance > 0 ? 'bg-destructive/10 border border-destructive/20' : 'bg-success/10 border border-success/20'}`}>
+              <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Outstanding</p>
+              <p className={`text-xl font-bold flex items-center justify-center gap-1 ${yearSummary.totalBalance > 0 ? 'text-destructive' : 'text-success'}`}>
+                {yearSummary.totalBalance > 0 && <TrendingDown className="h-4 w-4" />}
+                {formatCurrency(yearSummary.totalBalance)}
+              </p>
+            </div>
           </div>
 
           <Separator />
 
-          {/* Payment History for January */}
+          {/* Monthly Tracker Grid */}
           <div className="space-y-4">
-            <h3 className="font-semibold text-lg">Payment History</h3>
-            {payments.length > 0 ? (
-              <div className="space-y-3">
-                {payments.map((payment) => (
-                  <div
-                    key={payment.id}
-                    className="p-4 rounded-xl border bg-card hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="font-medium text-success">{formatCurrency(payment.amount)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Ref: {payment.mpesaRef}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{payment.tenantName}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(payment.date)}</p>
-                      </div>
-                    </div>
+            <h3 className="font-semibold text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Monthly Breakdown
+            </h3>
+
+            <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+              {yearlyData.map((monthData) => (
+                <div
+                  key={monthData.month}
+                  className={`p-4 rounded-xl border transition-all ${getStatusBg(monthData.status)} ${monthData.status === 'upcoming' ? 'opacity-50' : 'hover:shadow-md'}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-sm">{monthData.month.slice(0, 3)}</span>
+                    {getStatusIcon(monthData.status)}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="p-8 text-center rounded-xl bg-muted/30">
-                <CreditCard className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">No payments recorded for January 2025</p>
-              </div>
-            )}
+                  
+                  {monthData.status !== 'upcoming' ? (
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Paid</span>
+                        <span className="font-medium text-success">
+                          {formatCurrency(monthData.paidAmount)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span className="text-muted-foreground">Due</span>
+                        <span className={`font-medium ${monthData.balance > 0 ? 'text-destructive' : 'text-foreground'}`}>
+                          {formatCurrency(monthData.balance)}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={Math.min((monthData.paidAmount / monthData.expectedRent) * 100, 100)} 
+                        className="h-1.5 mt-2" 
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">Upcoming</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="flex items-center gap-6 justify-center pt-2">
+            <div className="flex items-center gap-2 text-sm">
+              <CheckCircle2 className="h-4 w-4 text-success" />
+              <span>Paid</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <AlertCircle className="h-4 w-4 text-warning" />
+              <span>Partial</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <XCircle className="h-4 w-4 text-destructive" />
+              <span>Unpaid</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span>Upcoming</span>
+            </div>
           </div>
         </div>
       </DialogContent>
