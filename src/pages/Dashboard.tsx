@@ -4,9 +4,9 @@ import { CollectionProgress } from '@/components/dashboard/CollectionProgress';
 import { RecentPayments } from '@/components/dashboard/RecentPayments';
 import { HouseStatusChart } from '@/components/dashboard/HouseStatusChart';
 import { getDashboardStats, balances, tenants } from '@/lib/mockData';
-import { Home, CheckCircle, AlertCircle, XCircle, Banknote } from 'lucide-react';
+import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const Dashboard = () => {
   const stats = getDashboardStats();
@@ -23,8 +23,12 @@ const Dashboard = () => {
   const partialHouses = balances.filter(b => b.status === 'partial');
   const paidHouses = balances.filter(b => b.status === 'paid');
 
+  const getTenant = (houseId: string) => {
+    return tenants.find(t => t.houseId === houseId);
+  };
+
   const getTenantName = (houseId: string) => {
-    const tenant = tenants.find(t => t.houseId === houseId);
+    const tenant = getTenant(houseId);
     return tenant?.name || 'Vacant';
   };
 
@@ -114,41 +118,109 @@ const Dashboard = () => {
             </TabsList>
             
             <TabsContent value="unpaid" className="mt-4">
-              <div className="flex flex-wrap gap-3">
-                {unpaidHouses.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No unpaid houses</p>
-                ) : (
-                  unpaidHouses.map((house) => (
-                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-destructive/30 bg-destructive/5">
-                      <XCircle className="h-4 w-4 text-destructive" />
-                      <div>
-                        <p className="font-medium text-sm">{house.houseNo}</p>
-                        <p className="text-xs text-muted-foreground">{getTenantName(house.houseId)}</p>
-                        <p className="text-xs text-destructive font-medium">{formatCurrency(house.balance)} due</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              {unpaidHouses.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No unpaid houses</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>House</TableHead>
+                      <TableHead>Tenant</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead className="text-right">Amount Due</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {unpaidHouses.map((house) => {
+                      const tenant = getTenant(house.houseId);
+                      return (
+                        <TableRow key={house.houseId}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <XCircle className="h-4 w-4 text-destructive" />
+                              {house.houseNo}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              {tenant?.name || 'Vacant'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {tenant ? (
+                              <a href={`tel:${tenant.phone}`} className="flex items-center gap-2 text-primary hover:underline">
+                                <Phone className="h-4 w-4" />
+                                {tenant.phone}
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right text-destructive font-medium">
+                            {formatCurrency(house.balance)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </TabsContent>
             
             <TabsContent value="partial" className="mt-4">
-              <div className="flex flex-wrap gap-3">
-                {partialHouses.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">No partially paid houses</p>
-                ) : (
-                  partialHouses.map((house) => (
-                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/5">
-                      <AlertCircle className="h-4 w-4 text-yellow-600" />
-                      <div>
-                        <p className="font-medium text-sm">{house.houseNo}</p>
-                        <p className="text-xs text-muted-foreground">{getTenantName(house.houseId)}</p>
-                        <p className="text-xs text-yellow-600 font-medium">{formatCurrency(house.balance)} remaining</p>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
+              {partialHouses.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No partially paid houses</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>House</TableHead>
+                      <TableHead>Tenant</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead className="text-right">Paid</TableHead>
+                      <TableHead className="text-right">Balance</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {partialHouses.map((house) => {
+                      const tenant = getTenant(house.houseId);
+                      return (
+                        <TableRow key={house.houseId}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <AlertCircle className="h-4 w-4 text-yellow-600" />
+                              {house.houseNo}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              {tenant?.name || 'Vacant'}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {tenant ? (
+                              <a href={`tel:${tenant.phone}`} className="flex items-center gap-2 text-primary hover:underline">
+                                <Phone className="h-4 w-4" />
+                                {tenant.phone}
+                              </a>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {formatCurrency(house.paidAmount)}
+                          </TableCell>
+                          <TableCell className="text-right text-yellow-600 font-medium">
+                            {formatCurrency(house.balance)}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              )}
             </TabsContent>
             
             <TabsContent value="paid" className="mt-4">
