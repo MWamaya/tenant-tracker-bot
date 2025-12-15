@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { houses, balances, tenants } from '@/lib/mockData';
+import { houses, balances, tenants, payments } from '@/lib/mockData';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,9 +13,20 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Search, Plus, Home } from 'lucide-react';
+import { HouseDetailDialog } from '@/components/houses/HouseDetailDialog';
+
+interface HouseData {
+  id: string;
+  houseNo: string;
+  expectedRent: number;
+  tenant?: typeof tenants[0];
+  balance?: typeof balances[0];
+}
 
 const Houses = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedHouse, setSelectedHouse] = useState<HouseData | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -41,6 +52,18 @@ const Houses = () => {
   };
 
   const houseData = getHouseData();
+
+  const handleViewDetails = (house: HouseData) => {
+    setSelectedHouse(house);
+    setDialogOpen(true);
+  };
+
+  const getHousePayments = (houseId: string) => {
+    return payments.filter(p => 
+      p.houseId === houseId && 
+      p.date.startsWith('2025-01')
+    );
+  };
 
   return (
     <MainLayout>
@@ -118,7 +141,11 @@ const Houses = () => {
                     {house.balance && <StatusBadge status={house.balance.status} />}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleViewDetails(house)}
+                    >
                       View Details
                     </Button>
                   </TableCell>
@@ -128,6 +155,16 @@ const Houses = () => {
           </Table>
         </div>
       </div>
+
+      {/* House Detail Dialog */}
+      <HouseDetailDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        house={selectedHouse}
+        tenant={selectedHouse ? tenants.find(t => t.houseId === selectedHouse.id) : undefined}
+        balance={selectedHouse ? balances.find(b => b.houseId === selectedHouse.id) : undefined}
+        payments={selectedHouse ? getHousePayments(selectedHouse.id) : []}
+      />
     </MainLayout>
   );
 };
