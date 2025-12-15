@@ -1,21 +1,18 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { tenants, houses, balances } from '@/lib/mockData';
+import { tenants as initialTenants, houses, balances, Tenant } from '@/lib/mockData';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from '@/components/ui/table';
 import { Search, Plus, User, Phone, Home } from 'lucide-react';
+import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
+import { toast } from 'sonner';
 
 const Tenants = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -42,6 +39,41 @@ const Tenants = () => {
   };
 
   const tenantData = getTenantData();
+  const assignedHouseIds = tenants.map(t => t.houseId);
+
+  const handleAddTenant = () => {
+    setEditingTenant(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditTenant = (tenant: Tenant) => {
+    setEditingTenant(tenant);
+    setDialogOpen(true);
+  };
+
+  const handleSaveTenant = (data: { name: string; phone: string; houseId: string }) => {
+    if (editingTenant) {
+      // Edit existing tenant
+      setTenants(prev =>
+        prev.map(t =>
+          t.id === editingTenant.id
+            ? { ...t, name: data.name, phone: data.phone, houseId: data.houseId }
+            : t
+        )
+      );
+      toast.success('Tenant updated successfully');
+    } else {
+      // Add new tenant
+      const newTenant: Tenant = {
+        id: String(Date.now()),
+        name: data.name,
+        phone: data.phone,
+        houseId: data.houseId,
+      };
+      setTenants(prev => [...prev, newTenant]);
+      toast.success('Tenant added successfully');
+    }
+  };
 
   return (
     <MainLayout>
@@ -54,7 +86,7 @@ const Tenants = () => {
               Manage tenant information and payments
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={handleAddTenant}>
             <Plus className="h-4 w-4" />
             Add Tenant
           </Button>
@@ -112,7 +144,7 @@ const Tenants = () => {
                 <Button variant="outline" size="sm" className="flex-1">
                   View Statement
                 </Button>
-                <Button variant="ghost" size="sm">
+                <Button variant="ghost" size="sm" onClick={() => handleEditTenant(tenant)}>
                   Edit
                 </Button>
               </div>
@@ -128,6 +160,16 @@ const Tenants = () => {
           </div>
         )}
       </div>
+
+      {/* Tenant Form Dialog */}
+      <TenantFormDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        tenant={editingTenant}
+        houses={houses}
+        assignedHouseIds={assignedHouseIds}
+        onSave={handleSaveTenant}
+      />
     </MainLayout>
   );
 };
