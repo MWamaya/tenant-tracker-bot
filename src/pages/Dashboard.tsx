@@ -5,7 +5,7 @@ import { CollectionProgress } from '@/components/dashboard/CollectionProgress';
 import { RecentPayments } from '@/components/dashboard/RecentPayments';
 import { HouseStatusChart } from '@/components/dashboard/HouseStatusChart';
 import { getDashboardStats, balances, tenants } from '@/lib/mockData';
-import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User } from 'lucide-react';
+import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
@@ -160,10 +160,18 @@ const Dashboard = () => {
                           </TableCell>
                           <TableCell>
                             {tenant ? (
-                              <a href={`tel:${tenant.phone}`} className="flex items-center gap-2 text-primary hover:underline">
-                                <Phone className="h-4 w-4" />
-                                {tenant.phone}
-                              </a>
+                              <div className="flex items-center gap-3">
+                                <a href={`tel:${tenant.phone}`} className="text-primary hover:underline" title="Call">
+                                  <Phone className="h-4 w-4" />
+                                </a>
+                                <a href={`https://wa.me/${tenant.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700" title="WhatsApp">
+                                  <MessageCircle className="h-4 w-4" />
+                                </a>
+                                <a href={`sms:${tenant.phone}`} className="text-blue-600 hover:text-blue-700" title="SMS">
+                                  <MessageSquare className="h-4 w-4" />
+                                </a>
+                                <span className="text-sm">{tenant.phone}</span>
+                              </div>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
@@ -212,10 +220,18 @@ const Dashboard = () => {
                           </TableCell>
                           <TableCell>
                             {tenant ? (
-                              <a href={`tel:${tenant.phone}`} className="flex items-center gap-2 text-primary hover:underline">
-                                <Phone className="h-4 w-4" />
-                                {tenant.phone}
-                              </a>
+                              <div className="flex items-center gap-3">
+                                <a href={`tel:${tenant.phone}`} className="text-primary hover:underline" title="Call">
+                                  <Phone className="h-4 w-4" />
+                                </a>
+                                <a href={`https://wa.me/${tenant.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700" title="WhatsApp">
+                                  <MessageCircle className="h-4 w-4" />
+                                </a>
+                                <a href={`sms:${tenant.phone}`} className="text-blue-600 hover:text-blue-700" title="SMS">
+                                  <MessageSquare className="h-4 w-4" />
+                                </a>
+                                <span className="text-sm">{tenant.phone}</span>
+                              </div>
                             ) : (
                               <span className="text-muted-foreground">-</span>
                             )}
