@@ -45,8 +45,8 @@ const Dashboard = () => {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1 text-sm md:text-base">
             January 2025 rent collection overview
           </p>
         </div>
@@ -113,18 +113,18 @@ const Dashboard = () => {
         <div className="stat-card animate-slide-up" ref={tabsRef}>
           <h3 className="text-lg font-semibold mb-4">House Payment Status</h3>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="unpaid" className="flex gap-2">
-                <XCircle className="h-4 w-4" />
-                Unpaid ({unpaidHouses.length})
+            <TabsList className="grid w-full grid-cols-3 h-auto">
+              <TabsTrigger value="unpaid" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
+                <XCircle className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Unpaid</span> ({unpaidHouses.length})
               </TabsTrigger>
-              <TabsTrigger value="partial" className="flex gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Partial ({partialHouses.length})
+              <TabsTrigger value="partial" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
+                <AlertCircle className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Partial</span> ({partialHouses.length})
               </TabsTrigger>
-              <TabsTrigger value="paid" className="flex gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Paid ({paidHouses.length})
+              <TabsTrigger value="paid" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
+                <CheckCircle className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Paid</span> ({paidHouses.length})
               </TabsTrigger>
             </TabsList>
             
@@ -132,58 +132,65 @@ const Dashboard = () => {
               {unpaidHouses.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No unpaid houses</p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>House</TableHead>
-                      <TableHead>Tenant</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead className="text-right">Amount Due</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {unpaidHouses.map((house) => {
-                      const tenant = getTenant(house.houseId);
-                      return (
-                        <TableRow key={house.houseId}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              <XCircle className="h-4 w-4 text-destructive" />
-                              {house.houseNo}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              {tenant?.name || 'Vacant'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {tenant ? (
-                              <div className="flex items-center gap-3">
-                                <a href={`tel:${tenant.phone}`} className="text-primary hover:underline" title="Call">
-                                  <Phone className="h-4 w-4" />
-                                </a>
-                                <a href={`https://wa.me/${tenant.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700" title="WhatsApp">
-                                  <MessageCircle className="h-4 w-4" />
-                                </a>
-                                <a href={`sms:${tenant.phone}`} className="text-blue-600 hover:text-blue-700" title="SMS">
-                                  <MessageSquare className="h-4 w-4" />
-                                </a>
-                                <span className="text-sm">{tenant.phone}</span>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right text-destructive font-medium">
-                            {formatCurrency(house.balance)}
-                          </TableCell>
+                <div className="overflow-x-auto -mx-4 md:mx-0">
+                  <div className="min-w-[500px] md:min-w-0 px-4 md:px-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>House</TableHead>
+                          <TableHead className="hidden sm:table-cell">Tenant</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead className="text-right">Amount Due</TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {unpaidHouses.map((house) => {
+                          const tenant = getTenant(house.houseId);
+                          return (
+                            <TableRow key={house.houseId}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+                                  <div>
+                                    <span>{house.houseNo}</span>
+                                    <p className="sm:hidden text-xs text-muted-foreground">{tenant?.name || 'Vacant'}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  {tenant?.name || 'Vacant'}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {tenant ? (
+                                  <div className="flex items-center gap-2 md:gap-3">
+                                    <a href={`tel:${tenant.phone}`} className="text-primary hover:underline" title="Call">
+                                      <Phone className="h-4 w-4" />
+                                    </a>
+                                    <a href={`https://wa.me/${tenant.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700" title="WhatsApp">
+                                      <MessageCircle className="h-4 w-4" />
+                                    </a>
+                                    <a href={`sms:${tenant.phone}`} className="text-blue-600 hover:text-blue-700" title="SMS">
+                                      <MessageSquare className="h-4 w-4" />
+                                    </a>
+                                    <span className="text-xs md:text-sm hidden md:inline">{tenant.phone}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right text-destructive font-medium text-sm">
+                                {formatCurrency(house.balance)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               )}
             </TabsContent>
             
@@ -191,62 +198,69 @@ const Dashboard = () => {
               {partialHouses.length === 0 ? (
                 <p className="text-muted-foreground text-sm">No partially paid houses</p>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>House</TableHead>
-                      <TableHead>Tenant</TableHead>
-                      <TableHead>Contact</TableHead>
-                      <TableHead className="text-right">Paid</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {partialHouses.map((house) => {
-                      const tenant = getTenant(house.houseId);
-                      return (
-                        <TableRow key={house.houseId}>
-                          <TableCell className="font-medium">
-                            <div className="flex items-center gap-2">
-                              <AlertCircle className="h-4 w-4 text-yellow-600" />
-                              {house.houseNo}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              {tenant?.name || 'Vacant'}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {tenant ? (
-                              <div className="flex items-center gap-3">
-                                <a href={`tel:${tenant.phone}`} className="text-primary hover:underline" title="Call">
-                                  <Phone className="h-4 w-4" />
-                                </a>
-                                <a href={`https://wa.me/${tenant.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700" title="WhatsApp">
-                                  <MessageCircle className="h-4 w-4" />
-                                </a>
-                                <a href={`sms:${tenant.phone}`} className="text-blue-600 hover:text-blue-700" title="SMS">
-                                  <MessageSquare className="h-4 w-4" />
-                                </a>
-                                <span className="text-sm">{tenant.phone}</span>
-                              </div>
-                            ) : (
-                              <span className="text-muted-foreground">-</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right text-green-600">
-                            {formatCurrency(house.paidAmount)}
-                          </TableCell>
-                          <TableCell className="text-right text-yellow-600 font-medium">
-                            {formatCurrency(house.balance)}
-                          </TableCell>
+                <div className="overflow-x-auto -mx-4 md:mx-0">
+                  <div className="min-w-[500px] md:min-w-0 px-4 md:px-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>House</TableHead>
+                          <TableHead className="hidden sm:table-cell">Tenant</TableHead>
+                          <TableHead>Contact</TableHead>
+                          <TableHead className="text-right">Paid</TableHead>
+                          <TableHead className="text-right">Balance</TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+                      </TableHeader>
+                      <TableBody>
+                        {partialHouses.map((house) => {
+                          const tenant = getTenant(house.houseId);
+                          return (
+                            <TableRow key={house.houseId}>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                                  <div>
+                                    <span>{house.houseNo}</span>
+                                    <p className="sm:hidden text-xs text-muted-foreground">{tenant?.name || 'Vacant'}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">
+                                <div className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-muted-foreground" />
+                                  {tenant?.name || 'Vacant'}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {tenant ? (
+                                  <div className="flex items-center gap-2 md:gap-3">
+                                    <a href={`tel:${tenant.phone}`} className="text-primary hover:underline" title="Call">
+                                      <Phone className="h-4 w-4" />
+                                    </a>
+                                    <a href={`https://wa.me/${tenant.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700" title="WhatsApp">
+                                      <MessageCircle className="h-4 w-4" />
+                                    </a>
+                                    <a href={`sms:${tenant.phone}`} className="text-blue-600 hover:text-blue-700" title="SMS">
+                                      <MessageSquare className="h-4 w-4" />
+                                    </a>
+                                    <span className="text-xs md:text-sm hidden md:inline">{tenant.phone}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right text-green-600 text-sm">
+                                {formatCurrency(house.paidAmount)}
+                              </TableCell>
+                              <TableCell className="text-right text-yellow-600 font-medium text-sm">
+                                {formatCurrency(house.balance)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               )}
             </TabsContent>
             
