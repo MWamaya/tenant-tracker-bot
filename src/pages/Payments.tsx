@@ -54,28 +54,28 @@ const Payments = () => {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Payments</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Payments</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
               Track all rent payments received
             </p>
           </div>
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
               <Download className="h-4 w-4" />
-              Export
+              <span className="hidden sm:inline">Export</span>
             </Button>
-            <Button className="gap-2">
+            <Button className="gap-2 flex-1 sm:flex-none">
               <Plus className="h-4 w-4" />
-              Add Payment
+              <span className="hidden sm:inline">Add Payment</span>
             </Button>
           </div>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <div className="relative flex-1 max-w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by tenant, house, or reference..."
@@ -85,7 +85,7 @@ const Payments = () => {
             />
           </div>
           <Select value={monthFilter} onValueChange={setMonthFilter}>
-            <SelectTrigger className="w-48">
+            <SelectTrigger className="w-full sm:w-48">
               <Calendar className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by month" />
             </SelectTrigger>
@@ -99,7 +99,7 @@ const Payments = () => {
         </div>
 
         {/* Summary Card */}
-        <div className="stat-card flex items-center justify-between">
+        <div className="stat-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="p-3 rounded-xl bg-success/10">
               <CreditCard className="h-6 w-6 text-success" />
@@ -108,7 +108,7 @@ const Payments = () => {
               <p className="text-sm text-muted-foreground">
                 {filteredPayments.length} payments
               </p>
-              <p className="text-2xl font-bold">{formatCurrency(totalAmount)}</p>
+              <p className="text-xl md:text-2xl font-bold">{formatCurrency(totalAmount)}</p>
             </div>
           </div>
           <Badge variant="secondary" className="text-sm">
@@ -116,8 +116,8 @@ const Payments = () => {
           </Badge>
         </div>
 
-        {/* Table */}
-        <div className="stat-card p-0 overflow-hidden">
+        {/* Table - Desktop View */}
+        <div className="stat-card p-0 overflow-hidden hidden md:block">
           <Table>
             <TableHeader>
               <TableRow className="table-header">
@@ -161,6 +161,29 @@ const Payments = () => {
               ))}
             </TableBody>
           </Table>
+        </div>
+
+        {/* Mobile Card View */}
+        <div className="grid grid-cols-1 gap-4 md:hidden">
+          {filteredPayments.map((payment) => (
+            <div key={payment.id} className="stat-card">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-semibold">{payment.tenantName}</p>
+                  <p className="text-sm text-muted-foreground">{payment.houseNo}</p>
+                </div>
+                <p className="font-bold text-success">{formatCurrency(payment.amount)}</p>
+              </div>
+              <div className="flex items-center justify-between mt-3 pt-3 border-t text-sm">
+                <div className="text-muted-foreground">
+                  {format(new Date(payment.date), 'MMM d, yyyy h:mm a')}
+                </div>
+                <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                  {payment.mpesaRef}
+                </code>
+              </div>
+            </div>
+          ))}
         </div>
 
         {filteredPayments.length === 0 && (

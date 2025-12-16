@@ -79,14 +79,14 @@ const Tenants = () => {
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Tenants</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Tenants</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
               Manage tenant information and payments
             </p>
           </div>
-          <Button className="gap-2" onClick={handleAddTenant}>
+          <Button className="gap-2 w-full sm:w-auto" onClick={handleAddTenant}>
             <Plus className="h-4 w-4" />
             Add Tenant
           </Button>
@@ -94,7 +94,7 @@ const Tenants = () => {
 
         {/* Search */}
         <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 max-w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search tenants..."
