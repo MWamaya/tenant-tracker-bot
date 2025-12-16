@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { CollectionProgress } from '@/components/dashboard/CollectionProgress';
@@ -9,6 +10,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 const Dashboard = () => {
+  const [activeTab, setActiveTab] = useState('unpaid');
+  const tabsRef = useRef<HTMLDivElement>(null);
+
+  const scrollToTabs = (tab: string) => {
+    setActiveTab(tab);
+    tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   const stats = getDashboardStats();
   
   const formatCurrency = (amount: number) => {
@@ -59,20 +67,24 @@ const Dashboard = () => {
             icon={CheckCircle}
             variant="success"
           />
-          <StatCard
-            title="Partially Paid"
-            value={stats.partialHouses}
-            subtitle="Pending balance"
-            icon={AlertCircle}
-            variant="warning"
-          />
-          <StatCard
-            title="Unpaid"
-            value={stats.unpaidHouses}
-            subtitle="No payments received"
-            icon={XCircle}
-            variant="danger"
-          />
+          <div onClick={() => scrollToTabs('partial')} className="cursor-pointer">
+            <StatCard
+              title="Partially Paid"
+              value={stats.partialHouses}
+              subtitle="Pending balance"
+              icon={AlertCircle}
+              variant="warning"
+            />
+          </div>
+          <div onClick={() => scrollToTabs('unpaid')} className="cursor-pointer">
+            <StatCard
+              title="Unpaid"
+              value={stats.unpaidHouses}
+              subtitle="No payments received"
+              icon={XCircle}
+              variant="danger"
+            />
+          </div>
         </div>
 
         {/* Financial Stats */}
@@ -98,10 +110,9 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* House Status Tabs */}
-        <div className="stat-card animate-slide-up">
+        <div className="stat-card animate-slide-up" ref={tabsRef}>
           <h3 className="text-lg font-semibold mb-4">House Payment Status</h3>
-          <Tabs defaultValue="unpaid" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="unpaid" className="flex gap-2">
                 <XCircle className="h-4 w-4" />
