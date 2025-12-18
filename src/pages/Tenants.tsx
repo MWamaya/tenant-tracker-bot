@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { tenants as initialTenants, houses, balances, Tenant } from '@/lib/mockData';
+import { balances, Tenant } from '@/lib/mockData';
+import { useData } from '@/context/DataContext';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,8 +20,8 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const Tenants = () => {
+  const { houses, tenants, addTenant, updateTenant, deleteTenant } = useData();
   const [searchQuery, setSearchQuery] = useState('');
-  const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -65,24 +66,10 @@ const Tenants = () => {
 
   const handleSaveTenant = (data: { name: string; phone: string; houseId: string }) => {
     if (editingTenant) {
-      // Edit existing tenant
-      setTenants(prev =>
-        prev.map(t =>
-          t.id === editingTenant.id
-            ? { ...t, name: data.name, phone: data.phone, houseId: data.houseId }
-            : t
-        )
-      );
+      updateTenant(editingTenant.id, data);
       toast.success('Tenant updated successfully');
     } else {
-      // Add new tenant
-      const newTenant: Tenant = {
-        id: String(Date.now()),
-        name: data.name,
-        phone: data.phone,
-        houseId: data.houseId,
-      };
-      setTenants(prev => [...prev, newTenant]);
+      addTenant(data);
       toast.success('Tenant added successfully');
     }
   };
@@ -94,8 +81,8 @@ const Tenants = () => {
 
   const handleConfirmDelete = () => {
     if (tenantToDelete) {
-      setTenants(prev => prev.filter(t => t.id !== tenantToDelete.id));
-      toast.success('Tenant removed successfully');
+      deleteTenant(tenantToDelete.id);
+      toast.success('Tenant removed successfully. House is now vacant.');
       setTenantToDelete(null);
       setDeleteDialogOpen(false);
     }

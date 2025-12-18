@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { houses as initialHouses, balances, tenants as initialTenants, payments } from '@/lib/mockData';
+import { balances, payments } from '@/lib/mockData';
+import { useData } from '@/context/DataContext';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -21,17 +22,16 @@ interface HouseData {
   id: string;
   houseNo: string;
   expectedRent: number;
-  tenant?: typeof initialTenants[0];
+  tenant?: { id: string; name: string; phone: string; houseId: string };
   balance?: typeof balances[0];
 }
 
 const Houses = () => {
+  const { houses, tenants, addHouse, setTenants } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<HouseData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [houses, setHouses] = useState(initialHouses);
-  const [tenants, setTenants] = useState(initialTenants);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -77,18 +77,14 @@ const Houses = () => {
     tenantId?: string;
     occupancyDate?: string;
   }) => {
-    const newHouseId = (houses.length + 1).toString();
-    const newHouse = {
-      id: newHouseId,
+    const newHouseId = addHouse({
       houseNo: houseData.houseNo,
       expectedRent: houseData.expectedRent,
-    };
-    
-    setHouses([...houses, newHouse]);
+    });
 
     // If occupied, update tenant assignment
     if (houseData.isOccupied && houseData.tenantId) {
-      setTenants(tenants.map(t => 
+      setTenants(prev => prev.map(t => 
         t.id === houseData.tenantId 
           ? { ...t, houseId: newHouseId }
           : t
