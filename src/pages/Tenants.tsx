@@ -4,15 +4,27 @@ import { tenants as initialTenants, houses, balances, Tenant } from '@/lib/mockD
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, User, Phone, Home } from 'lucide-react';
+import { Search, Plus, User, Phone, Home, Trash2 } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const Tenants = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [tenants, setTenants] = useState<Tenant[]>(initialTenants);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -72,6 +84,20 @@ const Tenants = () => {
       };
       setTenants(prev => [...prev, newTenant]);
       toast.success('Tenant added successfully');
+    }
+  };
+
+  const handleDeleteClick = (tenant: Tenant) => {
+    setTenantToDelete(tenant);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (tenantToDelete) {
+      setTenants(prev => prev.filter(t => t.id !== tenantToDelete.id));
+      toast.success('Tenant removed successfully');
+      setTenantToDelete(null);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -147,6 +173,14 @@ const Tenants = () => {
                 <Button variant="ghost" size="sm" onClick={() => handleEditTenant(tenant)}>
                   Edit
                 </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => handleDeleteClick(tenant)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           ))}
@@ -170,6 +204,28 @@ const Tenants = () => {
         assignedHouseIds={assignedHouseIds}
         onSave={handleSaveTenant}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Tenant</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove <strong>{tenantToDelete?.name}</strong>? 
+              This will mark their house as vacant.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Remove Tenant
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };
