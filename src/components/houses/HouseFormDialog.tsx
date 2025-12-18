@@ -143,15 +143,16 @@ export const HouseFormDialog = ({
                     <SelectValue placeholder="Select tenant" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableTenants.map((tenant) => (
-                      <SelectItem key={tenant.id} value={tenant.id}>
-                        {tenant.name} - {tenant.phone}
-                      </SelectItem>
-                    ))}
-                    {availableTenants.length === 0 && (
-                      <SelectItem value="" disabled>
+                    {availableTenants.length === 0 ? (
+                      <div className="py-2 px-2 text-sm text-muted-foreground">
                         No available tenants
-                      </SelectItem>
+                      </div>
+                    ) : (
+                      availableTenants.map((tenant) => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {tenant.name} - {tenant.phone}
+                        </SelectItem>
+                      ))
                     )}
                   </SelectContent>
                 </Select>
