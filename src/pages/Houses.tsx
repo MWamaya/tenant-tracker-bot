@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { houses, balances, tenants, payments } from '@/lib/mockData';
+import { houses as initialHouses, balances, tenants as initialTenants, payments } from '@/lib/mockData';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,12 +14,14 @@ import {
 } from '@/components/ui/table';
 import { Search, Plus, Home } from 'lucide-react';
 import { HouseDetailDialog } from '@/components/houses/HouseDetailDialog';
+import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
+import { toast } from 'sonner';
 
 interface HouseData {
   id: string;
   houseNo: string;
   expectedRent: number;
-  tenant?: typeof tenants[0];
+  tenant?: typeof initialTenants[0];
   balance?: typeof balances[0];
 }
 
@@ -27,6 +29,9 @@ const Houses = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<HouseData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [houses, setHouses] = useState(initialHouses);
+  const [tenants, setTenants] = useState(initialTenants);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -65,6 +70,34 @@ const Houses = () => {
     );
   };
 
+  const handleAddHouse = (houseData: {
+    houseNo: string;
+    expectedRent: number;
+    isOccupied: boolean;
+    tenantId?: string;
+    occupancyDate?: string;
+  }) => {
+    const newHouseId = (houses.length + 1).toString();
+    const newHouse = {
+      id: newHouseId,
+      houseNo: houseData.houseNo,
+      expectedRent: houseData.expectedRent,
+    };
+    
+    setHouses([...houses, newHouse]);
+
+    // If occupied, update tenant assignment
+    if (houseData.isOccupied && houseData.tenantId) {
+      setTenants(tenants.map(t => 
+        t.id === houseData.tenantId 
+          ? { ...t, houseId: newHouseId }
+          : t
+      ));
+    }
+
+    toast.success(`House ${houseData.houseNo} added successfully!`);
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -76,7 +109,7 @@ const Houses = () => {
               Manage all rental properties
             </p>
           </div>
-          <Button className="gap-2 w-full sm:w-auto">
+          <Button className="gap-2 w-full sm:w-auto" onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             Add House
           </Button>
@@ -204,6 +237,14 @@ const Houses = () => {
         tenant={selectedHouse ? tenants.find(t => t.houseId === selectedHouse.id) : undefined}
         balance={selectedHouse ? balances.find(b => b.houseId === selectedHouse.id) : undefined}
         payments={selectedHouse ? getHousePayments(selectedHouse.id) : []}
+      />
+
+      {/* Add House Dialog */}
+      <HouseFormDialog
+        open={addDialogOpen}
+        onOpenChange={setAddDialogOpen}
+        tenants={tenants}
+        onSave={handleAddHouse}
       />
     </MainLayout>
   );
