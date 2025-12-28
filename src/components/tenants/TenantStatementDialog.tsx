@@ -59,6 +59,7 @@ export const TenantStatementDialog = ({
   if (!tenant || !house) return null;
 
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth();
   const expectedRent = house.expectedRent;
 
   // Generate yearly statement with balance carry forward
@@ -180,7 +181,9 @@ export const TenantStatementDialog = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {yearlyStatement.map((record) => (
+              {yearlyStatement
+                .filter((record) => record.monthIndex === currentMonth)
+                .map((record) => (
                 <TableRow key={record.monthIndex}>
                   <TableCell className="font-medium">{record.month}</TableCell>
                   <TableCell className="text-right">
