@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { balances, Tenant } from '@/lib/mockData';
+import { balances, payments, Tenant } from '@/lib/mockData';
 import { useData } from '@/context/DataContext';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, User, Phone, Home, Trash2 } from 'lucide-react';
+import { Search, Plus, User, Phone, Home, Trash2, FileText } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
+import { TenantStatementDialog } from '@/components/tenants/TenantStatementDialog';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -26,6 +27,8 @@ const Tenants = () => {
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
+  const [statementDialogOpen, setStatementDialogOpen] = useState(false);
+  const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<Tenant | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -86,6 +89,21 @@ const Tenants = () => {
       setTenantToDelete(null);
       setDeleteDialogOpen(false);
     }
+  };
+
+  const handleViewStatement = (tenant: Tenant) => {
+    setSelectedTenantForStatement(tenant);
+    setStatementDialogOpen(true);
+  };
+
+  const getSelectedTenantHouse = () => {
+    if (!selectedTenantForStatement) return null;
+    return houses.find(h => h.id === selectedTenantForStatement.houseId) || null;
+  };
+
+  const getSelectedTenantPayments = () => {
+    if (!selectedTenantForStatement) return [];
+    return payments.filter(p => p.tenantId === selectedTenantForStatement.id);
   };
 
   return (
@@ -154,7 +172,13 @@ const Tenants = () => {
               </div>
 
               <div className="mt-4 flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex-1 gap-1"
+                  onClick={() => handleViewStatement(tenant)}
+                >
+                  <FileText className="h-3 w-3" />
                   View Statement
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleEditTenant(tenant)}>
@@ -213,6 +237,15 @@ const Tenants = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Statement Dialog */}
+      <TenantStatementDialog
+        open={statementDialogOpen}
+        onOpenChange={setStatementDialogOpen}
+        tenant={selectedTenantForStatement}
+        house={getSelectedTenantHouse()}
+        payments={getSelectedTenantPayments()}
+      />
     </MainLayout>
   );
 };
