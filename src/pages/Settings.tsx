@@ -12,7 +12,9 @@ import {
   Shield, 
   Database,
   Clock,
-  Save
+  Save,
+  MessageSquare,
+  Smartphone
 } from 'lucide-react';
 
 const Settings = () => {
@@ -36,6 +38,10 @@ const Settings = () => {
             <TabsTrigger value="email" className="gap-2">
               <Mail className="h-4 w-4" />
               Email Integration
+            </TabsTrigger>
+            <TabsTrigger value="sms" className="gap-2">
+              <MessageSquare className="h-4 w-4" />
+              SMS Integration
             </TabsTrigger>
             <TabsTrigger value="notifications" className="gap-2">
               <Bell className="h-4 w-4" />
@@ -195,6 +201,158 @@ const Settings = () => {
                     <Label>Duplicate Detection</Label>
                     <p className="text-sm text-muted-foreground">
                       Prevent duplicate payments using M-Pesa reference
+                    </p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="sms" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5" />
+                  SMS Gateway Configuration
+                </CardTitle>
+                <CardDescription>
+                  Connect an SMS provider to send payment reminders and notifications to tenants
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-destructive/10">
+                        <Smartphone className="h-5 w-5 text-destructive" />
+                      </div>
+                      <div>
+                        <p className="font-medium">SMS Provider</p>
+                        <p className="text-sm text-muted-foreground">Not connected</p>
+                      </div>
+                    </div>
+                    <Button>Connect Provider</Button>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="smsProvider">SMS Provider</Label>
+                    <select 
+                      id="smsProvider" 
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">Select a provider</option>
+                      <option value="africastalking">Africa's Talking</option>
+                      <option value="twilio">Twilio</option>
+                      <option value="infobip">Infobip</option>
+                      <option value="nexmo">Vonage (Nexmo)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="smsApiKey">API Key</Label>
+                    <Input id="smsApiKey" type="password" placeholder="Enter your API key" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="smsUsername">Username / Account ID</Label>
+                    <Input id="smsUsername" placeholder="Enter username or account ID" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="smsSenderId">Sender ID</Label>
+                    <Input id="smsSenderId" placeholder="KODI PAP" />
+                    <p className="text-xs text-muted-foreground">
+                      The name that will appear as the sender of your SMS messages
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>SMS Templates</CardTitle>
+                <CardDescription>
+                  Configure message templates for different notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="paymentReminder">Payment Reminder</Label>
+                  <textarea 
+                    id="paymentReminder"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    placeholder="Dear {tenant_name}, your rent of KES {amount} for {house_name} is due on {due_date}. Please pay via M-Pesa. Ref: {tenant_id}"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Variables: {'{tenant_name}'}, {'{amount}'}, {'{house_name}'}, {'{due_date}'}, {'{tenant_id}'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="paymentConfirmation">Payment Confirmation</Label>
+                  <textarea 
+                    id="paymentConfirmation"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    placeholder="Dear {tenant_name}, we have received your payment of KES {amount} for {house_name}. Ref: {mpesa_ref}. Thank you!"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Variables: {'{tenant_name}'}, {'{amount}'}, {'{house_name}'}, {'{mpesa_ref}'}
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="overdueNotice">Overdue Notice</Label>
+                  <textarea 
+                    id="overdueNotice"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    placeholder="Dear {tenant_name}, your rent of KES {amount} for {house_name} is {days_overdue} days overdue. Please pay immediately to avoid penalties."
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Variables: {'{tenant_name}'}, {'{amount}'}, {'{house_name}'}, {'{days_overdue}'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Automated SMS Settings</CardTitle>
+                <CardDescription>
+                  Configure when to automatically send SMS notifications
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div>
+                    <Label>Send Payment Reminders</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Automatically send reminders before due date
+                    </p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="reminderDays">Days Before Due Date</Label>
+                  <Input id="reminderDays" type="number" placeholder="3" className="w-24" />
+                </div>
+                <div className="flex items-center justify-between py-3 border-b">
+                  <div>
+                    <Label>Send Payment Confirmations</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Notify tenants when payment is received
+                    </p>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between py-3">
+                  <div>
+                    <Label>Send Overdue Notices</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Alert tenants about overdue payments
                     </p>
                   </div>
                   <Switch defaultChecked />
