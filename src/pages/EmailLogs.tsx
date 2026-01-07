@@ -14,8 +14,17 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, RefreshCw, CheckCircle, XCircle, AlertCircle, Mail, Zap } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Search, RefreshCw, CheckCircle, XCircle, AlertCircle, Mail, Zap, Edit, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface EmailLog {
   id: string;
@@ -27,7 +36,7 @@ interface EmailLog {
   error?: string;
 }
 
-const mockEmailLogs: EmailLog[] = [
+const initialMockEmailLogs: EmailLog[] = [
   {
     id: '1',
     receivedAt: '2025-01-12T20:05:00',
@@ -81,11 +90,18 @@ const mockEmailLogs: EmailLog[] = [
 ];
 
 const EmailLogs = () => {
+  const [emailLogs, setEmailLogs] = useState<EmailLog[]>(initialMockEmailLogs);
   const [searchQuery, setSearchQuery] = useState('');
   const [testMessage, setTestMessage] = useState('');
   const [parsedResult, setParsedResult] = useState<ReturnType<typeof parsePaymentMessage> | null>(null);
+  
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingLog, setEditingLog] = useState<EmailLog | null>(null);
+  const [editedMessage, setEditedMessage] = useState('');
+  const [editPreviewResult, setEditPreviewResult] = useState<ReturnType<typeof parsePaymentMessage> | null>(null);
 
-  const filteredLogs = mockEmailLogs.filter(log =>
+  const filteredLogs = emailLogs.filter(log =>
     log.rawMessage.toLowerCase().includes(searchQuery.toLowerCase()) ||
     log.subject.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -95,6 +111,51 @@ const EmailLogs = () => {
       const result = parsePaymentMessage(testMessage);
       setParsedResult(result);
     }
+  };
+
+  const handleEditLog = (log: EmailLog) => {
+    setEditingLog(log);
+    setEditedMessage(log.rawMessage);
+    setEditPreviewResult(null);
+    setEditDialogOpen(true);
+  };
+
+  const handlePreviewParse = () => {
+    if (editedMessage.trim()) {
+      const result = parsePaymentMessage(editedMessage);
+      setEditPreviewResult(result);
+    }
+  };
+
+  const handleSaveAndSync = () => {
+    if (!editingLog || !editedMessage.trim()) return;
+
+    const parsedData = parsePaymentMessage(editedMessage);
+    const hasRequiredFields = parsedData.amount && parsedData.houseNo && parsedData.mpesaRef;
+
+    setEmailLogs(prev => prev.map(log => {
+      if (log.id === editingLog.id) {
+        return {
+          ...log,
+          rawMessage: editedMessage,
+          status: hasRequiredFields ? 'processed' : 'failed',
+          parsedData: hasRequiredFields ? parsedData : undefined,
+          error: hasRequiredFields ? undefined : 'Could not parse required fields from message',
+        };
+      }
+      return log;
+    }));
+
+    if (hasRequiredFields) {
+      toast.success('Message updated and synced successfully');
+    } else {
+      toast.error('Message updated but still missing required fields');
+    }
+
+    setEditDialogOpen(false);
+    setEditingLog(null);
+    setEditedMessage('');
+    setEditPreviewResult(null);
   };
 
   const getStatusIcon = (status: EmailLog['status']) => {
@@ -148,7 +209,7 @@ const EmailLogs = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Emails</p>
-                <p className="text-xl font-bold">{mockEmailLogs.length}</p>
+                <p className="text-xl font-bold">{emailLogs.length}</p>
               </div>
             </div>
           </div>
@@ -160,7 +221,7 @@ const EmailLogs = () => {
               <div>
                 <p className="text-xs text-muted-foreground">Processed</p>
                 <p className="text-xl font-bold">
-                  {mockEmailLogs.filter(l => l.status === 'processed').length}
+                  {emailLogs.filter(l => l.status === 'processed').length}
                 </p>
               </div>
             </div>
@@ -173,7 +234,7 @@ const EmailLogs = () => {
               <div>
                 <p className="text-xs text-muted-foreground">Failed</p>
                 <p className="text-xl font-bold">
-                  {mockEmailLogs.filter(l => l.status === 'failed').length}
+                  {emailLogs.filter(l => l.status === 'failed').length}
                 </p>
               </div>
             </div>
@@ -186,7 +247,7 @@ const EmailLogs = () => {
               <div>
                 <p className="text-xs text-muted-foreground">Pending</p>
                 <p className="text-xl font-bold">
-                  {mockEmailLogs.filter(l => l.status === 'pending').length}
+                  {emailLogs.filter(l => l.status === 'pending').length}
                 </p>
               </div>
             </div>
@@ -277,6 +338,7 @@ const EmailLogs = () => {
                 <TableHead className="max-w-xs">Message Preview</TableHead>
                 <TableHead>Parsed Data</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -312,11 +374,111 @@ const EmailLogs = () => {
                   <TableCell>
                     {getStatusBadge(log.status)}
                   </TableCell>
+                  <TableCell>
+                    {log.status === 'failed' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditLog(log)}
+                        className="gap-1.5"
+                      >
+                        <Edit className="h-3.5 w-3.5" />
+                        Edit & Sync
+                      </Button>
+                    )}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
+
+        {/* Edit Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Edit className="h-5 w-5" />
+                Edit & Re-sync Message
+              </DialogTitle>
+              <DialogDescription>
+                Edit the message to correct any parsing issues, then preview and sync.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Original Error</label>
+                <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">
+                  {editingLog?.error}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Message Content</label>
+                <Textarea
+                  value={editedMessage}
+                  onChange={(e) => setEditedMessage(e.target.value)}
+                  className="min-h-32"
+                  placeholder="Edit the message content..."
+                />
+              </div>
+
+              <Button variant="outline" onClick={handlePreviewParse} className="gap-2">
+                <Zap className="h-4 w-4" />
+                Preview Parse Result
+              </Button>
+
+              {editPreviewResult && (
+                <div className="p-4 rounded-lg bg-muted/50 space-y-2">
+                  <h4 className="font-medium">Preview Result:</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Amount:</span>{' '}
+                      <span className={editPreviewResult.amount ? 'text-success font-medium' : 'text-destructive'}>
+                        {editPreviewResult.amount ? `KES ${editPreviewResult.amount.toLocaleString()}` : 'Not found'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">House No:</span>{' '}
+                      <span className={editPreviewResult.houseNo ? 'font-medium' : 'text-destructive'}>
+                        {editPreviewResult.houseNo || 'Not found'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Tenant:</span>{' '}
+                      <span className={editPreviewResult.tenantName ? 'font-medium' : 'text-destructive'}>
+                        {editPreviewResult.tenantName || 'Not found'}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">M-Pesa Ref:</span>{' '}
+                      <span className={editPreviewResult.mpesaRef ? 'font-mono' : 'text-destructive'}>
+                        {editPreviewResult.mpesaRef || 'Not found'}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-muted-foreground">Date:</span>{' '}
+                      <span className={editPreviewResult.date ? 'font-medium' : 'text-destructive'}>
+                        {editPreviewResult.date || 'Not found'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSaveAndSync} className="gap-2">
+                <RotateCcw className="h-4 w-4" />
+                Save & Sync
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );
