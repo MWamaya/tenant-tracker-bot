@@ -13,7 +13,17 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
-import { Search, Plus, Home } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Search, Plus, Home, Trash2 } from 'lucide-react';
 import { HouseDetailDialog } from '@/components/houses/HouseDetailDialog';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
 import { toast } from 'sonner';
@@ -27,11 +37,13 @@ interface HouseData {
 }
 
 const Houses = () => {
-  const { houses, tenants, addHouse, setTenants } = useData();
+  const { houses, tenants, addHouse, setTenants, deleteHouse } = useData();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<HouseData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [houseToDelete, setHouseToDelete] = useState<HouseData | null>(null);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -92,6 +104,21 @@ const Houses = () => {
     }
 
     toast.success(`House ${houseData.houseNo} added successfully!`);
+  };
+
+  const handleDeleteClick = (house: HouseData, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setHouseToDelete(house);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (houseToDelete) {
+      deleteHouse(houseToDelete.id);
+      toast.success(`House ${houseToDelete.houseNo} deleted successfully!`);
+      setHouseToDelete(null);
+      setDeleteDialogOpen(false);
+    }
   };
 
   return (
@@ -170,13 +197,23 @@ const Houses = () => {
                     {house.balance && <StatusBadge status={house.balance.status} />}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleViewDetails(house)}
-                    >
-                      View Details
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleViewDetails(house)}
+                      >
+                        View Details
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => handleDeleteClick(house, e)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -187,9 +224,9 @@ const Houses = () => {
         {/* Mobile Card View */}
         <div className="grid grid-cols-1 gap-4 md:hidden">
           {houseData.map((house) => (
-            <div key={house.id} className="stat-card" onClick={() => handleViewDetails(house)}>
+            <div key={house.id} className="stat-card">
               <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3" onClick={() => handleViewDetails(house)}>
                   <div className="p-2 rounded-lg bg-primary/10">
                     <Home className="h-4 w-4 text-primary" />
                   </div>
@@ -200,9 +237,19 @@ const Houses = () => {
                     </p>
                   </div>
                 </div>
-                {house.balance && <StatusBadge status={house.balance.status} />}
+                <div className="flex items-center gap-2">
+                  {house.balance && <StatusBadge status={house.balance.status} />}
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive/10 p-2"
+                    onClick={(e) => handleDeleteClick(house, e)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t" onClick={() => handleViewDetails(house)}>
                 <div>
                   <p className="text-xs text-muted-foreground">Expected</p>
                   <p className="font-medium text-sm">{formatCurrency(house.expectedRent)}</p>
@@ -242,6 +289,27 @@ const Houses = () => {
         tenants={tenants}
         onSave={handleAddHouse}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete House {houseToDelete?.houseNo}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this house and remove any assigned tenant. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

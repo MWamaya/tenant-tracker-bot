@@ -10,6 +10,7 @@ interface DataContextType {
   addTenant: (tenant: Omit<Tenant, 'id'>) => void;
   updateTenant: (id: string, data: Partial<Tenant>) => void;
   deleteTenant: (id: string) => void;
+  deleteHouse: (id: string) => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -43,6 +44,13 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setTenants(prev => prev.filter(t => t.id !== id));
   };
 
+  const deleteHouse = (id: string) => {
+    // First, unassign any tenants from this house
+    setTenants(prev => prev.filter(t => t.houseId !== id));
+    // Then delete the house
+    setHouses(prev => prev.filter(h => h.id !== id));
+  };
+
   return (
     <DataContext.Provider
       value={{
@@ -54,6 +62,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         addTenant,
         updateTenant,
         deleteTenant,
+        deleteHouse,
       }}
     >
       {children}
