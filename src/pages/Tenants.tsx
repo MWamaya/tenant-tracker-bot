@@ -67,7 +67,7 @@ const Tenants = () => {
     setDialogOpen(true);
   };
 
-  const handleSaveTenant = (data: { name: string; phone: string; houseId: string }) => {
+  const handleSaveTenant = (data: { name: string; phone: string; secondaryPhone?: string; houseId: string }) => {
     if (editingTenant) {
       updateTenant(editingTenant.id, data);
       toast.success('Tenant updated successfully');
@@ -150,6 +150,12 @@ const Tenants = () => {
                     <Phone className="h-3 w-3" />
                     <span>{tenant.phone}</span>
                   </div>
+                  {tenant.secondaryPhone && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                      <Phone className="h-3 w-3" />
+                      <span>{tenant.secondaryPhone} (Alt)</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <Home className="h-3 w-3" />
                     <span>{tenant.house?.houseNo}</span>

@@ -25,7 +25,7 @@ interface TenantFormDialogProps {
   tenant?: Tenant | null;
   houses: House[];
   assignedHouseIds: string[];
-  onSave: (data: { name: string; phone: string; houseId: string }) => void;
+  onSave: (data: { name: string; phone: string; secondaryPhone?: string; houseId: string }) => void;
 }
 
 export const TenantFormDialog = ({
@@ -38,6 +38,7 @@ export const TenantFormDialog = ({
 }: TenantFormDialogProps) => {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [secondaryPhone, setSecondaryPhone] = useState('');
   const [houseId, setHouseId] = useState('');
 
   const isEditing = !!tenant;
@@ -46,10 +47,12 @@ export const TenantFormDialog = ({
     if (tenant) {
       setName(tenant.name);
       setPhone(tenant.phone);
+      setSecondaryPhone(tenant.secondaryPhone || '');
       setHouseId(tenant.houseId);
     } else {
       setName('');
       setPhone('');
+      setSecondaryPhone('');
       setHouseId('');
     }
   }, [tenant, open]);
@@ -61,7 +64,7 @@ export const TenantFormDialog = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name && phone && houseId) {
-      onSave({ name, phone, houseId });
+      onSave({ name, phone, secondaryPhone: secondaryPhone || undefined, houseId });
       onOpenChange(false);
     }
   };
@@ -104,6 +107,19 @@ export const TenantFormDialog = ({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="secondaryPhone" className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-muted-foreground" />
+              Secondary Phone (Optional)
+            </Label>
+            <Input
+              id="secondaryPhone"
+              placeholder="e.g. 0722345678"
+              value={secondaryPhone}
+              onChange={(e) => setSecondaryPhone(e.target.value)}
             />
           </div>
 
