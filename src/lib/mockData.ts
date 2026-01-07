@@ -11,6 +11,7 @@ export interface Tenant {
   id: string;
   name: string;
   phone: string;
+  secondaryPhone?: string;
   houseId: string;
 }
 
