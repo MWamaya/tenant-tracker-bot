@@ -106,10 +106,34 @@ const EmailLogs = () => {
     log.subject.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleTestParse = () => {
+  const handleTestParse = (addToLog: boolean = false) => {
     if (testMessage.trim()) {
       const result = parsePaymentMessage(testMessage);
       setParsedResult(result);
+      
+      if (addToLog) {
+        const hasRequiredFields = result.amount && result.houseNo && result.mpesaRef;
+        const newLog: EmailLog = {
+          id: Date.now().toString(),
+          receivedAt: new Date().toISOString(),
+          subject: 'Manual Entry',
+          rawMessage: testMessage,
+          status: hasRequiredFields ? 'processed' : 'failed',
+          parsedData: hasRequiredFields ? result : undefined,
+          error: hasRequiredFields ? undefined : 'Could not parse required fields (Amount, House No, or M-Pesa Ref)',
+        };
+        
+        setEmailLogs(prev => [newLog, ...prev]);
+        
+        if (hasRequiredFields) {
+          toast.success('Message parsed and added to logs');
+        } else {
+          toast.error('Message added to logs as failed - missing required fields');
+        }
+        
+        setTestMessage('');
+        setParsedResult(null);
+      }
     }
   };
 
@@ -272,10 +296,16 @@ const EmailLogs = () => {
               onChange={(e) => setTestMessage(e.target.value)}
               className="min-h-24"
             />
-            <Button onClick={handleTestParse} className="gap-2">
-              <Zap className="h-4 w-4" />
-              Parse Message
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => handleTestParse(false)} className="gap-2">
+                <Zap className="h-4 w-4" />
+                Test Parse
+              </Button>
+              <Button onClick={() => handleTestParse(true)} className="gap-2">
+                <Mail className="h-4 w-4" />
+                Add to Logs
+              </Button>
+            </div>
 
             {parsedResult && (
               <div className="p-4 rounded-lg bg-muted/50 space-y-2">
