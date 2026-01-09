@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { payments } from '@/lib/mockData';
+import { usePayments } from '@/hooks/usePayments';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,10 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Download, CreditCard, Calendar } from 'lucide-react';
+import { Search, Download, CreditCard, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Payments = () => {
+  const { payments, isLoading } = usePayments();
   const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter] = useState('all');
 
@@ -36,19 +37,46 @@ const Payments = () => {
 
   const filteredPayments = payments
     .filter(payment => {
+      const tenantName = payment.tenants?.name || payment.sender_name || '';
+      const houseNo = payment.houses?.house_no || '';
+      
       const matchesSearch = 
-        payment.tenantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        payment.houseNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        payment.mpesaRef.toLowerCase().includes(searchQuery.toLowerCase());
+        tenantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        houseNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        payment.mpesa_ref.toLowerCase().includes(searchQuery.toLowerCase());
       
       if (monthFilter === 'all') return matchesSearch;
       
-      const paymentMonth = format(new Date(payment.date), 'yyyy-MM');
+      const paymentMonth = format(new Date(payment.payment_date), 'yyyy-MM');
       return matchesSearch && paymentMonth === monthFilter;
     })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime());
 
-  const totalAmount = filteredPayments.reduce((sum, p) => sum + p.amount, 0);
+  const totalAmount = filteredPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+  // Generate month options
+  const getMonthOptions = () => {
+    const months = [];
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({
+        value: format(date, 'yyyy-MM'),
+        label: format(date, 'MMMM yyyy'),
+      });
+    }
+    return months;
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -65,10 +93,6 @@ const Payments = () => {
             <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Export</span>
-            </Button>
-            <Button className="gap-2 flex-1 sm:flex-none">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Add Payment</span>
             </Button>
           </div>
         </div>
@@ -91,9 +115,11 @@ const Payments = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="2025-01">January 2025</SelectItem>
-              <SelectItem value="2024-12">December 2024</SelectItem>
-              <SelectItem value="2024-11">November 2024</SelectItem>
+              {getMonthOptions().map(month => (
+                <SelectItem key={month.value} value={month.value}>
+                  {month.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -135,21 +161,23 @@ const Payments = () => {
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {format(new Date(payment.date), 'MMM d, yyyy')}
+                        {format(new Date(payment.payment_date), 'MMM d, yyyy')}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(payment.date), 'h:mm a')}
+                        {format(new Date(payment.payment_date), 'h:mm a')}
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{payment.tenantName}</TableCell>
-                  <TableCell>{payment.houseNo}</TableCell>
+                  <TableCell className="font-medium">
+                    {payment.tenants?.name || payment.sender_name || 'Unknown'}
+                  </TableCell>
+                  <TableCell>{payment.houses?.house_no || 'Unassigned'}</TableCell>
                   <TableCell className="font-semibold text-success">
-                    {formatCurrency(payment.amount)}
+                    {formatCurrency(Number(payment.amount))}
                   </TableCell>
                   <TableCell>
                     <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
-                      {payment.mpesaRef}
+                      {payment.mpesa_ref}
                     </code>
                   </TableCell>
                   <TableCell className="text-right">
@@ -169,28 +197,32 @@ const Payments = () => {
             <div key={payment.id} className="stat-card">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-semibold">{payment.tenantName}</p>
-                  <p className="text-sm text-muted-foreground">{payment.houseNo}</p>
+                  <p className="font-semibold">
+                    {payment.tenants?.name || payment.sender_name || 'Unknown'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {payment.houses?.house_no || 'Unassigned'}
+                  </p>
                 </div>
-                <p className="font-bold text-success">{formatCurrency(payment.amount)}</p>
+                <p className="font-bold text-success">{formatCurrency(Number(payment.amount))}</p>
               </div>
               <div className="flex items-center justify-between mt-3 pt-3 border-t text-sm">
                 <div className="text-muted-foreground">
-                  {format(new Date(payment.date), 'MMM d, yyyy h:mm a')}
+                  {format(new Date(payment.payment_date), 'MMM d, yyyy h:mm a')}
                 </div>
                 <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
-                  {payment.mpesaRef}
+                  {payment.mpesa_ref}
                 </code>
               </div>
             </div>
           ))}
         </div>
 
-        {filteredPayments.length === 0 && (
+        {filteredPayments.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium">No payments found</h3>
-            <p className="text-muted-foreground">Try adjusting your search or filter</p>
+            <p className="text-muted-foreground">Payments will appear here once processed from email logs</p>
           </div>
         )}
       </div>

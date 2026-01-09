@@ -14,6 +14,225 @@ export type Database = {
   }
   public: {
     Tables: {
+      balances: {
+        Row: {
+          balance: number
+          carry_forward: number
+          created_at: string
+          expected_rent: number
+          house_id: string
+          id: string
+          landlord_id: string
+          month: string
+          paid_amount: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          carry_forward?: number
+          created_at?: string
+          expected_rent: number
+          house_id: string
+          id?: string
+          landlord_id: string
+          month: string
+          paid_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          carry_forward?: number
+          created_at?: string
+          expected_rent?: number
+          house_id?: string
+          id?: string
+          landlord_id?: string
+          month?: string
+          paid_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "balances_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "balances_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          landlord_id: string
+          parsed_amount: number | null
+          parsed_date: string | null
+          parsed_house_no: string | null
+          parsed_mpesa_ref: string | null
+          parsed_tenant_name: string | null
+          payment_id: string | null
+          raw_message: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          landlord_id: string
+          parsed_amount?: number | null
+          parsed_date?: string | null
+          parsed_house_no?: string | null
+          parsed_mpesa_ref?: string | null
+          parsed_tenant_name?: string | null
+          payment_id?: string | null
+          raw_message: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          landlord_id?: string
+          parsed_amount?: number | null
+          parsed_date?: string | null
+          parsed_house_no?: string | null
+          parsed_mpesa_ref?: string | null
+          parsed_tenant_name?: string | null
+          payment_id?: string | null
+          raw_message?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "email_logs_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      houses: {
+        Row: {
+          created_at: string
+          expected_rent: number
+          house_no: string
+          id: string
+          landlord_id: string
+          occupancy_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expected_rent?: number
+          house_no: string
+          id?: string
+          landlord_id: string
+          occupancy_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expected_rent?: number
+          house_no?: string
+          id?: string
+          landlord_id?: string
+          occupancy_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "houses_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          house_id: string | null
+          id: string
+          landlord_id: string
+          mpesa_ref: string
+          payment_date: string
+          sender_name: string | null
+          sender_phone: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          house_id?: string | null
+          id?: string
+          landlord_id: string
+          mpesa_ref: string
+          payment_date: string
+          sender_name?: string | null
+          sender_phone?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          house_id?: string | null
+          id?: string
+          landlord_id?: string
+          mpesa_ref?: string
+          payment_date?: string
+          sender_name?: string | null
+          sender_phone?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_name: string | null
@@ -40,6 +259,57 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          house_id: string | null
+          id: string
+          landlord_id: string
+          move_in_date: string | null
+          name: string
+          phone: string
+          secondary_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          house_id?: string | null
+          id?: string
+          landlord_id: string
+          move_in_date?: string | null
+          name: string
+          phone: string
+          secondary_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          house_id?: string | null
+          id?: string
+          landlord_id?: string
+          move_in_date?: string | null
+          name?: string
+          phone?: string
+          secondary_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenants_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenants_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

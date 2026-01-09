@@ -16,12 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { House, Tenant } from '@/lib/mockData';
+
+interface Tenant {
+  id: string;
+  name: string;
+  phone: string;
+  houseId: string;
+}
 
 interface HouseFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  house?: House | null;
   tenants: Tenant[];
   onSave: (houseData: {
     houseNo: string;
@@ -35,7 +40,6 @@ interface HouseFormDialogProps {
 export const HouseFormDialog = ({
   open,
   onOpenChange,
-  house,
   tenants,
   onSave,
 }: HouseFormDialogProps) => {
@@ -45,29 +49,18 @@ export const HouseFormDialog = ({
   const [tenantId, setTenantId] = useState('');
   const [occupancyDate, setOccupancyDate] = useState('');
 
-  // Get tenants that are not assigned to any house (available tenants)
-  const availableTenants = tenants.filter(t => !t.houseId || (house && t.houseId === house.id));
-
   useEffect(() => {
-    if (house) {
-      setHouseNo(house.houseNo);
-      setExpectedRent(house.expectedRent.toString());
-      const assignedTenant = tenants.find(t => t.houseId === house.id);
-      setIsOccupied(!!assignedTenant);
-      setTenantId(assignedTenant?.id || '');
-      setOccupancyDate('');
-    } else {
+    if (open) {
       setHouseNo('');
       setExpectedRent('');
       setIsOccupied(false);
       setTenantId('');
       setOccupancyDate('');
     }
-  }, [house, tenants, open]);
+  }, [open]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!houseNo.trim() || !expectedRent) return;
 
     onSave({
@@ -85,7 +78,7 @@ export const HouseFormDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{house ? 'Edit House' : 'Add New House'}</DialogTitle>
+          <DialogTitle>Add New House</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
@@ -143,12 +136,12 @@ export const HouseFormDialog = ({
                     <SelectValue placeholder="Select tenant" />
                   </SelectTrigger>
                   <SelectContent>
-                    {availableTenants.length === 0 ? (
+                    {tenants.length === 0 ? (
                       <div className="py-2 px-2 text-sm text-muted-foreground">
                         No available tenants
                       </div>
                     ) : (
-                      availableTenants.map((tenant) => (
+                      tenants.map((tenant) => (
                         <SelectItem key={tenant.id} value={tenant.id}>
                           {tenant.name} - {tenant.phone}
                         </SelectItem>
@@ -174,9 +167,7 @@ export const HouseFormDialog = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">
-              {house ? 'Save Changes' : 'Add House'}
-            </Button>
+            <Button type="submit">Add House</Button>
           </DialogFooter>
         </form>
       </DialogContent>
