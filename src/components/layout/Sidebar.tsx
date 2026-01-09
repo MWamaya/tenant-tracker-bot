@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Home, 
@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 
 const navigation = [
@@ -27,6 +29,14 @@ const navigation = [
 
 const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success('Logged out successfully');
+    navigate('/auth');
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -67,7 +77,10 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
           <Settings className="h-5 w-5" />
           <span>Settings</span>
         </NavLink>
-        <button className="sidebar-link w-full text-left text-destructive/80 hover:text-destructive hover:bg-destructive/10">
+        <button 
+          onClick={handleLogout}
+          className="sidebar-link w-full text-left text-destructive/80 hover:text-destructive hover:bg-destructive/10"
+        >
           <LogOut className="h-5 w-5" />
           <span>Logout</span>
         </button>
