@@ -141,12 +141,15 @@ export const TenantFormDialog = ({
               <Home className="h-4 w-4 text-muted-foreground" />
               Assign House (Optional)
             </Label>
-            <Select value={houseId} onValueChange={setHouseId}>
+            <Select 
+              value={houseId || "none"} 
+              onValueChange={(val) => setHouseId(val === "none" ? "" : val)}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select a house" />
               </SelectTrigger>
               <SelectContent className="bg-popover">
-                <SelectItem value="">No house assigned</SelectItem>
+                <SelectItem value="none">No house assigned</SelectItem>
                 {availableHouses.map((house) => (
                   <SelectItem key={house.id} value={house.id}>
                     {house.houseNo} - KES {house.expectedRent.toLocaleString()}/month
