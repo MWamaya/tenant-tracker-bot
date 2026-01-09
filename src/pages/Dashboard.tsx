@@ -5,10 +5,12 @@ import { CollectionProgress } from '@/components/dashboard/CollectionProgress';
 import { RecentPayments } from '@/components/dashboard/RecentPayments';
 import { HouseStatusChart } from '@/components/dashboard/HouseStatusChart';
 import { getDashboardStats, balances, tenants } from '@/lib/mockData';
-import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare } from 'lucide-react';
+import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare, Printer } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-
+import { Button } from '@/components/ui/button';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('unpaid');
   const tabsRef = useRef<HTMLDivElement>(null);
@@ -38,6 +40,110 @@ const Dashboard = () => {
   const getTenantName = (houseId: string) => {
     const tenant = getTenant(houseId);
     return tenant?.name || 'Vacant';
+  };
+
+  const handlePrintStatements = () => {
+    const doc = new jsPDF();
+    const currentDate = new Date().toLocaleDateString('en-KE', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    // Title
+    doc.setFontSize(18);
+    doc.text('Outstanding Rent Statement', 14, 20);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${currentDate}`, 14, 28);
+
+    let yPosition = 40;
+
+    // Unpaid Houses Section
+    if (unpaidHouses.length > 0) {
+      doc.setFontSize(14);
+      doc.setTextColor(220, 53, 69);
+      doc.text('Unpaid Houses', 14, yPosition);
+      yPosition += 6;
+
+      const unpaidData = unpaidHouses.map((house) => {
+        const tenant = getTenant(house.houseId);
+        return [
+          house.houseNo,
+          tenant?.name || 'Vacant',
+          tenant?.phone || '-',
+          formatCurrency(house.expectedRent),
+          formatCurrency(house.balance),
+        ];
+      });
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['House No', 'Tenant', 'Phone', 'Expected', 'Amount Due']],
+        body: unpaidData,
+        theme: 'striped',
+        headStyles: { fillColor: [220, 53, 69] },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    // Partially Paid Houses Section
+    if (partialHouses.length > 0) {
+      // Check if we need a new page
+      if (yPosition > 240) {
+        doc.addPage();
+        yPosition = 20;
+      }
+
+      doc.setFontSize(14);
+      doc.setTextColor(255, 193, 7);
+      doc.text('Partially Paid Houses', 14, yPosition);
+      yPosition += 6;
+
+      const partialData = partialHouses.map((house) => {
+        const tenant = getTenant(house.houseId);
+        return [
+          house.houseNo,
+          tenant?.name || 'Vacant',
+          tenant?.phone || '-',
+          formatCurrency(house.expectedRent),
+          formatCurrency(house.paidAmount),
+          formatCurrency(house.balance),
+        ];
+      });
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: [['House No', 'Tenant', 'Phone', 'Expected', 'Paid', 'Balance']],
+        body: partialData,
+        theme: 'striped',
+        headStyles: { fillColor: [255, 193, 7], textColor: [0, 0, 0] },
+      });
+
+      yPosition = (doc as any).lastAutoTable.finalY + 15;
+    }
+
+    // Summary
+    if (yPosition > 250) {
+      doc.addPage();
+      yPosition = 20;
+    }
+
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text('Summary', 14, yPosition);
+    yPosition += 8;
+    doc.setFontSize(10);
+    doc.text(`Total Unpaid Houses: ${unpaidHouses.length}`, 14, yPosition);
+    yPosition += 6;
+    doc.text(`Total Partially Paid Houses: ${partialHouses.length}`, 14, yPosition);
+    yPosition += 6;
+    const totalOutstanding = [...unpaidHouses, ...partialHouses].reduce((sum, h) => sum + h.balance, 0);
+    doc.text(`Total Outstanding: ${formatCurrency(totalOutstanding)}`, 14, yPosition);
+
+    // Save the PDF
+    doc.save(`outstanding-rent-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
   return (
@@ -111,7 +217,19 @@ const Dashboard = () => {
         </div>
 
         <div className="stat-card animate-slide-up" ref={tabsRef}>
-          <h3 className="text-lg font-semibold mb-4">House Payment Status</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">House Payment Status</h3>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handlePrintStatements}
+              className="gap-2"
+              disabled={unpaidHouses.length === 0 && partialHouses.length === 0}
+            >
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline">Print Statement</span>
+            </Button>
+          </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3 h-auto">
               <TabsTrigger value="unpaid" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
