@@ -17,7 +17,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { User, Phone, Home } from 'lucide-react';
-import { Tenant, House } from '@/lib/mockData';
+
+interface Tenant {
+  id: string;
+  name: string;
+  phone: string;
+  secondaryPhone?: string;
+  houseId: string;
+}
+
+interface House {
+  id: string;
+  houseNo: string;
+  expectedRent: number;
+}
 
 interface TenantFormDialogProps {
   open: boolean;
@@ -63,7 +76,7 @@ export const TenantFormDialog = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && phone && houseId) {
+    if (name && phone) {
       onSave({ name, phone, secondaryPhone: secondaryPhone || undefined, houseId });
       onOpenChange(false);
     }
@@ -126,13 +139,14 @@ export const TenantFormDialog = ({
           <div className="space-y-2">
             <Label htmlFor="house" className="flex items-center gap-2">
               <Home className="h-4 w-4 text-muted-foreground" />
-              Assign House
+              Assign House (Optional)
             </Label>
-            <Select value={houseId} onValueChange={setHouseId} required>
+            <Select value={houseId} onValueChange={setHouseId}>
               <SelectTrigger>
                 <SelectValue placeholder="Select a house" />
               </SelectTrigger>
               <SelectContent className="bg-popover">
+                <SelectItem value="">No house assigned</SelectItem>
                 {availableHouses.map((house) => (
                   <SelectItem key={house.id} value={house.id}>
                     {house.houseNo} - KES {house.expectedRent.toLocaleString()}/month
@@ -151,7 +165,7 @@ export const TenantFormDialog = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!name || !phone || !houseId}>
+            <Button type="submit" disabled={!name || !phone}>
               {isEditing ? 'Save Changes' : 'Add Tenant'}
             </Button>
           </DialogFooter>

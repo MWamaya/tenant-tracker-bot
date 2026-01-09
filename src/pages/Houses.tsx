@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { balances, payments } from '@/lib/mockData';
-import { useData } from '@/context/DataContext';
+import { useHouses, House } from '@/hooks/useHouses';
+import { useTenants } from '@/hooks/useTenants';
+import { useBalances } from '@/hooks/useBalances';
+import { usePayments } from '@/hooks/usePayments';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -23,27 +25,37 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Search, Plus, Home, Trash2 } from 'lucide-react';
+import { Search, Plus, Home, Trash2, Loader2 } from 'lucide-react';
 import { HouseDetailDialog } from '@/components/houses/HouseDetailDialog';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
-import { toast } from 'sonner';
 
 interface HouseData {
   id: string;
-  houseNo: string;
-  expectedRent: number;
-  tenant?: { id: string; name: string; phone: string; houseId: string };
-  balance?: typeof balances[0];
+  house_no: string;
+  expected_rent: number;
+  status: 'vacant' | 'occupied';
+  tenant?: { id: string; name: string; phone: string; house_id: string | null };
+  balance?: {
+    status: 'paid' | 'partial' | 'unpaid';
+    paid_amount: number;
+    balance: number;
+  };
 }
 
 const Houses = () => {
-  const { houses, tenants, addHouse, setTenants, deleteHouse } = useData();
+  const { houses, isLoading: housesLoading, addHouse, deleteHouse } = useHouses();
+  const { tenants, isLoading: tenantsLoading, updateTenant } = useTenants();
+  const { balances } = useBalances();
+  const { payments } = usePayments();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<HouseData | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [houseToDelete, setHouseToDelete] = useState<HouseData | null>(null);
+
+  const isLoading = housesLoading || tenantsLoading;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -53,17 +65,37 @@ const Houses = () => {
     }).format(amount);
   };
 
-  const getHouseData = () => {
+  const getHouseData = (): HouseData[] => {
     return houses.map(house => {
-      const balance = balances.find(b => b.houseId === house.id);
-      const tenant = tenants.find(t => t.houseId === house.id);
+      const tenant = tenants.find(t => t.house_id === house.id);
+      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+      const balance = balances.find(b => b.house_id === house.id && b.month === currentMonth);
+      
+      let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
+      if (balance) {
+        if (balance.balance <= 0) balanceStatus = 'paid';
+        else if (balance.paid_amount > 0) balanceStatus = 'partial';
+      }
+
       return {
-        ...house,
-        tenant,
-        balance,
+        id: house.id,
+        house_no: house.house_no,
+        expected_rent: Number(house.expected_rent),
+        status: house.status as 'vacant' | 'occupied',
+        tenant: tenant ? {
+          id: tenant.id,
+          name: tenant.name,
+          phone: tenant.phone,
+          house_id: tenant.house_id,
+        } : undefined,
+        balance: balance ? {
+          status: balanceStatus,
+          paid_amount: Number(balance.paid_amount),
+          balance: Number(balance.balance),
+        } : undefined,
       };
     }).filter(house => 
-      house.houseNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      house.house_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
       house.tenant?.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
@@ -76,34 +108,34 @@ const Houses = () => {
   };
 
   const getHousePayments = (houseId: string) => {
+    const currentMonth = new Date().toISOString().slice(0, 7);
     return payments.filter(p => 
-      p.houseId === houseId && 
-      p.date.startsWith('2025-01')
+      p.house_id === houseId && 
+      p.payment_date.startsWith(currentMonth)
     );
   };
 
-  const handleAddHouse = (houseData: {
+  const handleAddHouse = async (houseData: {
     houseNo: string;
     expectedRent: number;
     isOccupied: boolean;
     tenantId?: string;
     occupancyDate?: string;
   }) => {
-    const newHouseId = addHouse({
-      houseNo: houseData.houseNo,
-      expectedRent: houseData.expectedRent,
+    const result = await addHouse.mutateAsync({
+      house_no: houseData.houseNo,
+      expected_rent: houseData.expectedRent,
+      status: houseData.isOccupied ? 'occupied' : 'vacant',
+      occupancy_date: houseData.occupancyDate || null,
     });
 
     // If occupied, update tenant assignment
-    if (houseData.isOccupied && houseData.tenantId) {
-      setTenants(prev => prev.map(t => 
-        t.id === houseData.tenantId 
-          ? { ...t, houseId: newHouseId }
-          : t
-      ));
+    if (houseData.isOccupied && houseData.tenantId && result) {
+      await updateTenant.mutateAsync({
+        id: houseData.tenantId,
+        data: { house_id: result.id },
+      });
     }
-
-    toast.success(`House ${houseData.houseNo} added successfully!`);
   };
 
   const handleDeleteClick = (house: HouseData, e: React.MouseEvent) => {
@@ -112,14 +144,23 @@ const Houses = () => {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (houseToDelete) {
-      deleteHouse(houseToDelete.id);
-      toast.success(`House ${houseToDelete.houseNo} deleted successfully!`);
+      await deleteHouse.mutateAsync(houseToDelete.id);
       setHouseToDelete(null);
       setDeleteDialogOpen(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -173,10 +214,10 @@ const Houses = () => {
                       <div className="p-2 rounded-lg bg-primary/10">
                         <Home className="h-4 w-4 text-primary" />
                       </div>
-                      <span className="font-medium">{house.houseNo}</span>
+                      <span className="font-medium">{house.house_no}</span>
                     </div>
                   </TableCell>
-                  <TableCell>{formatCurrency(house.expectedRent)}</TableCell>
+                  <TableCell>{formatCurrency(house.expected_rent)}</TableCell>
                   <TableCell>
                     {house.tenant ? (
                       <div>
@@ -188,7 +229,7 @@ const Houses = () => {
                     )}
                   </TableCell>
                   <TableCell className="text-success font-medium">
-                    {house.balance ? formatCurrency(house.balance.paidAmount) : '-'}
+                    {house.balance ? formatCurrency(house.balance.paid_amount) : '-'}
                   </TableCell>
                   <TableCell className={house.balance?.balance ? 'text-destructive font-medium' : ''}>
                     {house.balance ? formatCurrency(house.balance.balance) : '-'}
@@ -231,7 +272,7 @@ const Houses = () => {
                     <Home className="h-4 w-4 text-primary" />
                   </div>
                   <div>
-                    <span className="font-semibold">{house.houseNo}</span>
+                    <span className="font-semibold">{house.house_no}</span>
                     <p className="text-sm text-muted-foreground">
                       {house.tenant?.name || 'Vacant'}
                     </p>
@@ -252,12 +293,12 @@ const Houses = () => {
               <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t" onClick={() => handleViewDetails(house)}>
                 <div>
                   <p className="text-xs text-muted-foreground">Expected</p>
-                  <p className="font-medium text-sm">{formatCurrency(house.expectedRent)}</p>
+                  <p className="font-medium text-sm">{formatCurrency(house.expected_rent)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Paid</p>
                   <p className="font-medium text-sm text-success">
-                    {house.balance ? formatCurrency(house.balance.paidAmount) : '-'}
+                    {house.balance ? formatCurrency(house.balance.paid_amount) : '-'}
                   </p>
                 </div>
                 <div>
@@ -270,23 +311,62 @@ const Houses = () => {
             </div>
           ))}
         </div>
+
+        {houseData.length === 0 && !isLoading && (
+          <div className="text-center py-12">
+            <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium">No houses found</h3>
+            <p className="text-muted-foreground">Add your first house to get started</p>
+          </div>
+        )}
       </div>
 
       {/* House Detail Dialog */}
       <HouseDetailDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        house={selectedHouse}
-        tenant={selectedHouse ? tenants.find(t => t.houseId === selectedHouse.id) : undefined}
-        balance={selectedHouse ? balances.find(b => b.houseId === selectedHouse.id) : undefined}
-        payments={selectedHouse ? getHousePayments(selectedHouse.id) : []}
+        house={selectedHouse ? {
+          id: selectedHouse.id,
+          houseNo: selectedHouse.house_no,
+          expectedRent: selectedHouse.expected_rent,
+        } : null}
+        tenant={selectedHouse?.tenant ? {
+          id: selectedHouse.tenant.id,
+          name: selectedHouse.tenant.name,
+          phone: selectedHouse.tenant.phone,
+          houseId: selectedHouse.id,
+        } : undefined}
+        balance={selectedHouse?.balance ? {
+          houseId: selectedHouse.id,
+          houseNo: selectedHouse.house_no,
+          month: new Date().toISOString().slice(0, 7),
+          expectedRent: selectedHouse.expected_rent,
+          paidAmount: selectedHouse.balance.paid_amount,
+          balance: selectedHouse.balance.balance,
+          status: selectedHouse.balance.status,
+        } : undefined}
+        payments={selectedHouse ? getHousePayments(selectedHouse.id).map(p => ({
+          id: p.id,
+          amount: Number(p.amount),
+          mpesaRef: p.mpesa_ref,
+          date: p.payment_date,
+          tenantName: p.tenants?.name || '',
+          houseNo: p.houses?.house_no || '',
+          houseId: p.house_id || '',
+          tenantId: p.tenant_id || '',
+        })) : []}
       />
 
       {/* Add House Dialog */}
       <HouseFormDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        tenants={tenants}
+        tenants={tenants.filter(t => !t.house_id).map(t => ({
+          id: t.id,
+          name: t.name,
+          phone: t.phone,
+          houseId: t.house_id || '',
+        }))}
         onSave={handleAddHouse}
       />
 
@@ -294,7 +374,7 @@ const Houses = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete House {houseToDelete?.houseNo}?</AlertDialogTitle>
+            <AlertDialogTitle>Delete House {houseToDelete?.house_no}?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete this house and remove any assigned tenant. This action cannot be undone.
             </AlertDialogDescription>

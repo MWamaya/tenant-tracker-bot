@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { parsePaymentMessage } from '@/lib/mockData';
+import { useEmailLogs, parsePaymentMessage } from '@/hooks/useEmailLogs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   Table, 
@@ -22,75 +21,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Search, RefreshCw, CheckCircle, XCircle, AlertCircle, Mail, Zap, Edit, RotateCcw } from 'lucide-react';
+import { Search, RefreshCw, CheckCircle, XCircle, AlertCircle, Mail, Zap, Edit, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-
-interface EmailLog {
-  id: string;
-  receivedAt: string;
-  subject: string;
-  rawMessage: string;
-  status: 'processed' | 'failed' | 'pending';
-  parsedData?: ReturnType<typeof parsePaymentMessage>;
-  error?: string;
-}
-
-const initialMockEmailLogs: EmailLog[] = [
-  {
-    id: '1',
-    receivedAt: '2025-01-12T20:05:00',
-    subject: 'Payment Received',
-    rawMessage: 'Dear MICHAEL O a transaction of KES 10,000.00 for 212245 B2 has been received from BEATRICE ADHIAMBO 079****635 on 12/12/2025 08:01 PM. M-Pesa Ref: TLC5B0WSBC. NCBA, Go for it.',
-    status: 'processed',
-    parsedData: {
-      amount: 10000,
-      houseNo: '212245 B2',
-      tenantName: 'BEATRICE ADHIAMBO',
-      mpesaRef: 'TLC5B0WSBC',
-      date: '12/12/2025 08:01 PM',
-    },
-  },
-  {
-    id: '2',
-    receivedAt: '2025-01-10T14:35:00',
-    subject: 'Payment Notification',
-    rawMessage: 'Dear MICHAEL O a transaction of KES 8,000.00 for 212245 A1 has been received from JOHN KAMAU 072****678 on 10/01/2025 02:30 PM. M-Pesa Ref: TLC5B1XYZD. NCBA, Go for it.',
-    status: 'processed',
-    parsedData: {
-      amount: 8000,
-      houseNo: '212245 A1',
-      tenantName: 'JOHN KAMAU',
-      mpesaRef: 'TLC5B1XYZD',
-      date: '10/01/2025 02:30 PM',
-    },
-  },
-  {
-    id: '3',
-    receivedAt: '2025-01-09T11:20:00',
-    subject: 'Bank Alert',
-    rawMessage: 'Your account has been credited with KES 5000. This is a general alert.',
-    status: 'failed',
-    error: 'Could not parse house number from message',
-  },
-  {
-    id: '4',
-    receivedAt: '2025-01-08T09:20:00',
-    subject: 'Payment Received',
-    rawMessage: 'Dear MICHAEL O a transaction of KES 5,000.00 for 212245 A2 has been received from MARY WANJIKU 073****789 on 08/01/2025 09:15 AM. M-Pesa Ref: TLC5B2ABCE. NCBA, Go for it.',
-    status: 'processed',
-    parsedData: {
-      amount: 5000,
-      houseNo: '212245 A2',
-      tenantName: 'MARY WANJIKU',
-      mpesaRef: 'TLC5B2ABCE',
-      date: '08/01/2025 09:15 AM',
-    },
-  },
-];
+import { EmailLog } from '@/hooks/useEmailLogs';
 
 const EmailLogs = () => {
-  const [emailLogs, setEmailLogs] = useState<EmailLog[]>(initialMockEmailLogs);
+  const { emailLogs, isLoading, addEmailLog, updateEmailLog, processEmailLog, refetch } = useEmailLogs();
   const [searchQuery, setSearchQuery] = useState('');
   const [testMessage, setTestMessage] = useState('');
   const [parsedResult, setParsedResult] = useState<ReturnType<typeof parsePaymentMessage> | null>(null);
@@ -102,35 +39,16 @@ const EmailLogs = () => {
   const [editPreviewResult, setEditPreviewResult] = useState<ReturnType<typeof parsePaymentMessage> | null>(null);
 
   const filteredLogs = emailLogs.filter(log =>
-    log.rawMessage.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    log.subject.toLowerCase().includes(searchQuery.toLowerCase())
+    log.raw_message.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleTestParse = (addToLog: boolean = false) => {
+  const handleTestParse = async (addToLog: boolean = false) => {
     if (testMessage.trim()) {
       const result = parsePaymentMessage(testMessage);
       setParsedResult(result);
       
       if (addToLog) {
-        const hasRequiredFields = result.amount && result.houseNo && result.mpesaRef;
-        const newLog: EmailLog = {
-          id: Date.now().toString(),
-          receivedAt: new Date().toISOString(),
-          subject: 'Manual Entry',
-          rawMessage: testMessage,
-          status: hasRequiredFields ? 'processed' : 'failed',
-          parsedData: hasRequiredFields ? result : undefined,
-          error: hasRequiredFields ? undefined : 'Could not parse required fields (Amount, House No, or M-Pesa Ref)',
-        };
-        
-        setEmailLogs(prev => [newLog, ...prev]);
-        
-        if (hasRequiredFields) {
-          toast.success('Message parsed and added to logs');
-        } else {
-          toast.error('Message added to logs as failed - missing required fields');
-        }
-        
+        await addEmailLog.mutateAsync({ raw_message: testMessage });
         setTestMessage('');
         setParsedResult(null);
       }
@@ -139,7 +57,7 @@ const EmailLogs = () => {
 
   const handleEditLog = (log: EmailLog) => {
     setEditingLog(log);
-    setEditedMessage(log.rawMessage);
+    setEditedMessage(log.raw_message);
     setEditPreviewResult(null);
     setEditDialogOpen(true);
   };
@@ -151,35 +69,33 @@ const EmailLogs = () => {
     }
   };
 
-  const handleSaveAndSync = () => {
+  const handleSaveAndSync = async () => {
     if (!editingLog || !editedMessage.trim()) return;
 
-    const parsedData = parsePaymentMessage(editedMessage);
-    const hasRequiredFields = parsedData.amount && parsedData.houseNo && parsedData.mpesaRef;
+    const parsed = parsePaymentMessage(editedMessage);
 
-    setEmailLogs(prev => prev.map(log => {
-      if (log.id === editingLog.id) {
-        return {
-          ...log,
-          rawMessage: editedMessage,
-          status: hasRequiredFields ? 'processed' : 'failed',
-          parsedData: hasRequiredFields ? parsedData : undefined,
-          error: hasRequiredFields ? undefined : 'Could not parse required fields from message',
-        };
-      }
-      return log;
-    }));
-
-    if (hasRequiredFields) {
-      toast.success('Message updated and synced successfully');
-    } else {
-      toast.error('Message updated but still missing required fields');
-    }
+    await updateEmailLog.mutateAsync({
+      id: editingLog.id,
+      data: {
+        raw_message: editedMessage,
+        parsed_amount: parsed.amount,
+        parsed_house_no: parsed.houseNo,
+        parsed_tenant_name: parsed.tenantName,
+        parsed_mpesa_ref: parsed.mpesaRef,
+        parsed_date: parsed.paymentDate,
+        status: parsed.isValid ? 'pending' : 'failed',
+        error_message: parsed.isValid ? null : 'Could not parse required fields from message',
+      },
+    });
 
     setEditDialogOpen(false);
     setEditingLog(null);
     setEditedMessage('');
     setEditPreviewResult(null);
+  };
+
+  const handleProcessPayment = async (log: EmailLog) => {
+    await processEmailLog.mutateAsync(log);
   };
 
   const getStatusIcon = (status: EmailLog['status']) => {
@@ -207,6 +123,16 @@ const EmailLogs = () => {
     );
   };
 
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -218,9 +144,9 @@ const EmailLogs = () => {
               Monitor automated email parsing and payment detection
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4" />
-            Sync Now
+            Refresh
           </Button>
         </div>
 
@@ -301,7 +227,11 @@ const EmailLogs = () => {
                 <Zap className="h-4 w-4" />
                 Test Parse
               </Button>
-              <Button onClick={() => handleTestParse(true)} className="gap-2">
+              <Button 
+                onClick={() => handleTestParse(true)} 
+                className="gap-2"
+                disabled={addEmailLog.isPending}
+              >
                 <Mail className="h-4 w-4" />
                 Add to Logs
               </Button>
@@ -336,9 +266,9 @@ const EmailLogs = () => {
                     </span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-muted-foreground">Date:</span>{' '}
-                    <span className={parsedResult.date ? 'font-medium' : 'text-destructive'}>
-                      {parsedResult.date || 'Not found'}
+                    <span className="text-muted-foreground">Valid:</span>{' '}
+                    <span className={parsedResult.isValid ? 'text-success font-medium' : 'text-destructive'}>
+                      {parsedResult.isValid ? 'Yes' : 'No - Missing required fields'}
                     </span>
                   </div>
                 </div>
@@ -364,7 +294,6 @@ const EmailLogs = () => {
             <TableHeader>
               <TableRow className="table-header">
                 <TableHead>Received</TableHead>
-                <TableHead>Subject</TableHead>
                 <TableHead className="max-w-xs">Message Preview</TableHead>
                 <TableHead>Parsed Data</TableHead>
                 <TableHead>Status</TableHead>
@@ -377,51 +306,72 @@ const EmailLogs = () => {
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {format(new Date(log.receivedAt), 'MMM d, yyyy')}
+                        {format(new Date(log.created_at), 'MMM d, yyyy')}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(log.receivedAt), 'h:mm a')}
+                        {format(new Date(log.created_at), 'h:mm a')}
                       </p>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{log.subject}</TableCell>
                   <TableCell className="max-w-xs">
                     <p className="truncate text-sm text-muted-foreground">
-                      {log.rawMessage}
+                      {log.raw_message}
                     </p>
                   </TableCell>
                   <TableCell>
-                    {log.parsedData ? (
+                    {log.parsed_amount && log.parsed_mpesa_ref ? (
                       <div className="text-xs space-y-1">
-                        <p><span className="text-muted-foreground">Amount:</span> KES {log.parsedData.amount?.toLocaleString()}</p>
-                        <p><span className="text-muted-foreground">House:</span> {log.parsedData.houseNo}</p>
-                        <p className="font-mono text-muted-foreground">{log.parsedData.mpesaRef}</p>
+                        <p><span className="text-muted-foreground">Amount:</span> KES {Number(log.parsed_amount).toLocaleString()}</p>
+                        <p><span className="text-muted-foreground">House:</span> {log.parsed_house_no || 'Unknown'}</p>
+                        <p className="font-mono text-muted-foreground">{log.parsed_mpesa_ref}</p>
                       </div>
                     ) : (
-                      <p className="text-xs text-destructive">{log.error}</p>
+                      <p className="text-xs text-destructive">{log.error_message || 'Parsing failed'}</p>
                     )}
                   </TableCell>
                   <TableCell>
                     {getStatusBadge(log.status)}
                   </TableCell>
                   <TableCell>
-                    {log.status === 'failed' && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditLog(log)}
-                        className="gap-1.5"
-                      >
-                        <Edit className="h-3.5 w-3.5" />
-                        Edit & Sync
-                      </Button>
-                    )}
+                    <div className="flex gap-2">
+                      {log.status === 'pending' && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleProcessPayment(log)}
+                          disabled={processEmailLog.isPending}
+                          className="gap-1.5"
+                        >
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Process
+                        </Button>
+                      )}
+                      {log.status === 'failed' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditLog(log)}
+                          className="gap-1.5"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                          Edit & Sync
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
+
+        {filteredLogs.length === 0 && !isLoading && (
+          <div className="text-center py-12">
+            <Mail className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium">No email logs found</h3>
+            <p className="text-muted-foreground">Use the test parser above to add payment messages</p>
+          </div>
+        )}
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
@@ -440,7 +390,7 @@ const EmailLogs = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Original Error</label>
                 <p className="text-sm text-destructive bg-destructive/10 p-2 rounded">
-                  {editingLog?.error}
+                  {editingLog?.error_message}
                 </p>
               </div>
 
@@ -488,9 +438,9 @@ const EmailLogs = () => {
                       </span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-muted-foreground">Date:</span>{' '}
-                      <span className={editPreviewResult.date ? 'font-medium' : 'text-destructive'}>
-                        {editPreviewResult.date || 'Not found'}
+                      <span className="text-muted-foreground">Valid:</span>{' '}
+                      <span className={editPreviewResult.isValid ? 'text-success font-medium' : 'text-destructive'}>
+                        {editPreviewResult.isValid ? 'Yes - Ready to sync' : 'No - Missing required fields'}
                       </span>
                     </div>
                   </div>
@@ -502,8 +452,12 @@ const EmailLogs = () => {
               <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveAndSync} className="gap-2">
-                <RotateCcw className="h-4 w-4" />
+              <Button 
+                onClick={handleSaveAndSync} 
+                className="gap-2"
+                disabled={updateEmailLog.isPending}
+              >
+                <RefreshCw className="h-4 w-4" />
                 Save & Sync
               </Button>
             </DialogFooter>

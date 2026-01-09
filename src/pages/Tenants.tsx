@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { balances, payments, Tenant } from '@/lib/mockData';
-import { useData } from '@/context/DataContext';
+import { useHouses } from '@/hooks/useHouses';
+import { useTenants, TenantWithHouse } from '@/hooks/useTenants';
+import { useBalances } from '@/hooks/useBalances';
+import { usePayments } from '@/hooks/usePayments';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, User, Phone, Home, Trash2, FileText } from 'lucide-react';
+import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2 } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { TenantStatementDialog } from '@/components/tenants/TenantStatementDialog';
 import { toast } from 'sonner';
@@ -21,14 +23,20 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const Tenants = () => {
-  const { houses, tenants, addTenant, updateTenant, deleteTenant } = useData();
+  const { houses, isLoading: housesLoading } = useHouses();
+  const { tenants, isLoading: tenantsLoading, addTenant, updateTenant, deleteTenant } = useTenants();
+  const { balances } = useBalances();
+  const { payments } = usePayments();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
+  const [editingTenant, setEditingTenant] = useState<TenantWithHouse | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [tenantToDelete, setTenantToDelete] = useState<Tenant | null>(null);
+  const [tenantToDelete, setTenantToDelete] = useState<TenantWithHouse | null>(null);
   const [statementDialogOpen, setStatementDialogOpen] = useState(false);
-  const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<Tenant | null>(null);
+  const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<TenantWithHouse | null>(null);
+
+  const isLoading = housesLoading || tenantsLoading;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -40,71 +48,120 @@ const Tenants = () => {
 
   const getTenantData = () => {
     return tenants.map(tenant => {
-      const house = houses.find(h => h.id === tenant.houseId);
-      const balance = balances.find(b => b.houseId === tenant.houseId);
+      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+      const balance = balances.find(b => b.house_id === tenant.house_id && b.month === currentMonth);
+      
+      let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
+      if (balance) {
+        if (balance.balance <= 0) balanceStatus = 'paid';
+        else if (balance.paid_amount > 0) balanceStatus = 'partial';
+      }
+
       return {
         ...tenant,
-        house,
-        balance,
+        balance: balance ? {
+          status: balanceStatus,
+          paid_amount: Number(balance.paid_amount),
+          balance: Number(balance.balance),
+        } : undefined,
       };
     }).filter(tenant => 
       tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tenant.phone.includes(searchQuery) ||
-      tenant.house?.houseNo.toLowerCase().includes(searchQuery.toLowerCase())
+      tenant.houses?.house_no?.toLowerCase().includes(searchQuery.toLowerCase())
     );
   };
 
   const tenantData = getTenantData();
-  const assignedHouseIds = tenants.map(t => t.houseId);
+  const assignedHouseIds = tenants.map(t => t.house_id).filter(Boolean) as string[];
 
   const handleAddTenant = () => {
     setEditingTenant(null);
     setDialogOpen(true);
   };
 
-  const handleEditTenant = (tenant: Tenant) => {
+  const handleEditTenant = (tenant: TenantWithHouse) => {
     setEditingTenant(tenant);
     setDialogOpen(true);
   };
 
-  const handleSaveTenant = (data: { name: string; phone: string; secondaryPhone?: string; houseId: string }) => {
+  const handleSaveTenant = async (data: { name: string; phone: string; secondaryPhone?: string; houseId: string }) => {
     if (editingTenant) {
-      updateTenant(editingTenant.id, data);
-      toast.success('Tenant updated successfully');
+      await updateTenant.mutateAsync({
+        id: editingTenant.id,
+        data: {
+          name: data.name,
+          phone: data.phone,
+          secondary_phone: data.secondaryPhone || null,
+          house_id: data.houseId || null,
+        },
+        previousHouseId: editingTenant.house_id,
+      });
     } else {
-      addTenant(data);
-      toast.success('Tenant added successfully');
+      await addTenant.mutateAsync({
+        name: data.name,
+        phone: data.phone,
+        secondary_phone: data.secondaryPhone || null,
+        house_id: data.houseId || null,
+      });
     }
   };
 
-  const handleDeleteClick = (tenant: Tenant) => {
+  const handleDeleteClick = (tenant: TenantWithHouse) => {
     setTenantToDelete(tenant);
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (tenantToDelete) {
-      deleteTenant(tenantToDelete.id);
-      toast.success('Tenant removed successfully. House is now vacant.');
+      await deleteTenant.mutateAsync({
+        id: tenantToDelete.id,
+        houseId: tenantToDelete.house_id,
+      });
       setTenantToDelete(null);
       setDeleteDialogOpen(false);
     }
   };
 
-  const handleViewStatement = (tenant: Tenant) => {
+  const handleViewStatement = (tenant: TenantWithHouse) => {
     setSelectedTenantForStatement(tenant);
     setStatementDialogOpen(true);
   };
 
   const getSelectedTenantHouse = () => {
-    if (!selectedTenantForStatement) return null;
-    return houses.find(h => h.id === selectedTenantForStatement.houseId) || null;
+    if (!selectedTenantForStatement?.houses) return null;
+    return {
+      id: selectedTenantForStatement.houses.id,
+      houseNo: selectedTenantForStatement.houses.house_no,
+      expectedRent: Number(selectedTenantForStatement.houses.expected_rent),
+    };
   };
 
   const getSelectedTenantPayments = () => {
     if (!selectedTenantForStatement) return [];
-    return payments.filter(p => p.tenantId === selectedTenantForStatement.id);
+    return payments
+      .filter(p => p.tenant_id === selectedTenantForStatement.id)
+      .map(p => ({
+        id: p.id,
+        amount: Number(p.amount),
+        mpesaRef: p.mpesa_ref,
+        date: p.payment_date,
+        tenantName: selectedTenantForStatement.name,
+        houseNo: selectedTenantForStatement.houses?.house_no || '',
+        houseId: p.house_id || '',
+        tenantId: p.tenant_id || '',
+      }));
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -150,15 +207,15 @@ const Tenants = () => {
                     <Phone className="h-3 w-3" />
                     <span>{tenant.phone}</span>
                   </div>
-                  {tenant.secondaryPhone && (
+                  {tenant.secondary_phone && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                       <Phone className="h-3 w-3" />
-                      <span>{tenant.secondaryPhone} (Alt)</span>
+                      <span>{tenant.secondary_phone} (Alt)</span>
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
                     <Home className="h-3 w-3" />
-                    <span>{tenant.house?.houseNo}</span>
+                    <span>{tenant.houses?.house_no || 'Not assigned'}</span>
                   </div>
                 </div>
                 {tenant.balance && <StatusBadge status={tenant.balance.status} />}
@@ -167,7 +224,7 @@ const Tenants = () => {
               <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-muted-foreground">Expected Rent</p>
-                  <p className="font-semibold">{formatCurrency(tenant.house?.expectedRent || 0)}</p>
+                  <p className="font-semibold">{formatCurrency(Number(tenant.houses?.expected_rent) || 0)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Balance</p>
@@ -203,11 +260,11 @@ const Tenants = () => {
           ))}
         </div>
 
-        {tenantData.length === 0 && (
+        {tenantData.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium">No tenants found</h3>
-            <p className="text-muted-foreground">Try adjusting your search query</p>
+            <p className="text-muted-foreground">Add your first tenant to get started</p>
           </div>
         )}
       </div>
@@ -216,8 +273,18 @@ const Tenants = () => {
       <TenantFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        tenant={editingTenant}
-        houses={houses}
+        tenant={editingTenant ? {
+          id: editingTenant.id,
+          name: editingTenant.name,
+          phone: editingTenant.phone,
+          secondaryPhone: editingTenant.secondary_phone || undefined,
+          houseId: editingTenant.house_id || '',
+        } : null}
+        houses={houses.map(h => ({
+          id: h.id,
+          houseNo: h.house_no,
+          expectedRent: Number(h.expected_rent),
+        }))}
         assignedHouseIds={assignedHouseIds}
         onSave={handleSaveTenant}
       />
@@ -248,7 +315,12 @@ const Tenants = () => {
       <TenantStatementDialog
         open={statementDialogOpen}
         onOpenChange={setStatementDialogOpen}
-        tenant={selectedTenantForStatement}
+        tenant={selectedTenantForStatement ? {
+          id: selectedTenantForStatement.id,
+          name: selectedTenantForStatement.name,
+          phone: selectedTenantForStatement.phone,
+          houseId: selectedTenantForStatement.house_id || '',
+        } : null}
         house={getSelectedTenantHouse()}
         payments={getSelectedTenantPayments()}
       />
