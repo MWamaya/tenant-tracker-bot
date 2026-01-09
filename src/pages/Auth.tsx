@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Building2, Mail, Lock, User, Phone, Building } from 'lucide-react';
+import { Mail, Lock, User, Phone, Building } from 'lucide-react';
+import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -118,11 +119,9 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
-            <Building2 className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground">Kodi Pap</h1>
-          <p className="text-muted-foreground mt-2">Property Management System</p>
+          <img src={kodiPapLogo} alt="KODI PAP Logo" className="h-20 w-auto mx-auto mb-4" />
+          <h1 className="text-3xl font-bold text-foreground">KODI PAP</h1>
+          <p className="text-muted-foreground mt-2">Rent Collection Management System</p>
         </div>
 
         <Card className="border-border/50 shadow-lg">
