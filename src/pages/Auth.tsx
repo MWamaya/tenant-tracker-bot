@@ -120,7 +120,6 @@ const Auth = () => {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <img src={kodiPapLogo} alt="KODI PAP Logo" className="h-20 w-auto mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-foreground">KODI PAP</h1>
           <p className="text-muted-foreground mt-2">Rent Collection Management System</p>
         </div>
 
