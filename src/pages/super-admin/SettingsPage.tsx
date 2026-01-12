@@ -98,7 +98,7 @@ const SettingsPage = () => {
                       </p>
                     </div>
                     <span className="text-white font-medium">
-                      {getSetting('subscription_grace_period_days') || 7} days
+                      {String(getSetting('subscription_grace_period_days') ?? 7)} days
                     </span>
                   </div>
                 </>
