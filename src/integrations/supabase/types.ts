@@ -115,6 +115,105 @@ export type Database = {
           },
         ]
       }
+      bank_transactions: {
+        Row: {
+          created_at: string
+          credit_amount: number | null
+          debit_amount: number | null
+          description: string | null
+          id: string
+          landlord_id: string
+          match_notes: string | null
+          match_status: string | null
+          matched_house_id: string | null
+          matched_payment_id: string | null
+          matched_tenant_id: string | null
+          payment_source_id: string | null
+          raw_data: Json | null
+          reference: string | null
+          running_balance: number | null
+          transaction_date: string
+          updated_at: string
+          value_date: string | null
+        }
+        Insert: {
+          created_at?: string
+          credit_amount?: number | null
+          debit_amount?: number | null
+          description?: string | null
+          id?: string
+          landlord_id: string
+          match_notes?: string | null
+          match_status?: string | null
+          matched_house_id?: string | null
+          matched_payment_id?: string | null
+          matched_tenant_id?: string | null
+          payment_source_id?: string | null
+          raw_data?: Json | null
+          reference?: string | null
+          running_balance?: number | null
+          transaction_date: string
+          updated_at?: string
+          value_date?: string | null
+        }
+        Update: {
+          created_at?: string
+          credit_amount?: number | null
+          debit_amount?: number | null
+          description?: string | null
+          id?: string
+          landlord_id?: string
+          match_notes?: string | null
+          match_status?: string | null
+          matched_house_id?: string | null
+          matched_payment_id?: string | null
+          matched_tenant_id?: string | null
+          payment_source_id?: string | null
+          raw_data?: Json | null
+          reference?: string | null
+          running_balance?: number | null
+          transaction_date?: string
+          updated_at?: string
+          value_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_house_id_fkey"
+            columns: ["matched_house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_payment_id_fkey"
+            columns: ["matched_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_matched_tenant_id_fkey"
+            columns: ["matched_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_payment_source_id_fkey"
+            columns: ["payment_source_id"]
+            isOneToOne: false
+            referencedRelation: "payment_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -186,6 +285,7 @@ export type Database = {
           id: string
           landlord_id: string
           occupancy_date: string | null
+          property_id: string | null
           status: string
           updated_at: string
         }
@@ -196,6 +296,7 @@ export type Database = {
           id?: string
           landlord_id: string
           occupancy_date?: string | null
+          property_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -206,6 +307,7 @@ export type Database = {
           id?: string
           landlord_id?: string
           occupancy_date?: string | null
+          property_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -215,6 +317,108 @@ export type Database = {
             columns: ["landlord_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "houses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invoices: {
+        Row: {
+          amount_paid: number | null
+          balance: number | null
+          created_at: string
+          due_date: string
+          house_id: string
+          id: string
+          invoice_date: string
+          invoice_number: string
+          landlord_id: string
+          late_fee: number | null
+          lease_id: string | null
+          notes: string | null
+          paid_at: string | null
+          sent_at: string | null
+          status: string | null
+          subtotal: number
+          tenant_id: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          amount_paid?: number | null
+          balance?: number | null
+          created_at?: string
+          due_date: string
+          house_id: string
+          id?: string
+          invoice_date?: string
+          invoice_number: string
+          landlord_id: string
+          late_fee?: number | null
+          lease_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subtotal: number
+          tenant_id: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          amount_paid?: number | null
+          balance?: number | null
+          created_at?: string
+          due_date?: string
+          house_id?: string
+          id?: string
+          invoice_date?: string
+          invoice_number?: string
+          landlord_id?: string
+          late_fee?: number | null
+          lease_id?: string | null
+          notes?: string | null
+          paid_at?: string | null
+          sent_at?: string | null
+          status?: string | null
+          subtotal?: number
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -279,44 +483,308 @@ export type Database = {
           },
         ]
       }
+      leases: {
+        Row: {
+          created_at: string
+          deposit_amount: number | null
+          deposit_paid: number | null
+          end_date: string | null
+          house_id: string
+          id: string
+          landlord_id: string
+          late_fee_amount: number | null
+          late_fee_grace_days: number | null
+          monthly_rent: number
+          notes: string | null
+          payment_due_day: number | null
+          start_date: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          deposit_amount?: number | null
+          deposit_paid?: number | null
+          end_date?: string | null
+          house_id: string
+          id?: string
+          landlord_id: string
+          late_fee_amount?: number | null
+          late_fee_grace_days?: number | null
+          monthly_rent: number
+          notes?: string | null
+          payment_due_day?: number | null
+          start_date: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          deposit_amount?: number | null
+          deposit_paid?: number | null
+          end_date?: string | null
+          house_id?: string
+          id?: string
+          landlord_id?: string
+          late_fee_amount?: number | null
+          late_fee_grace_days?: number | null
+          monthly_rent?: number
+          notes?: string | null
+          payment_due_day?: number | null
+          start_date?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leases_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leases_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leases_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mpesa_transactions: {
+        Row: {
+          bill_ref_number: string | null
+          business_short_code: string | null
+          created_at: string
+          first_name: string | null
+          id: string
+          invoice_number: string | null
+          landlord_id: string
+          last_name: string | null
+          match_confidence: number | null
+          match_notes: string | null
+          match_status: string | null
+          matched_house_id: string | null
+          matched_payment_id: string | null
+          matched_tenant_id: string | null
+          middle_name: string | null
+          msisdn: string | null
+          org_account_balance: number | null
+          raw_payload: Json | null
+          third_party_trans_id: string | null
+          trans_amount: number
+          trans_time: string
+          transaction_id: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          bill_ref_number?: string | null
+          business_short_code?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          invoice_number?: string | null
+          landlord_id: string
+          last_name?: string | null
+          match_confidence?: number | null
+          match_notes?: string | null
+          match_status?: string | null
+          matched_house_id?: string | null
+          matched_payment_id?: string | null
+          matched_tenant_id?: string | null
+          middle_name?: string | null
+          msisdn?: string | null
+          org_account_balance?: number | null
+          raw_payload?: Json | null
+          third_party_trans_id?: string | null
+          trans_amount: number
+          trans_time: string
+          transaction_id: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          bill_ref_number?: string | null
+          business_short_code?: string | null
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          invoice_number?: string | null
+          landlord_id?: string
+          last_name?: string | null
+          match_confidence?: number | null
+          match_notes?: string | null
+          match_status?: string | null
+          matched_house_id?: string | null
+          matched_payment_id?: string | null
+          matched_tenant_id?: string | null
+          middle_name?: string | null
+          msisdn?: string | null
+          org_account_balance?: number | null
+          raw_payload?: Json | null
+          third_party_trans_id?: string | null
+          trans_amount?: number
+          trans_time?: string
+          transaction_id?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mpesa_transactions_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mpesa_transactions_matched_house_id_fkey"
+            columns: ["matched_house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mpesa_transactions_matched_payment_id_fkey"
+            columns: ["matched_payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mpesa_transactions_matched_tenant_id_fkey"
+            columns: ["matched_tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_sources: {
+        Row: {
+          account_number: string | null
+          bank_name: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          is_primary: boolean | null
+          landlord_id: string
+          paybill_number: string | null
+          source_name: string
+          source_type: string
+          till_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          landlord_id: string
+          paybill_number?: string | null
+          source_name: string
+          source_type: string
+          till_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string | null
+          bank_name?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          is_primary?: boolean | null
+          landlord_id?: string
+          paybill_number?: string | null
+          source_name?: string
+          source_type?: string
+          till_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_sources_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
+          bank_transaction_id: string | null
           created_at: string
           house_id: string | null
           id: string
+          invoice_id: string | null
           landlord_id: string
+          lease_id: string | null
           mpesa_ref: string
+          mpesa_transaction_id: string | null
           payment_date: string
+          payment_source: string | null
           sender_name: string | null
           sender_phone: string | null
           tenant_id: string | null
         }
         Insert: {
           amount: number
+          bank_transaction_id?: string | null
           created_at?: string
           house_id?: string | null
           id?: string
+          invoice_id?: string | null
           landlord_id: string
+          lease_id?: string | null
           mpesa_ref: string
+          mpesa_transaction_id?: string | null
           payment_date: string
+          payment_source?: string | null
           sender_name?: string | null
           sender_phone?: string | null
           tenant_id?: string | null
         }
         Update: {
           amount?: number
+          bank_transaction_id?: string | null
           created_at?: string
           house_id?: string | null
           id?: string
+          invoice_id?: string | null
           landlord_id?: string
+          lease_id?: string | null
           mpesa_ref?: string
+          mpesa_transaction_id?: string | null
           payment_date?: string
+          payment_source?: string | null
           sender_name?: string | null
           sender_phone?: string | null
           tenant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "payments_bank_transaction_id_fkey"
+            columns: ["bank_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "bank_transactions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "payments_house_id_fkey"
             columns: ["house_id"]
@@ -325,10 +793,31 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "payments_landlord_id_fkey"
             columns: ["landlord_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_mpesa_transaction_id_fkey"
+            columns: ["mpesa_transaction_id"]
+            isOneToOne: false
+            referencedRelation: "mpesa_transactions"
             referencedColumns: ["id"]
           },
           {
@@ -426,6 +915,130 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      properties: {
+        Row: {
+          address: string | null
+          county: string | null
+          created_at: string
+          id: string
+          landlord_id: string
+          name: string
+          property_type: string | null
+          total_units: number | null
+          town: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          county?: string | null
+          created_at?: string
+          id?: string
+          landlord_id: string
+          name: string
+          property_type?: string | null
+          total_units?: number | null
+          town?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          county?: string | null
+          created_at?: string
+          id?: string
+          landlord_id?: string
+          name?: string
+          property_type?: string | null
+          total_units?: number | null
+          town?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rent_schedules: {
+        Row: {
+          amount_due: number
+          amount_paid: number | null
+          balance: number | null
+          created_at: string
+          due_date: string
+          house_id: string
+          id: string
+          landlord_id: string
+          late_fee_applied: number | null
+          lease_id: string
+          status: string | null
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_due: number
+          amount_paid?: number | null
+          balance?: number | null
+          created_at?: string
+          due_date: string
+          house_id: string
+          id?: string
+          landlord_id: string
+          late_fee_applied?: number | null
+          lease_id: string
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_due?: number
+          amount_paid?: number | null
+          balance?: number | null
+          created_at?: string
+          due_date?: string
+          house_id?: string
+          id?: string
+          landlord_id?: string
+          late_fee_applied?: number | null
+          lease_id?: string
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rent_schedules_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_schedules_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_schedules_lease_id_fkey"
+            columns: ["lease_id"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rent_schedules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sms_transactions: {
         Row: {
@@ -635,6 +1248,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      webhooks_log: {
+        Row: {
+          created_at: string
+          endpoint: string
+          error_message: string | null
+          headers: Json | null
+          id: string
+          landlord_id: string | null
+          method: string | null
+          payload: Json
+          processed: boolean | null
+          response_body: Json | null
+          response_status: number | null
+          webhook_type: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          error_message?: string | null
+          headers?: Json | null
+          id?: string
+          landlord_id?: string | null
+          method?: string | null
+          payload: Json
+          processed?: boolean | null
+          response_body?: Json | null
+          response_status?: number | null
+          webhook_type: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          error_message?: string | null
+          headers?: Json | null
+          id?: string
+          landlord_id?: string | null
+          method?: string | null
+          payload?: Json
+          processed?: boolean | null
+          response_body?: Json | null
+          response_status?: number | null
+          webhook_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhooks_log_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
