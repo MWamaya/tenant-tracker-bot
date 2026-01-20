@@ -4,6 +4,58 @@ import { createServiceClient } from '../_shared/supabase.ts';
 // M-Pesa C2B and STK Push callback handler
 // This endpoint receives payment notifications from Safaricom
 
+// Safaricom's known IP ranges for M-Pesa callbacks
+// These are the official Safaricom data center IP ranges
+const SAFARICOM_IP_RANGES = [
+  '196.201.214.',  // Safaricom data center
+  '196.201.212.',  // Safaricom data center
+  '196.201.213.',  // Safaricom data center
+  '41.215.129.',   // Safaricom data center
+  '196.207.40.',   // Safaricom additional range
+  '102.133.143.',  // Azure East Africa (Safaricom cloud)
+];
+
+// For development/testing, allow these IPs
+const ALLOWED_TEST_IPS = [
+  '127.0.0.1',
+  '::1',
+  'localhost',
+];
+
+function isAllowedIP(ip: string | null): boolean {
+  if (!ip) return false;
+  
+  // Allow test IPs in non-production
+  const environment = Deno.env.get('MPESA_ENVIRONMENT') || 'sandbox';
+  if (environment === 'sandbox') {
+    if (ALLOWED_TEST_IPS.includes(ip)) return true;
+  }
+  
+  // Check against Safaricom IP ranges
+  for (const range of SAFARICOM_IP_RANGES) {
+    if (ip.startsWith(range)) return true;
+  }
+  
+  return false;
+}
+
+function getClientIP(req: Request): string | null {
+  // Check various headers that might contain the real IP
+  const forwardedFor = req.headers.get('x-forwarded-for');
+  if (forwardedFor) {
+    // x-forwarded-for can contain multiple IPs, take the first (original client)
+    return forwardedFor.split(',')[0].trim();
+  }
+  
+  const realIP = req.headers.get('x-real-ip');
+  if (realIP) return realIP;
+  
+  const cfConnectingIP = req.headers.get('cf-connecting-ip');
+  if (cfConnectingIP) return cfConnectingIP;
+  
+  return null;
+}
+
 interface C2BPayload {
   TransactionType: string;
   TransID: string;
@@ -38,6 +90,29 @@ Deno.serve(async (req) => {
   // Handle CORS preflight
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
+
+  // IP Whitelisting - Only allow Safaricom IPs
+  const clientIP = getClientIP(req);
+  if (!isAllowedIP(clientIP)) {
+    console.warn(`Rejected request from unauthorized IP: ${clientIP}`);
+    
+    // Log the rejected attempt for security monitoring
+    const supabaseForLog = createServiceClient();
+    await supabaseForLog.from('webhooks_log').insert({
+      webhook_type: 'mpesa_callback_rejected',
+      endpoint: req.url,
+      method: req.method,
+      headers: Object.fromEntries(req.headers.entries()),
+      payload: { rejected_ip: clientIP, reason: 'IP not whitelisted' },
+      processed: false,
+      error_message: `Rejected: IP ${clientIP} not in Safaricom whitelist`,
+    });
+
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
   const supabase = createServiceClient();
 
