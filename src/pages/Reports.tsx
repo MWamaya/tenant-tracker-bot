@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { balances, payments, tenants, houses, getDashboardStats } from '@/lib/mockData';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,8 @@ const Reports = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        <AppBreadcrumbs />
+        
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>

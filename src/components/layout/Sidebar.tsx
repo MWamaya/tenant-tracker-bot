@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Landlord Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Properties', href: '/properties', icon: Building2 },
   { name: 'Houses', href: '/houses', icon: Home },
   { name: 'Tenants', href: '/tenants', icon: Users },

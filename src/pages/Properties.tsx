@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useProperties, PropertyWithStats } from '@/hooks/useProperties';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -82,7 +83,7 @@ const Properties = () => {
   };
 
   const handlePropertyClick = (property: PropertyWithStats) => {
-    navigate(`/houses?property=${property.id}`);
+    navigate(`/property?property=${property.id}`);
   };
 
   const getPropertyTypeLabel = (type: string | null) => {
@@ -107,6 +108,8 @@ const Properties = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        <AppBreadcrumbs />
+        
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { usePayments } from '@/hooks/usePayments';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -81,6 +82,8 @@ const Payments = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        <AppBreadcrumbs />
+        
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>

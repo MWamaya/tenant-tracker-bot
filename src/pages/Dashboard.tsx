@@ -151,9 +151,9 @@ const Dashboard = () => {
       <div className="space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Landlord Dashboard</h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            January 2025 rent collection overview
+            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} rent collection overview
           </p>
         </div>
 

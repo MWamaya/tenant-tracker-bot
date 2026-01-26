@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useEmailLogs, parsePaymentMessage } from '@/hooks/useEmailLogs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -136,6 +137,8 @@ const EmailLogs = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        <AppBreadcrumbs />
+        
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
