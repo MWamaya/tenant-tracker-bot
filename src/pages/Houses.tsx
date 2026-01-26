@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useHouses, HouseWithProperty } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
 import { useBalances } from '@/hooks/useBalances';
@@ -200,6 +201,8 @@ const Houses = () => {
   return (
     <MainLayout>
       <div className="space-y-6">
+        <AppBreadcrumbs />
+        
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
