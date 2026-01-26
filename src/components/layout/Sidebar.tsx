@@ -10,7 +10,8 @@ import {
   Mail,
   LogOut,
   Menu,
-  X
+  X,
+  Building2
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Properties', href: '/properties', icon: Building2 },
   { name: 'Houses', href: '/houses', icon: Home },
   { name: 'Tenants', href: '/tenants', icon: Users },
   { name: 'Payments', href: '/payments', icon: CreditCard },

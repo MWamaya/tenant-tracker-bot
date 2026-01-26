@@ -9,6 +9,7 @@ import { SuperAdminProvider } from "@/hooks/useSuperAdmin";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
 import Index from "./pages/Index";
+import Properties from "./pages/Properties";
 import Houses from "./pages/Houses";
 import Tenants from "./pages/Tenants";
 import Payments from "./pages/Payments";
@@ -42,6 +43,7 @@ const App = () => (
                 {/* Landlord Auth & Routes */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/properties" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
                 <Route path="/houses" element={<ProtectedRoute><Houses /></ProtectedRoute>} />
                 <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
                 <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />

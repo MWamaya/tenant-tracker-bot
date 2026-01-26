@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Property } from '@/hooks/useProperties';
 
 interface Tenant {
   id: string;
@@ -28,10 +29,13 @@ interface HouseFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tenants: Tenant[];
+  properties: Property[];
+  defaultPropertyId?: string | null;
   onSave: (houseData: {
     houseNo: string;
     expectedRent: number;
     isOccupied: boolean;
+    propertyId?: string;
     tenantId?: string;
     occupancyDate?: string;
   }) => void;
@@ -41,10 +45,13 @@ export const HouseFormDialog = ({
   open,
   onOpenChange,
   tenants,
+  properties,
+  defaultPropertyId,
   onSave,
 }: HouseFormDialogProps) => {
   const [houseNo, setHouseNo] = useState('');
   const [expectedRent, setExpectedRent] = useState('');
+  const [propertyId, setPropertyId] = useState('');
   const [isOccupied, setIsOccupied] = useState(false);
   const [tenantId, setTenantId] = useState('');
   const [occupancyDate, setOccupancyDate] = useState('');
@@ -53,11 +60,12 @@ export const HouseFormDialog = ({
     if (open) {
       setHouseNo('');
       setExpectedRent('');
+      setPropertyId(defaultPropertyId || '');
       setIsOccupied(false);
       setTenantId('');
       setOccupancyDate('');
     }
-  }, [open]);
+  }, [open, defaultPropertyId]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +75,7 @@ export const HouseFormDialog = ({
       houseNo: houseNo.trim(),
       expectedRent: parseFloat(expectedRent),
       isOccupied,
+      propertyId: propertyId || undefined,
       tenantId: isOccupied ? tenantId : undefined,
       occupancyDate: isOccupied ? occupancyDate : undefined,
     });
@@ -81,6 +90,27 @@ export const HouseFormDialog = ({
           <DialogTitle>Add New House</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          {/* Property Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="property">Property (Optional)</Label>
+            <Select value={propertyId} onValueChange={setPropertyId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select property" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No Property (Standalone)</SelectItem>
+                {properties.map((property) => (
+                  <SelectItem key={property.id} value={property.id}>
+                    {property.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Group this house under a property building
+            </p>
+          </div>
+
           <div className="space-y-2">
             <Label htmlFor="houseNo">House Number</Label>
             <Input

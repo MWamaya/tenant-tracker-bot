@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 export interface House {
   id: string;
   landlord_id: string;
+  property_id: string | null;
   house_no: string;
   expected_rent: number;
   status: 'vacant' | 'occupied';
@@ -14,7 +15,15 @@ export interface House {
   updated_at: string;
 }
 
+export interface HouseWithProperty extends House {
+  properties?: {
+    id: string;
+    name: string;
+  } | null;
+}
+
 export interface HouseInsert {
+  property_id?: string | null;
   house_no: string;
   expected_rent: number;
   status?: 'vacant' | 'occupied';
@@ -22,29 +31,43 @@ export interface HouseInsert {
 }
 
 export interface HouseUpdate {
+  property_id?: string | null;
   house_no?: string;
   expected_rent?: number;
   status?: 'vacant' | 'occupied';
   occupancy_date?: string | null;
 }
 
-export const useHouses = () => {
+export const useHouses = (propertyId?: string | null) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const housesQuery = useQuery({
-    queryKey: ['houses', user?.id],
+    queryKey: ['houses', user?.id, propertyId],
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('houses')
-        .select('*')
+        .select(`
+          *,
+          properties (
+            id,
+            name
+          )
+        `)
         .eq('landlord_id', user.id)
         .order('house_no', { ascending: true });
 
+      // Filter by property if specified
+      if (propertyId) {
+        query = query.eq('property_id', propertyId);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
-      return data as House[];
+      return data as HouseWithProperty[];
     },
     enabled: !!user?.id,
   });
@@ -57,6 +80,7 @@ export const useHouses = () => {
         .from('houses')
         .insert({
           landlord_id: user.id,
+          property_id: house.property_id || null,
           house_no: house.house_no,
           expected_rent: house.expected_rent,
           status: house.status || 'vacant',
@@ -70,6 +94,7 @@ export const useHouses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
+      queryClient.invalidateQueries({ queryKey: ['properties-with-stats'] });
       toast.success('House added successfully');
     },
     onError: (error: Error) => {
@@ -91,6 +116,7 @@ export const useHouses = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
+      queryClient.invalidateQueries({ queryKey: ['properties-with-stats'] });
       toast.success('House updated successfully');
     },
     onError: (error: Error) => {
@@ -110,6 +136,7 @@ export const useHouses = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['properties-with-stats'] });
       toast.success('House deleted successfully');
     },
     onError: (error: Error) => {
