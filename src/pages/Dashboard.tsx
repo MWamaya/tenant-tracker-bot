@@ -1,25 +1,37 @@
 import { useState, useRef } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
-import { CollectionProgress } from '@/components/dashboard/CollectionProgress';
-import { RecentPayments } from '@/components/dashboard/RecentPayments';
-import { HouseStatusChart } from '@/components/dashboard/HouseStatusChart';
-import { getDashboardStats, balances, tenants } from '@/lib/mockData';
-import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare, Printer } from 'lucide-react';
+import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { useProperties } from '@/hooks/useProperties';
+import { useHouses } from '@/hooks/useHouses';
+import { useTenants } from '@/hooks/useTenants';
+import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
+import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
+import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare, Printer, Loader2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('unpaid');
+  const [addPropertyOpen, setAddPropertyOpen] = useState(false);
+  const [addHouseOpen, setAddHouseOpen] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
+
+  const { data, isLoading: statsLoading } = useDashboardStats();
+  const { properties, isLoading: propertiesLoading, addProperty } = useProperties();
+  const { houses, isLoading: housesLoading, addHouse } = useHouses();
+  const { tenants, isLoading: tenantsLoading } = useTenants();
+
+  const isLoading = statsLoading || propertiesLoading || housesLoading || tenantsLoading;
 
   const scrollToTabs = (tab: string) => {
     setActiveTab(tab);
     tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
-  const stats = getDashboardStats();
   
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -29,20 +41,46 @@ const Dashboard = () => {
     }).format(amount);
   };
 
-  const unpaidHouses = balances.filter(b => b.status === 'unpaid');
-  const partialHouses = balances.filter(b => b.status === 'partial');
-  const paidHouses = balances.filter(b => b.status === 'paid');
-
-  const getTenant = (houseId: string) => {
-    return tenants.find(t => t.houseId === houseId);
+  const handleAddProperty = async (propertyData: {
+    name: string;
+    address?: string;
+    county?: string;
+    town?: string;
+    property_type?: string;
+  }) => {
+    await addProperty.mutateAsync(propertyData);
   };
 
-  const getTenantName = (houseId: string) => {
-    const tenant = getTenant(houseId);
-    return tenant?.name || 'Vacant';
+  const handleAddHouse = async (houseData: {
+    houseNo: string;
+    expectedRent: number;
+    isOccupied: boolean;
+    propertyId?: string;
+    tenantId?: string;
+    occupancyDate?: string;
+  }) => {
+    await addHouse.mutateAsync({
+      house_no: houseData.houseNo,
+      expected_rent: houseData.expectedRent,
+      property_id: houseData.propertyId || null,
+      status: houseData.isOccupied ? 'occupied' : 'vacant',
+      occupancy_date: houseData.occupancyDate || null,
+    });
   };
+
+  // Convert tenants to the format expected by HouseFormDialog
+  const availableTenants = tenants
+    .filter(t => !t.house_id) // Only show tenants without a house
+    .map(t => ({
+      id: t.id,
+      name: t.name,
+      phone: t.phone,
+      houseId: t.house_id || '',
+    }));
 
   const handlePrintStatements = () => {
+    if (!data) return;
+    
     const doc = new jsPDF();
     const currentDate = new Date().toLocaleDateString('en-KE', {
       year: 'numeric',
@@ -60,22 +98,19 @@ const Dashboard = () => {
     let yPosition = 40;
 
     // Unpaid Houses Section
-    if (unpaidHouses.length > 0) {
+    if (data.unpaidHouses.length > 0) {
       doc.setFontSize(14);
       doc.setTextColor(220, 53, 69);
       doc.text('Unpaid Houses', 14, yPosition);
       yPosition += 6;
 
-      const unpaidData = unpaidHouses.map((house) => {
-        const tenant = getTenant(house.houseId);
-        return [
-          house.houseNo,
-          tenant?.name || 'Vacant',
-          tenant?.phone || '-',
-          formatCurrency(house.expectedRent),
-          formatCurrency(house.balance),
-        ];
-      });
+      const unpaidData = data.unpaidHouses.map((house) => [
+        house.houseNo,
+        house.tenantName || 'Vacant',
+        house.tenantPhone || '-',
+        formatCurrency(house.expectedRent),
+        formatCurrency(house.balance),
+      ]);
 
       autoTable(doc, {
         startY: yPosition,
@@ -89,8 +124,7 @@ const Dashboard = () => {
     }
 
     // Partially Paid Houses Section
-    if (partialHouses.length > 0) {
-      // Check if we need a new page
+    if (data.partialHouses.length > 0) {
       if (yPosition > 240) {
         doc.addPage();
         yPosition = 20;
@@ -101,17 +135,14 @@ const Dashboard = () => {
       doc.text('Partially Paid Houses', 14, yPosition);
       yPosition += 6;
 
-      const partialData = partialHouses.map((house) => {
-        const tenant = getTenant(house.houseId);
-        return [
-          house.houseNo,
-          tenant?.name || 'Vacant',
-          tenant?.phone || '-',
-          formatCurrency(house.expectedRent),
-          formatCurrency(house.paidAmount),
-          formatCurrency(house.balance),
-        ];
-      });
+      const partialData = data.partialHouses.map((house) => [
+        house.houseNo,
+        house.tenantName || 'Vacant',
+        house.tenantPhone || '-',
+        formatCurrency(house.expectedRent),
+        formatCurrency(house.paidAmount),
+        formatCurrency(house.balance),
+      ]);
 
       autoTable(doc, {
         startY: yPosition,
@@ -135,16 +166,69 @@ const Dashboard = () => {
     doc.text('Summary', 14, yPosition);
     yPosition += 8;
     doc.setFontSize(10);
-    doc.text(`Total Unpaid Houses: ${unpaidHouses.length}`, 14, yPosition);
+    doc.text(`Total Unpaid Houses: ${data.unpaidHouses.length}`, 14, yPosition);
     yPosition += 6;
-    doc.text(`Total Partially Paid Houses: ${partialHouses.length}`, 14, yPosition);
+    doc.text(`Total Partially Paid Houses: ${data.partialHouses.length}`, 14, yPosition);
     yPosition += 6;
-    const totalOutstanding = [...unpaidHouses, ...partialHouses].reduce((sum, h) => sum + h.balance, 0);
+    const totalOutstanding = [...data.unpaidHouses, ...data.partialHouses].reduce((sum, h) => sum + h.balance, 0);
     doc.text(`Total Outstanding: ${formatCurrency(totalOutstanding)}`, 14, yPosition);
 
-    // Save the PDF
     doc.save(`outstanding-rent-${new Date().toISOString().split('T')[0]}.pdf`);
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  // Show empty state for new landlords
+  if (properties.length === 0 || houses.length === 0) {
+    return (
+      <MainLayout>
+        <EmptyDashboard 
+          hasProperties={properties.length > 0}
+          hasHouses={houses.length > 0}
+          onAddProperty={() => setAddPropertyOpen(true)}
+          onAddHouse={() => setAddHouseOpen(true)}
+        />
+        
+        <PropertyFormDialog
+          open={addPropertyOpen}
+          onOpenChange={setAddPropertyOpen}
+          onSave={handleAddProperty}
+        />
+        
+        <HouseFormDialog
+          open={addHouseOpen}
+          onOpenChange={setAddHouseOpen}
+          onSave={handleAddHouse}
+          properties={properties}
+          tenants={availableTenants}
+        />
+      </MainLayout>
+    );
+  }
+
+  const stats = data?.stats || {
+    totalHouses: 0,
+    occupiedHouses: 0,
+    vacantHouses: 0,
+    totalExpected: 0,
+    totalCollected: 0,
+    totalOutstanding: 0,
+    paidHouses: 0,
+    partialHouses: 0,
+    unpaidHouses: 0,
+  };
+
+  const unpaidHouses = data?.unpaidHouses || [];
+  const partialHouses = data?.partialHouses || [];
+  const paidHouses = data?.paidHouses || [];
 
   return (
     <MainLayout>
@@ -169,7 +253,7 @@ const Dashboard = () => {
           <StatCard
             title="Fully Paid"
             value={stats.paidHouses}
-            subtitle={`${Math.round((stats.paidHouses / stats.totalHouses) * 100)}% of total`}
+            subtitle={stats.totalHouses > 0 ? `${Math.round((stats.paidHouses / stats.totalHouses) * 100)}% of total` : '0% of total'}
             icon={CheckCircle}
             variant="success"
           />
@@ -206,7 +290,6 @@ const Dashboard = () => {
             value={formatCurrency(stats.totalCollected)}
             icon={Banknote}
             variant="success"
-            trend={{ value: 12, isPositive: true }}
           />
           <StatCard
             title="Outstanding Balance"
@@ -262,49 +345,46 @@ const Dashboard = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {unpaidHouses.map((house) => {
-                          const tenant = getTenant(house.houseId);
-                          return (
-                            <TableRow key={house.houseId}>
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
-                                  <div>
-                                    <span>{house.houseNo}</span>
-                                    <p className="sm:hidden text-xs text-muted-foreground">{tenant?.name || 'Vacant'}</p>
-                                  </div>
+                        {unpaidHouses.map((house) => (
+                          <TableRow key={house.houseId}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <XCircle className="h-4 w-4 text-destructive flex-shrink-0" />
+                                <div>
+                                  <span>{house.houseNo}</span>
+                                  <p className="sm:hidden text-xs text-muted-foreground">{house.tenantName || 'Vacant'}</p>
                                 </div>
-                              </TableCell>
-                              <TableCell className="hidden sm:table-cell">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground" />
-                                  {tenant?.name || 'Vacant'}
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                {house.tenantName || 'Vacant'}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {house.tenantPhone ? (
+                                <div className="flex items-center gap-2 md:gap-3">
+                                  <a href={`tel:${house.tenantPhone}`} className="text-primary hover:underline" title="Call">
+                                    <Phone className="h-4 w-4" />
+                                  </a>
+                                  <a href={`https://wa.me/${house.tenantPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-success hover:opacity-80" title="WhatsApp">
+                                    <MessageCircle className="h-4 w-4" />
+                                  </a>
+                                  <a href={`sms:${house.tenantPhone}`} className="text-primary hover:opacity-80" title="SMS">
+                                    <MessageSquare className="h-4 w-4" />
+                                  </a>
+                                  <span className="text-xs md:text-sm hidden md:inline">{house.tenantPhone}</span>
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                {tenant ? (
-                                  <div className="flex items-center gap-2 md:gap-3">
-                                    <a href={`tel:${tenant.phone}`} className="text-primary hover:underline" title="Call">
-                                      <Phone className="h-4 w-4" />
-                                    </a>
-                                    <a href={`https://wa.me/${tenant.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700" title="WhatsApp">
-                                      <MessageCircle className="h-4 w-4" />
-                                    </a>
-                                    <a href={`sms:${tenant.phone}`} className="text-blue-600 hover:text-blue-700" title="SMS">
-                                      <MessageSquare className="h-4 w-4" />
-                                    </a>
-                                    <span className="text-xs md:text-sm hidden md:inline">{tenant.phone}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">-</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right text-destructive font-medium text-sm">
-                                {formatCurrency(house.balance)}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-destructive font-medium text-sm">
+                              {formatCurrency(house.balance)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -329,52 +409,49 @@ const Dashboard = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {partialHouses.map((house) => {
-                          const tenant = getTenant(house.houseId);
-                          return (
-                            <TableRow key={house.houseId}>
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  <AlertCircle className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                                  <div>
-                                    <span>{house.houseNo}</span>
-                                    <p className="sm:hidden text-xs text-muted-foreground">{tenant?.name || 'Vacant'}</p>
-                                  </div>
+                        {partialHouses.map((house) => (
+                          <TableRow key={house.houseId}>
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <AlertCircle className="h-4 w-4 text-warning flex-shrink-0" />
+                                <div>
+                                  <span>{house.houseNo}</span>
+                                  <p className="sm:hidden text-xs text-muted-foreground">{house.tenantName || 'Vacant'}</p>
                                 </div>
-                              </TableCell>
-                              <TableCell className="hidden sm:table-cell">
-                                <div className="flex items-center gap-2">
-                                  <User className="h-4 w-4 text-muted-foreground" />
-                                  {tenant?.name || 'Vacant'}
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                {house.tenantName || 'Vacant'}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              {house.tenantPhone ? (
+                                <div className="flex items-center gap-2 md:gap-3">
+                                  <a href={`tel:${house.tenantPhone}`} className="text-primary hover:underline" title="Call">
+                                    <Phone className="h-4 w-4" />
+                                  </a>
+                                  <a href={`https://wa.me/${house.tenantPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-success hover:opacity-80" title="WhatsApp">
+                                    <MessageCircle className="h-4 w-4" />
+                                  </a>
+                                  <a href={`sms:${house.tenantPhone}`} className="text-primary hover:opacity-80" title="SMS">
+                                    <MessageSquare className="h-4 w-4" />
+                                  </a>
+                                  <span className="text-xs md:text-sm hidden md:inline">{house.tenantPhone}</span>
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                {tenant ? (
-                                  <div className="flex items-center gap-2 md:gap-3">
-                                    <a href={`tel:${tenant.phone}`} className="text-primary hover:underline" title="Call">
-                                      <Phone className="h-4 w-4" />
-                                    </a>
-                                    <a href={`https://wa.me/${tenant.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-green-600 hover:text-green-700" title="WhatsApp">
-                                      <MessageCircle className="h-4 w-4" />
-                                    </a>
-                                    <a href={`sms:${tenant.phone}`} className="text-blue-600 hover:text-blue-700" title="SMS">
-                                      <MessageSquare className="h-4 w-4" />
-                                    </a>
-                                    <span className="text-xs md:text-sm hidden md:inline">{tenant.phone}</span>
-                                  </div>
-                                ) : (
-                                  <span className="text-muted-foreground">-</span>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right text-green-600 text-sm">
-                                {formatCurrency(house.paidAmount)}
-                              </TableCell>
-                              <TableCell className="text-right text-yellow-600 font-medium text-sm">
-                                {formatCurrency(house.balance)}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-success text-sm">
+                              {formatCurrency(house.paidAmount)}
+                            </TableCell>
+                            <TableCell className="text-right text-warning font-medium text-sm">
+                              {formatCurrency(house.balance)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
                       </TableBody>
                     </Table>
                   </div>
@@ -388,12 +465,12 @@ const Dashboard = () => {
                   <p className="text-muted-foreground text-sm">No fully paid houses</p>
                 ) : (
                   paidHouses.map((house) => (
-                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-green-500/30 bg-green-500/5">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-success/30 bg-success/5">
+                      <CheckCircle className="h-4 w-4 text-success" />
                       <div>
                         <p className="font-medium text-sm">{house.houseNo}</p>
-                        <p className="text-xs text-muted-foreground">{getTenantName(house.houseId)}</p>
-                        <p className="text-xs text-green-600 font-medium">{formatCurrency(house.paidAmount)} paid</p>
+                        <p className="text-xs text-muted-foreground">{house.tenantName || 'Vacant'}</p>
+                        <p className="text-xs text-success font-medium">{formatCurrency(house.paidAmount)} paid</p>
                       </div>
                     </div>
                   ))
@@ -402,43 +479,21 @@ const Dashboard = () => {
             </TabsContent>
           </Tabs>
         </div>
-
-        {/* Charts and Tables */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <CollectionProgress
-            collected={stats.totalCollected}
-            expected={stats.totalExpected}
-            percentage={stats.collectionRate}
-          />
-          <HouseStatusChart
-            paid={stats.paidHouses}
-            partial={stats.partialHouses}
-            unpaid={stats.unpaidHouses}
-          />
-        </div>
-
-        {/* Recent Activity */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <RecentPayments />
-          <div className="stat-card animate-slide-up">
-            <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-            <div className="space-y-3">
-              <button className="w-full p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left">
-                <p className="font-medium">Add Manual Payment</p>
-                <p className="text-sm text-muted-foreground">Record a payment manually</p>
-              </button>
-              <button className="w-full p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left">
-                <p className="font-medium">Send Payment Reminders</p>
-                <p className="text-sm text-muted-foreground">Notify tenants with pending balances</p>
-              </button>
-              <button className="w-full p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors text-left">
-                <p className="font-medium">Generate Monthly Report</p>
-                <p className="text-sm text-muted-foreground">Export collection summary as PDF</p>
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
+      
+      <PropertyFormDialog
+        open={addPropertyOpen}
+        onOpenChange={setAddPropertyOpen}
+        onSave={handleAddProperty}
+      />
+      
+      <HouseFormDialog
+        open={addHouseOpen}
+        onOpenChange={setAddHouseOpen}
+        onSave={handleAddHouse}
+        properties={properties}
+        tenants={availableTenants}
+      />
     </MainLayout>
   );
 };
