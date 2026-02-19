@@ -1,6 +1,16 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
+
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  [key: string]: unknown;
+}
+
+interface Session {
+  access_token: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -15,32 +25,38 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+    const fetchCurrentUser = async () => {
+      if (!apiClient.getToken()) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+      try {
+        const data = await apiClient.get<{ user: User }>('/api/auth/user');
+        setUser(data.user);
+      } catch {
+        apiClient.removeToken();
+        setUser(null);
+      } finally {
         setLoading(false);
       }
-    );
+    };
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    fetchCurrentUser();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error as Error | null };
+    try {
+      const data = await apiClient.post<{ token: string; user: User }>('/api/auth/login', { email, password });
+      apiClient.setToken(data.token);
+      setUser(data.user);
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signUp = async (
@@ -48,22 +64,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     password: string,
     metadata: { full_name: string; company_name: string; phone: string }
   ) => {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: metadata
-      }
-    });
-    return { error: error as Error | null };
+    try {
+      const data = await apiClient.post<{ token: string; user: User }>('/api/auth/register', {
+        email,
+        password,
+        ...metadata,
+      });
+      apiClient.setToken(data.token);
+      setUser(data.user);
+      return { error: null };
+    } catch (error) {
+      return { error: error as Error };
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      await apiClient.post('/api/auth/logout');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      apiClient.removeToken();
+      setUser(null);
+    }
   };
+
+  const token = apiClient.getToken();
+  const session: Session | null = user && token ? { access_token: token } : null;
 
   return (
     <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut }}>
