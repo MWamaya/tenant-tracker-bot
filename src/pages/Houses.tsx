@@ -219,10 +219,25 @@ const Houses = () => {
               Manage all rental units
             </p>
           </div>
-          <Button className="gap-2 w-full sm:w-auto" onClick={() => setAddDialogOpen(true)}>
-            <Plus className="h-4 w-4" />
-            Add House
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2 w-full sm:w-auto">
+                <Plus className="h-4 w-4" />
+                Add House
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setAddDialogOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Single House
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBulkDialogOpen(true)}>
+                <ListPlus className="h-4 w-4 mr-2" />
+                Bulk Add Houses
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Property Filter Badge */}
