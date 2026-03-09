@@ -36,8 +36,16 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
+import { BulkHouseFormDialog } from '@/components/houses/BulkHouseFormDialog';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown, ListPlus } from 'lucide-react';
 
 const PropertyDetail = () => {
   const [searchParams] = useSearchParams();
