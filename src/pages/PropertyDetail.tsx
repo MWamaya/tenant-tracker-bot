@@ -335,10 +335,25 @@ const PropertyDetail = () => {
                 />
               </div>
               {activeTab === 'houses' && (
-                <Button size="sm" onClick={() => setAddHouseDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add House
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="gap-1">
+                      <Plus className="h-4 w-4" />
+                      Add House
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setAddHouseDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Single House
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setBulkHouseDialogOpen(true)}>
+                      <ListPlus className="h-4 w-4 mr-2" />
+                      Bulk Add Houses
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {activeTab === 'tenants' && (
                 <Button size="sm" onClick={() => setAddTenantDialogOpen(true)}>
