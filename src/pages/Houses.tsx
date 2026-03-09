@@ -486,7 +486,24 @@ const Houses = () => {
         onSave={handleAddHouse}
       />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Bulk Add Houses Dialog */}
+      <BulkHouseFormDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        propertyId={propertyFilter || ''}
+        propertyName={selectedProperty?.name || 'Standalone Houses'}
+        onSave={async (houses) => {
+          for (const h of houses) {
+            await addHouse.mutateAsync({
+              house_no: h.houseNo,
+              expected_rent: h.expectedRent,
+              status: 'vacant',
+              property_id: propertyFilter || null,
+            });
+          }
+        }}
+      />
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
