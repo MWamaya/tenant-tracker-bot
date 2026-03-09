@@ -98,7 +98,7 @@ export const HouseFormDialog = ({
                 <SelectValue placeholder="Select property" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No Property (Standalone)</SelectItem>
+                <SelectItem value="none">No Property (Standalone)</SelectItem>
                 {properties.map((property) => (
                   <SelectItem key={property.id} value={property.id}>
                     {property.name}
