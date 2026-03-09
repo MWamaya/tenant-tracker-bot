@@ -36,9 +36,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Home, Trash2, Loader2, Building2, X } from 'lucide-react';
+import { Search, Plus, Home, Trash2, Loader2, Building2, X, ChevronDown, ListPlus } from 'lucide-react';
 import { HouseDetailDialog } from '@/components/houses/HouseDetailDialog';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
+import { BulkHouseFormDialog } from '@/components/houses/BulkHouseFormDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface HouseData {
   id: string;
