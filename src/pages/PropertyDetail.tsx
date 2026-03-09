@@ -36,8 +36,16 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
+import { BulkHouseFormDialog } from '@/components/houses/BulkHouseFormDialog';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ChevronDown, ListPlus } from 'lucide-react';
 
 const PropertyDetail = () => {
   const [searchParams] = useSearchParams();
@@ -53,6 +61,7 @@ const PropertyDetail = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('houses');
   const [addHouseDialogOpen, setAddHouseDialogOpen] = useState(false);
+  const [bulkHouseDialogOpen, setBulkHouseDialogOpen] = useState(false);
   const [addTenantDialogOpen, setAddTenantDialogOpen] = useState(false);
   const [editPropertyDialogOpen, setEditPropertyDialogOpen] = useState(false);
 
@@ -326,10 +335,25 @@ const PropertyDetail = () => {
                 />
               </div>
               {activeTab === 'houses' && (
-                <Button size="sm" onClick={() => setAddHouseDialogOpen(true)}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Add House
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="gap-1">
+                      <Plus className="h-4 w-4" />
+                      Add House
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setAddHouseDialogOpen(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Single House
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setBulkHouseDialogOpen(true)}>
+                      <ListPlus className="h-4 w-4 mr-2" />
+                      Bulk Add Houses
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {activeTab === 'tenants' && (
                 <Button size="sm" onClick={() => setAddTenantDialogOpen(true)}>
@@ -487,6 +511,24 @@ const PropertyDetail = () => {
         properties={properties}
         defaultPropertyId={propertyId}
         onSave={handleAddHouse}
+      />
+
+      {/* Bulk Add Houses Dialog */}
+      <BulkHouseFormDialog
+        open={bulkHouseDialogOpen}
+        onOpenChange={setBulkHouseDialogOpen}
+        propertyId={propertyId || ''}
+        propertyName={property?.name || ''}
+        onSave={async (houses) => {
+          for (const h of houses) {
+            await addHouse.mutateAsync({
+              house_no: h.houseNo,
+              expected_rent: h.expectedRent,
+              status: 'vacant',
+              property_id: propertyId || null,
+            });
+          }
+        }}
       />
 
       {/* Add Tenant Dialog */}
