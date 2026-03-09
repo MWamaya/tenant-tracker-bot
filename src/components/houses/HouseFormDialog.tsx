@@ -75,7 +75,7 @@ export const HouseFormDialog = ({
       houseNo: houseNo.trim(),
       expectedRent: parseFloat(expectedRent),
       isOccupied,
-      propertyId: propertyId || undefined,
+      propertyId: propertyId && propertyId !== 'none' ? propertyId : undefined,
       tenantId: isOccupied ? tenantId : undefined,
       occupancyDate: isOccupied ? occupancyDate : undefined,
     });
