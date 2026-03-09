@@ -61,6 +61,7 @@ const PropertyDetail = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('houses');
   const [addHouseDialogOpen, setAddHouseDialogOpen] = useState(false);
+  const [bulkHouseDialogOpen, setBulkHouseDialogOpen] = useState(false);
   const [addTenantDialogOpen, setAddTenantDialogOpen] = useState(false);
   const [editPropertyDialogOpen, setEditPropertyDialogOpen] = useState(false);
 
