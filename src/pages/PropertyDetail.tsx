@@ -513,6 +513,24 @@ const PropertyDetail = () => {
         onSave={handleAddHouse}
       />
 
+      {/* Bulk Add Houses Dialog */}
+      <BulkHouseFormDialog
+        open={bulkHouseDialogOpen}
+        onOpenChange={setBulkHouseDialogOpen}
+        propertyId={propertyId || ''}
+        propertyName={property?.name || ''}
+        onSave={async (houses) => {
+          for (const h of houses) {
+            await addHouse.mutateAsync({
+              house_no: h.houseNo,
+              expected_rent: h.expectedRent,
+              status: 'vacant',
+              property_id: propertyId || null,
+            });
+          }
+        }}
+      />
+
       {/* Add Tenant Dialog */}
       <TenantFormDialog
         open={addTenantDialogOpen}
