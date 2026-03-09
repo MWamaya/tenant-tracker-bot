@@ -75,7 +75,7 @@ export const HouseFormDialog = ({
       houseNo: houseNo.trim(),
       expectedRent: parseFloat(expectedRent),
       isOccupied,
-      propertyId: propertyId || undefined,
+      propertyId: propertyId && propertyId !== 'none' ? propertyId : undefined,
       tenantId: isOccupied ? tenantId : undefined,
       occupancyDate: isOccupied ? occupancyDate : undefined,
     });
@@ -98,7 +98,7 @@ export const HouseFormDialog = ({
                 <SelectValue placeholder="Select property" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">No Property (Standalone)</SelectItem>
+                <SelectItem value="none">No Property (Standalone)</SelectItem>
                 {properties.map((property) => (
                   <SelectItem key={property.id} value={property.id}>
                     {property.name}
