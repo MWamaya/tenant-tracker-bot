@@ -8,10 +8,17 @@ import { usePayments } from '@/hooks/usePayments';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2 } from 'lucide-react';
+import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
+import { BulkTenantFormDialog } from '@/components/tenants/BulkTenantFormDialog';
 import { TenantStatementDialog } from '@/components/tenants/TenantStatementDialog';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +38,7 @@ const Tenants = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<TenantWithHouse | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [tenantToDelete, setTenantToDelete] = useState<TenantWithHouse | null>(null);
@@ -108,6 +116,16 @@ const Tenants = () => {
     }
   };
 
+  const handleBulkSaveTenants = async (data: { name: string; phone: string; houseId: string }[]) => {
+    for (const tenant of data) {
+      await addTenant.mutateAsync({
+        name: tenant.name,
+        phone: tenant.phone,
+        house_id: tenant.houseId || null,
+      });
+    }
+  };
+
   const handleDeleteClick = (tenant: TenantWithHouse) => {
     setTenantToDelete(tenant);
     setDeleteDialogOpen(true);
@@ -177,10 +195,25 @@ const Tenants = () => {
               Manage tenant information and payments
             </p>
           </div>
-          <Button className="gap-2 w-full sm:w-auto" onClick={handleAddTenant}>
-            <Plus className="h-4 w-4" />
-            Add Tenant
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2 w-full sm:w-auto">
+                <Plus className="h-4 w-4" />
+                Add Tenant
+                <ChevronDown className="h-3 w-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover">
+              <DropdownMenuItem onClick={handleAddTenant} className="gap-2">
+                <User className="h-4 w-4" />
+                Add Single Tenant
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBulkDialogOpen(true)} className="gap-2">
+                <Users className="h-4 w-4" />
+                Bulk Add Tenants
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Search */}
@@ -290,6 +323,19 @@ const Tenants = () => {
         }))}
         assignedHouseIds={assignedHouseIds}
         onSave={handleSaveTenant}
+      />
+
+      {/* Bulk Tenant Form Dialog */}
+      <BulkTenantFormDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        houses={houses.map(h => ({
+          id: h.id,
+          houseNo: h.house_no,
+          expectedRent: Number(h.expected_rent),
+        }))}
+        assignedHouseIds={assignedHouseIds}
+        onSave={handleBulkSaveTenants}
       />
 
       {/* Delete Confirmation Dialog */}
