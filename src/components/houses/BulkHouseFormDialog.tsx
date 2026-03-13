@@ -92,12 +92,14 @@ export const BulkHouseFormDialog = ({
       validEntries.map(e => ({
         houseNo: e.houseNo.trim(),
         expectedRent: parseFloat(e.expectedRent),
+        propertyId: selectedPropertyId !== 'none' ? selectedPropertyId : undefined,
       }))
     );
     onOpenChange(false);
   };
 
-  return (
+  const selectedProperty = properties.find(p => p.id === selectedPropertyId);
+  const displayName = propertyName || selectedProperty?.name;
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
