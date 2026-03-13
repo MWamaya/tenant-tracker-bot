@@ -525,7 +525,7 @@ const PropertyDetail = () => {
               house_no: h.houseNo,
               expected_rent: h.expectedRent,
               status: 'vacant',
-              property_id: propertyId || null,
+              property_id: h.propertyId || propertyId || null,
             });
           }
         }}
