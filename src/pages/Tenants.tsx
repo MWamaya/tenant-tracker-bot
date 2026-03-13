@@ -8,10 +8,17 @@ import { usePayments } from '@/hooks/usePayments';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2 } from 'lucide-react';
+import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
+import { BulkTenantFormDialog } from '@/components/tenants/BulkTenantFormDialog';
 import { TenantStatementDialog } from '@/components/tenants/TenantStatementDialog';
 import { toast } from 'sonner';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
