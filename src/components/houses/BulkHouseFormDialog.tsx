@@ -36,8 +36,9 @@ interface BulkHouseFormDialogProps {
 export const BulkHouseFormDialog = ({
   open,
   onOpenChange,
-  propertyId,
+  propertyId: defaultPropertyId,
   propertyName,
+  properties = [],
   onSave,
 }: BulkHouseFormDialogProps) => {
   const [entries, setEntries] = useState<BulkHouseEntry[]>([
@@ -47,6 +48,7 @@ export const BulkHouseFormDialog = ({
   ]);
   const [commonRent, setCommonRent] = useState('');
   const [useCommonRent, setUseCommonRent] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState(defaultPropertyId || 'none');
 
   useEffect(() => {
     if (open) {
@@ -57,8 +59,9 @@ export const BulkHouseFormDialog = ({
       ]);
       setCommonRent('');
       setUseCommonRent(false);
+      setSelectedPropertyId(defaultPropertyId || 'none');
     }
-  }, [open]);
+  }, [open, defaultPropertyId]);
 
   const addRow = () => {
     setEntries(prev => [...prev, { houseNo: '', expectedRent: '' }]);
