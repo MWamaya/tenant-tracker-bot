@@ -185,10 +185,25 @@ const Tenants = () => {
               Manage tenant information and payments
             </p>
           </div>
-          <Button className="gap-2 w-full sm:w-auto" onClick={handleAddTenant}>
-            <Plus className="h-4 w-4" />
-            Add Tenant
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="gap-2 w-full sm:w-auto">
+                <Plus className="h-4 w-4" />
+                Add Tenant
+                <ChevronDown className="h-3 w-3 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="bg-popover">
+              <DropdownMenuItem onClick={handleAddTenant} className="gap-2">
+                <User className="h-4 w-4" />
+                Add Single Tenant
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setBulkDialogOpen(true)} className="gap-2">
+                <Users className="h-4 w-4" />
+                Bulk Add Tenants
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Search */}
