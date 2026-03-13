@@ -116,6 +116,16 @@ const Tenants = () => {
     }
   };
 
+  const handleBulkSaveTenants = async (data: { name: string; phone: string; houseId: string }[]) => {
+    for (const tenant of data) {
+      await addTenant.mutateAsync({
+        name: tenant.name,
+        phone: tenant.phone,
+        house_id: tenant.houseId || null,
+      });
+    }
+  };
+
   const handleDeleteClick = (tenant: TenantWithHouse) => {
     setTenantToDelete(tenant);
     setDeleteDialogOpen(true);
