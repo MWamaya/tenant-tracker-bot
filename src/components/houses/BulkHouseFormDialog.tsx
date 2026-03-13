@@ -100,15 +100,41 @@ export const BulkHouseFormDialog = ({
 
   const selectedProperty = properties.find(p => p.id === selectedPropertyId);
   const displayName = propertyName || selectedProperty?.name;
+
+  return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bulk Add Houses</DialogTitle>
-          <p className="text-sm text-muted-foreground">
-            Adding houses to <span className="font-medium">{propertyName}</span>
-          </p>
+          {displayName && (
+            <p className="text-sm text-muted-foreground">
+              Adding houses to <span className="font-medium">{displayName}</span>
+            </p>
+          )}
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          {/* Property Selection */}
+          {!defaultPropertyId && properties.length > 0 && (
+            <div className="space-y-2">
+              <Label>Property / Apartment</Label>
+              <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select property" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Standalone Houses</SelectItem>
+                  {properties.map((property) => (
+                    <SelectItem key={property.id} value={property.id}>
+                      {property.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Link these houses to an apartment/property or add as standalone
+              </p>
+            </div>
+          )}
           {/* Common Rent */}
           <div className="flex items-end gap-2 p-3 rounded-lg bg-muted/50">
             <div className="flex-1 space-y-1">
