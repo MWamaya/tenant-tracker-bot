@@ -9,7 +9,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
+import { Property } from '@/hooks/useProperties';
 
 interface BulkHouseEntry {
   houseNo: string;
@@ -19,9 +27,10 @@ interface BulkHouseEntry {
 interface BulkHouseFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  propertyId: string;
-  propertyName: string;
-  onSave: (houses: { houseNo: string; expectedRent: number }[]) => void;
+  propertyId?: string;
+  propertyName?: string;
+  properties?: Property[];
+  onSave: (houses: { houseNo: string; expectedRent: number; propertyId?: string }[]) => void;
 }
 
 export const BulkHouseFormDialog = ({
