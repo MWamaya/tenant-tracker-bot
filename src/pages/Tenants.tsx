@@ -38,11 +38,8 @@ const Tenants = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<TenantWithHouse | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [tenantToDelete, setTenantToDelete] = useState<TenantWithHouse | null>(null);
-  const [statementDialogOpen, setStatementDialogOpen] = useState(false);
-  const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<TenantWithHouse | null>(null);
 
   const isLoading = housesLoading || tenantsLoading;
 
