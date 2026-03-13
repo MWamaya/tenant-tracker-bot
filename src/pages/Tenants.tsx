@@ -325,6 +325,19 @@ const Tenants = () => {
         onSave={handleSaveTenant}
       />
 
+      {/* Bulk Tenant Form Dialog */}
+      <BulkTenantFormDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        houses={houses.map(h => ({
+          id: h.id,
+          houseNo: h.house_no,
+          expectedRent: Number(h.expected_rent),
+        }))}
+        assignedHouseIds={assignedHouseIds}
+        onSave={handleBulkSaveTenants}
+      />
+
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
