@@ -490,15 +490,16 @@ const Houses = () => {
       <BulkHouseFormDialog
         open={bulkDialogOpen}
         onOpenChange={setBulkDialogOpen}
-        propertyId={propertyFilter || ''}
-        propertyName={selectedProperty?.name || 'Standalone Houses'}
+        propertyId={propertyFilter || undefined}
+        propertyName={selectedProperty?.name}
+        properties={properties}
         onSave={async (houses) => {
           for (const h of houses) {
             await addHouse.mutateAsync({
               house_no: h.houseNo,
               expected_rent: h.expectedRent,
               status: 'vacant',
-              property_id: propertyFilter || null,
+              property_id: h.propertyId || null,
             });
           }
         }}
