@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -46,28 +46,10 @@ export const useHouses = (propertyId?: string | null) => {
     queryKey: ['houses', user?.id, propertyId],
     queryFn: async () => {
       if (!user?.id) return [];
-      
-      let query = supabase
-        .from('houses')
-        .select(`
-          *,
-          properties (
-            id,
-            name
-          )
-        `)
-        .eq('landlord_id', user.id)
-        .order('house_no', { ascending: true });
-
-      // Filter by property if specified
-      if (propertyId) {
-        query = query.eq('property_id', propertyId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      return data as HouseWithProperty[];
+      const path = propertyId
+        ? `/api/houses?property_id=${propertyId}`
+        : '/api/houses';
+      return apiClient.get<HouseWithProperty[]>(path);
     },
     enabled: !!user?.id,
   });
@@ -75,22 +57,7 @@ export const useHouses = (propertyId?: string | null) => {
   const addHouse = useMutation({
     mutationFn: async (house: HouseInsert) => {
       if (!user?.id) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('houses')
-        .insert({
-          landlord_id: user.id,
-          property_id: house.property_id || null,
-          house_no: house.house_no,
-          expected_rent: house.expected_rent,
-          status: house.status || 'vacant',
-          occupancy_date: house.occupancy_date || null,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as House;
+      return apiClient.post<House>('/api/houses', house);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
@@ -104,15 +71,7 @@ export const useHouses = (propertyId?: string | null) => {
 
   const updateHouse = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: HouseUpdate }) => {
-      const { data: updated, error } = await supabase
-        .from('houses')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return updated as House;
+      return apiClient.put<House>(`/api/houses/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });
@@ -126,12 +85,7 @@ export const useHouses = (propertyId?: string | null) => {
 
   const deleteHouse = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('houses')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      return apiClient.delete(`/api/houses/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['houses'] });

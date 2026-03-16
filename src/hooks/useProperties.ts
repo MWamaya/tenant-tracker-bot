@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -46,15 +46,7 @@ export const useProperties = () => {
     queryKey: ['properties', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-
-      const { data, error } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('landlord_id', user.id)
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      return data as Property[];
+      return apiClient.get<Property[]>('/api/properties');
     },
     enabled: !!user?.id,
   });
@@ -64,36 +56,7 @@ export const useProperties = () => {
     queryKey: ['properties-with-stats', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-
-      // Fetch properties
-      const { data: properties, error: propertiesError } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('landlord_id', user.id)
-        .order('name', { ascending: true });
-
-      if (propertiesError) throw propertiesError;
-
-      // Fetch houses to calculate stats
-      const { data: houses, error: housesError } = await supabase
-        .from('houses')
-        .select('id, property_id, status')
-        .eq('landlord_id', user.id);
-
-      if (housesError) throw housesError;
-
-      // Calculate stats for each property
-      const propertiesWithStats: PropertyWithStats[] = properties.map(property => {
-        const propertyHouses = houses.filter(h => h.property_id === property.id);
-        return {
-          ...property,
-          houses_count: propertyHouses.length,
-          occupied_count: propertyHouses.filter(h => h.status === 'occupied').length,
-          vacant_count: propertyHouses.filter(h => h.status === 'vacant').length,
-        };
-      });
-
-      return propertiesWithStats;
+      return apiClient.get<PropertyWithStats[]>('/api/properties?with_stats=1');
     },
     enabled: !!user?.id,
   });
@@ -101,22 +64,7 @@ export const useProperties = () => {
   const addProperty = useMutation({
     mutationFn: async (property: PropertyInsert) => {
       if (!user?.id) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('properties')
-        .insert({
-          landlord_id: user.id,
-          name: property.name,
-          address: property.address || null,
-          county: property.county || null,
-          town: property.town || null,
-          property_type: property.property_type || 'residential',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Property;
+      return apiClient.post<Property>('/api/properties', property);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
@@ -130,15 +78,7 @@ export const useProperties = () => {
 
   const updateProperty = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: PropertyUpdate }) => {
-      const { data: updated, error } = await supabase
-        .from('properties')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return updated as Property;
+      return apiClient.put<Property>(`/api/properties/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
@@ -152,12 +92,7 @@ export const useProperties = () => {
 
   const deleteProperty = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('properties')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
+      return apiClient.delete(`/api/properties/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -29,14 +29,7 @@ const GlobalPaymentsPage = () => {
   const { data: payments, isLoading } = useQuery({
     queryKey: ['all-payments'],
     queryFn: async (): Promise<Payment[]> => {
-      const { data, error } = await supabase
-        .from('payments')
-        .select('*')
-        .order('payment_date', { ascending: false })
-        .limit(200);
-
-      if (error) throw error;
-      return data || [];
+      return apiClient.get<Payment[]>('/api/super-admin/payments?limit=200');
     },
   });
 

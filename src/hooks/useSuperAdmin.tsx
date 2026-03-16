@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 
 interface SuperAdminContextType {
   isSuperAdmin: boolean;
@@ -23,21 +23,8 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .eq('role', 'SUPER_ADMIN')
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking super admin role:', error);
-        setIsSuperAdmin(false);
-        setLoading(false);
-        return false;
-      }
-
-      const isAdmin = !!data;
+      const data = await apiClient.get<{ is_super_admin: boolean }>('/api/auth/check-super-admin');
+      const isAdmin = data.is_super_admin;
       setIsSuperAdmin(isAdmin);
       setLoading(false);
       return isAdmin;

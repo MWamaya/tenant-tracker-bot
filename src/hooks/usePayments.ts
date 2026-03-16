@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -45,25 +45,7 @@ export const usePayments = () => {
     queryKey: ['payments', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-
-      const { data, error } = await supabase
-        .from('payments')
-        .select(`
-          *,
-          houses (
-            id,
-            house_no
-          ),
-          tenants (
-            id,
-            name
-          )
-        `)
-        .eq('landlord_id', user.id)
-        .order('payment_date', { ascending: false });
-
-      if (error) throw error;
-      return data as PaymentWithDetails[];
+      return apiClient.get<PaymentWithDetails[]>('/api/payments');
     },
     enabled: !!user?.id,
   });
@@ -71,24 +53,7 @@ export const usePayments = () => {
   const addPayment = useMutation({
     mutationFn: async (payment: PaymentInsert) => {
       if (!user?.id) throw new Error('User not authenticated');
-
-      const { data, error } = await supabase
-        .from('payments')
-        .insert({
-          landlord_id: user.id,
-          house_id: payment.house_id || null,
-          tenant_id: payment.tenant_id || null,
-          amount: payment.amount,
-          mpesa_ref: payment.mpesa_ref,
-          payment_date: payment.payment_date,
-          sender_name: payment.sender_name || null,
-          sender_phone: payment.sender_phone || null,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as Payment;
+      return apiClient.post<Payment>('/api/payments', payment);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });

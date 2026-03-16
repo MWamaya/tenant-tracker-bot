@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 
@@ -94,15 +94,7 @@ export const useEmailLogs = () => {
     queryKey: ['emailLogs', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
-
-      const { data, error } = await supabase
-        .from('email_logs')
-        .select('*')
-        .eq('landlord_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as EmailLog[];
+      return apiClient.get<EmailLog[]>('/api/email-logs');
     },
     enabled: !!user?.id,
   });
@@ -110,28 +102,17 @@ export const useEmailLogs = () => {
   const addEmailLog = useMutation({
     mutationFn: async (emailLog: EmailLogInsert) => {
       if (!user?.id) throw new Error('User not authenticated');
-
-      // Parse the message
       const parsed = parsePaymentMessage(emailLog.raw_message);
-
-      const { data, error } = await supabase
-        .from('email_logs')
-        .insert({
-          landlord_id: user.id,
-          raw_message: emailLog.raw_message,
-          parsed_amount: parsed.amount,
-          parsed_house_no: parsed.houseNo,
-          parsed_tenant_name: parsed.tenantName,
-          parsed_mpesa_ref: parsed.mpesaRef,
-          parsed_date: parsed.paymentDate,
-          status: parsed.isValid ? 'pending' : 'failed',
-          error_message: parsed.isValid ? null : 'Could not parse required fields from message',
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data as EmailLog;
+      return apiClient.post<EmailLog>('/api/email-logs', {
+        raw_message: emailLog.raw_message,
+        parsed_amount: parsed.amount,
+        parsed_house_no: parsed.houseNo,
+        parsed_tenant_name: parsed.tenantName,
+        parsed_mpesa_ref: parsed.mpesaRef,
+        parsed_date: parsed.paymentDate,
+        status: parsed.isValid ? 'pending' : 'failed',
+        error_message: parsed.isValid ? null : 'Could not parse required fields from message',
+      });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['emailLogs'] });
@@ -148,15 +129,7 @@ export const useEmailLogs = () => {
 
   const updateEmailLog = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: EmailLogUpdate }) => {
-      const { data: updated, error } = await supabase
-        .from('email_logs')
-        .update(data)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return updated as EmailLog;
+      return apiClient.put<EmailLog>(`/api/email-logs/${id}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emailLogs'] });
@@ -173,65 +146,7 @@ export const useEmailLogs = () => {
       if (!emailLog.parsed_amount || !emailLog.parsed_mpesa_ref) {
         throw new Error('Missing required payment details');
       }
-
-      // Find matching house by house_no
-      let houseId: string | null = null;
-      let tenantId: string | null = null;
-
-      if (emailLog.parsed_house_no) {
-        const { data: houses } = await supabase
-          .from('houses')
-          .select('id')
-          .eq('landlord_id', user.id)
-          .ilike('house_no', `%${emailLog.parsed_house_no}%`)
-          .limit(1);
-
-        if (houses && houses.length > 0) {
-          houseId = houses[0].id;
-
-          // Find tenant for this house
-          const { data: tenants } = await supabase
-            .from('tenants')
-            .select('id')
-            .eq('house_id', houseId)
-            .limit(1);
-
-          if (tenants && tenants.length > 0) {
-            tenantId = tenants[0].id;
-          }
-        }
-      }
-
-      // Create payment
-      const { data: payment, error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          landlord_id: user.id,
-          house_id: houseId,
-          tenant_id: tenantId,
-          amount: emailLog.parsed_amount,
-          mpesa_ref: emailLog.parsed_mpesa_ref,
-          payment_date: emailLog.parsed_date || new Date().toISOString(),
-          sender_name: emailLog.parsed_tenant_name,
-        })
-        .select()
-        .single();
-
-      if (paymentError) throw paymentError;
-
-      // Update email log status
-      const { error: updateError } = await supabase
-        .from('email_logs')
-        .update({
-          status: 'processed',
-          payment_id: payment.id,
-          error_message: null,
-        })
-        .eq('id', emailLog.id);
-
-      if (updateError) throw updateError;
-
-      return payment;
+      return apiClient.post(`/api/email-logs/${emailLog.id}/process`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['emailLogs'] });

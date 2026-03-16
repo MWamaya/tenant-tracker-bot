@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { supabase } from '@/integrations/supabase/client';
+import { apiClient } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -19,13 +19,7 @@ const SettingsPage = () => {
   const { data: settings, isLoading } = useQuery({
     queryKey: ['system-settings'],
     queryFn: async (): Promise<SystemSetting[]> => {
-      const { data, error } = await supabase
-        .from('system_settings')
-        .select('*')
-        .order('setting_key');
-
-      if (error) throw error;
-      return data || [];
+      return apiClient.get<SystemSetting[]>('/api/super-admin/settings');
     },
   });
 
