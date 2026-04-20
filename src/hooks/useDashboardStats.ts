@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 
 export interface DashboardStats {
@@ -30,17 +30,16 @@ export interface HouseBalance {
 }
 
 export const useDashboardStats = () => {
-  const { user } = useAuth();
+  const landlordId = useEffectiveLandlordId();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
 
   return useQuery({
-    queryKey: ['dashboard-stats', user?.id, currentMonth],
+    queryKey: ['dashboard-stats', landlordId, currentMonth],
     queryFn: async () => {
-      if (!user?.id) return null;
+      if (!landlordId) return null;
 
-      // Fetch houses with property info
       const { data: houses, error: housesError } = await supabase
         .from('houses')
         .select(`
@@ -54,29 +53,26 @@ export const useDashboardStats = () => {
             name
           )
         `)
-        .eq('landlord_id', user.id);
+        .eq('landlord_id', landlordId);
 
       if (housesError) throw housesError;
 
-      // Fetch tenants
       const { data: tenants, error: tenantsError } = await supabase
         .from('tenants')
         .select('id, name, phone, house_id')
-        .eq('landlord_id', user.id);
+        .eq('landlord_id', landlordId);
 
       if (tenantsError) throw tenantsError;
 
-      // Fetch payments for current month
       const { data: payments, error: paymentsError } = await supabase
         .from('payments')
         .select('id, amount, house_id')
-        .eq('landlord_id', user.id)
+        .eq('landlord_id', landlordId)
         .gte('payment_date', monthStart)
         .lte('payment_date', monthEnd);
 
       if (paymentsError) throw paymentsError;
 
-      // Calculate stats
       const houseBalances: HouseBalance[] = houses.map(house => {
         const housePayments = payments.filter(p => p.house_id === house.id);
         const paidAmount = housePayments.reduce((sum, p) => sum + p.amount, 0);
@@ -125,6 +121,6 @@ export const useDashboardStats = () => {
         paidHouses: houseBalances.filter(h => h.status === 'paid'),
       };
     },
-    enabled: !!user?.id,
+    enabled: !!landlordId,
   });
 };

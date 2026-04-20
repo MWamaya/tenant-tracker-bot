@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface EmailLog {
@@ -38,28 +38,23 @@ export interface EmailLogUpdate {
 // Parse M-Pesa message using regex
 export const parsePaymentMessage = (message: string) => {
   try {
-    // Extract amount - matches "KES X,XXX.XX" or "KES XXXX"
     const amountMatch = message.match(/KES\s*([\d,]+(?:\.\d{2})?)/i);
-    const amount = amountMatch 
-      ? parseFloat(amountMatch[1].replace(/,/g, '')) 
+    const amount = amountMatch
+      ? parseFloat(amountMatch[1].replace(/,/g, ''))
       : null;
 
-    // Extract house number - matches patterns like "212245 B2" or just alphanumeric
     const houseMatch = message.match(/for\s+(\d+\s*[A-Z0-9]+)/i);
     const houseNo = houseMatch ? houseMatch[1].trim() : null;
 
-    // Extract sender name - matches "from NAME" pattern
     const nameMatch = message.match(/from\s+([A-Z\s]+?)(?:\s+\d|\s+on)/i);
     const tenantName = nameMatch ? nameMatch[1].trim() : null;
 
-    // Extract M-Pesa reference
     const refMatch = message.match(/M-Pesa\s*Ref[:\s]*([A-Z0-9]+)/i);
     const mpesaRef = refMatch ? refMatch[1] : null;
 
-    // Extract date - matches "DD/MM/YYYY HH:MM AM/PM" format
     const dateMatch = message.match(/on\s+(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
     let paymentDate: string | null = null;
-    
+
     if (dateMatch) {
       const [datePart, timePart] = dateMatch[1].split(/\s+/);
       const [day, month, year] = datePart.split('/');
@@ -87,37 +82,36 @@ export const parsePaymentMessage = (message: string) => {
 };
 
 export const useEmailLogs = () => {
-  const { user } = useAuth();
+  const landlordId = useEffectiveLandlordId();
   const queryClient = useQueryClient();
 
   const emailLogsQuery = useQuery({
-    queryKey: ['emailLogs', user?.id],
+    queryKey: ['emailLogs', landlordId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!landlordId) return [];
 
       const { data, error } = await supabase
         .from('email_logs')
         .select('*')
-        .eq('landlord_id', user.id)
+        .eq('landlord_id', landlordId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as EmailLog[];
     },
-    enabled: !!user?.id,
+    enabled: !!landlordId,
   });
 
   const addEmailLog = useMutation({
     mutationFn: async (emailLog: EmailLogInsert) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!landlordId) throw new Error('No landlord context');
 
-      // Parse the message
       const parsed = parsePaymentMessage(emailLog.raw_message);
 
       const { data, error } = await supabase
         .from('email_logs')
         .insert({
-          landlord_id: user.id,
+          landlord_id: landlordId,
           raw_message: emailLog.raw_message,
           parsed_amount: parsed.amount,
           parsed_house_no: parsed.houseNo,
@@ -169,12 +163,11 @@ export const useEmailLogs = () => {
 
   const processEmailLog = useMutation({
     mutationFn: async (emailLog: EmailLog) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!landlordId) throw new Error('No landlord context');
       if (!emailLog.parsed_amount || !emailLog.parsed_mpesa_ref) {
         throw new Error('Missing required payment details');
       }
 
-      // Find matching house by house_no
       let houseId: string | null = null;
       let tenantId: string | null = null;
 
@@ -182,14 +175,13 @@ export const useEmailLogs = () => {
         const { data: houses } = await supabase
           .from('houses')
           .select('id')
-          .eq('landlord_id', user.id)
+          .eq('landlord_id', landlordId)
           .ilike('house_no', `%${emailLog.parsed_house_no}%`)
           .limit(1);
 
         if (houses && houses.length > 0) {
           houseId = houses[0].id;
 
-          // Find tenant for this house
           const { data: tenants } = await supabase
             .from('tenants')
             .select('id')
@@ -202,11 +194,10 @@ export const useEmailLogs = () => {
         }
       }
 
-      // Create payment
       const { data: payment, error: paymentError } = await supabase
         .from('payments')
         .insert({
-          landlord_id: user.id,
+          landlord_id: landlordId,
           house_id: houseId,
           tenant_id: tenantId,
           amount: emailLog.parsed_amount,
@@ -219,7 +210,6 @@ export const useEmailLogs = () => {
 
       if (paymentError) throw paymentError;
 
-      // Update email log status
       const { error: updateError } = await supabase
         .from('email_logs')
         .update({

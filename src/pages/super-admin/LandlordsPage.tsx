@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { useLandlords, useUpdateLandlordStatus, useSubscriptionPlans, useAssignSubscription, useAllocateSmsTokens } from '@/hooks/useSuperAdminData';
+import { useImpersonation } from '@/hooks/useImpersonation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,16 +31,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare } from 'lucide-react';
+import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare, LogIn } from 'lucide-react';
 import { format } from 'date-fns';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 
 const LandlordsPage = () => {
+  const navigate = useNavigate();
+  const { startImpersonation } = useImpersonation();
   const { data: landlords, isLoading } = useLandlords();
   const { data: plans } = useSubscriptionPlans();
   const updateStatus = useUpdateLandlordStatus();
   const assignSubscription = useAssignSubscription();
   const allocateTokens = useAllocateSmsTokens();
+
+  const handleLoginAs = async (landlord: LandlordProfile) => {
+    await startImpersonation({
+      id: landlord.id,
+      name: landlord.full_name || 'Unknown Landlord',
+      company: landlord.company_name,
+    });
+    navigate('/');
+  };
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -222,6 +235,13 @@ const LandlordsPage = () => {
                           >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-primary"
+                            onClick={() => handleLoginAs(landlord)}
+                          >
+                            <LogIn className="h-4 w-4 mr-2" />
+                            Login as Landlord
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-slate-200"

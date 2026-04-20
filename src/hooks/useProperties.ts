@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface Property {
@@ -39,50 +39,46 @@ export interface PropertyUpdate {
 }
 
 export const useProperties = () => {
-  const { user } = useAuth();
+  const landlordId = useEffectiveLandlordId();
   const queryClient = useQueryClient();
 
   const propertiesQuery = useQuery({
-    queryKey: ['properties', user?.id],
+    queryKey: ['properties', landlordId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!landlordId) return [];
 
       const { data, error } = await supabase
         .from('properties')
         .select('*')
-        .eq('landlord_id', user.id)
+        .eq('landlord_id', landlordId)
         .order('name', { ascending: true });
 
       if (error) throw error;
       return data as Property[];
     },
-    enabled: !!user?.id,
+    enabled: !!landlordId,
   });
 
-  // Get properties with stats (house counts)
   const propertiesWithStatsQuery = useQuery({
-    queryKey: ['properties-with-stats', user?.id],
+    queryKey: ['properties-with-stats', landlordId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!landlordId) return [];
 
-      // Fetch properties
       const { data: properties, error: propertiesError } = await supabase
         .from('properties')
         .select('*')
-        .eq('landlord_id', user.id)
+        .eq('landlord_id', landlordId)
         .order('name', { ascending: true });
 
       if (propertiesError) throw propertiesError;
 
-      // Fetch houses to calculate stats
       const { data: houses, error: housesError } = await supabase
         .from('houses')
         .select('id, property_id, status')
-        .eq('landlord_id', user.id);
+        .eq('landlord_id', landlordId);
 
       if (housesError) throw housesError;
 
-      // Calculate stats for each property
       const propertiesWithStats: PropertyWithStats[] = properties.map(property => {
         const propertyHouses = houses.filter(h => h.property_id === property.id);
         return {
@@ -95,17 +91,17 @@ export const useProperties = () => {
 
       return propertiesWithStats;
     },
-    enabled: !!user?.id,
+    enabled: !!landlordId,
   });
 
   const addProperty = useMutation({
     mutationFn: async (property: PropertyInsert) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!landlordId) throw new Error('No landlord context');
 
       const { data, error } = await supabase
         .from('properties')
         .insert({
-          landlord_id: user.id,
+          landlord_id: landlordId,
           name: property.name,
           address: property.address || null,
           county: property.county || null,

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface Tenant {
@@ -41,13 +41,13 @@ export interface TenantUpdate {
 }
 
 export const useTenants = () => {
-  const { user } = useAuth();
+  const landlordId = useEffectiveLandlordId();
   const queryClient = useQueryClient();
 
   const tenantsQuery = useQuery({
-    queryKey: ['tenants', user?.id],
+    queryKey: ['tenants', landlordId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!landlordId) return [];
 
       const { data, error } = await supabase
         .from('tenants')
@@ -60,23 +60,23 @@ export const useTenants = () => {
             status
           )
         `)
-        .eq('landlord_id', user.id)
+        .eq('landlord_id', landlordId)
         .order('name', { ascending: true });
 
       if (error) throw error;
       return data as TenantWithHouse[];
     },
-    enabled: !!user?.id,
+    enabled: !!landlordId,
   });
 
   const addTenant = useMutation({
     mutationFn: async (tenant: TenantInsert) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!landlordId) throw new Error('No landlord context');
 
       const { data, error } = await supabase
         .from('tenants')
         .insert({
-          landlord_id: user.id,
+          landlord_id: landlordId,
           house_id: tenant.house_id || null,
           name: tenant.name,
           phone: tenant.phone,
@@ -88,7 +88,6 @@ export const useTenants = () => {
 
       if (error) throw error;
 
-      // If tenant is assigned to a house, update house status to occupied
       if (tenant.house_id) {
         await supabase
           .from('houses')
@@ -119,9 +118,7 @@ export const useTenants = () => {
 
       if (error) throw error;
 
-      // Handle house status updates
       if (previousHouseId && previousHouseId !== data.house_id) {
-        // Mark old house as vacant
         await supabase
           .from('houses')
           .update({ status: 'vacant', occupancy_date: null })
@@ -129,7 +126,6 @@ export const useTenants = () => {
       }
 
       if (data.house_id && data.house_id !== previousHouseId) {
-        // Mark new house as occupied
         await supabase
           .from('houses')
           .update({ status: 'occupied', occupancy_date: data.move_in_date || new Date().toISOString().split('T')[0] })
@@ -157,7 +153,6 @@ export const useTenants = () => {
 
       if (error) throw error;
 
-      // Mark house as vacant when tenant is deleted
       if (houseId) {
         await supabase
           .from('houses')

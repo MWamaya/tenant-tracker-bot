@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface Payment {
@@ -38,13 +38,13 @@ export interface PaymentInsert {
 }
 
 export const usePayments = () => {
-  const { user } = useAuth();
+  const landlordId = useEffectiveLandlordId();
   const queryClient = useQueryClient();
 
   const paymentsQuery = useQuery({
-    queryKey: ['payments', user?.id],
+    queryKey: ['payments', landlordId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!landlordId) return [];
 
       const { data, error } = await supabase
         .from('payments')
@@ -59,23 +59,23 @@ export const usePayments = () => {
             name
           )
         `)
-        .eq('landlord_id', user.id)
+        .eq('landlord_id', landlordId)
         .order('payment_date', { ascending: false });
 
       if (error) throw error;
       return data as PaymentWithDetails[];
     },
-    enabled: !!user?.id,
+    enabled: !!landlordId,
   });
 
   const addPayment = useMutation({
     mutationFn: async (payment: PaymentInsert) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!landlordId) throw new Error('No landlord context');
 
       const { data, error } = await supabase
         .from('payments')
         .insert({
-          landlord_id: user.id,
+          landlord_id: landlordId,
           house_id: payment.house_id || null,
           tenant_id: payment.tenant_id || null,
           amount: payment.amount,
