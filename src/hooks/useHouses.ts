@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface House {
@@ -39,14 +39,14 @@ export interface HouseUpdate {
 }
 
 export const useHouses = (propertyId?: string | null) => {
-  const { user } = useAuth();
+  const landlordId = useEffectiveLandlordId();
   const queryClient = useQueryClient();
 
   const housesQuery = useQuery({
-    queryKey: ['houses', user?.id, propertyId],
+    queryKey: ['houses', landlordId, propertyId],
     queryFn: async () => {
-      if (!user?.id) return [];
-      
+      if (!landlordId) return [];
+
       let query = supabase
         .from('houses')
         .select(`
@@ -56,10 +56,9 @@ export const useHouses = (propertyId?: string | null) => {
             name
           )
         `)
-        .eq('landlord_id', user.id)
+        .eq('landlord_id', landlordId)
         .order('house_no', { ascending: true });
 
-      // Filter by property if specified
       if (propertyId) {
         query = query.eq('property_id', propertyId);
       }
@@ -69,17 +68,17 @@ export const useHouses = (propertyId?: string | null) => {
       if (error) throw error;
       return data as HouseWithProperty[];
     },
-    enabled: !!user?.id,
+    enabled: !!landlordId,
   });
 
   const addHouse = useMutation({
     mutationFn: async (house: HouseInsert) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!landlordId) throw new Error('No landlord context');
 
       const { data, error } = await supabase
         .from('houses')
         .insert({
-          landlord_id: user.id,
+          landlord_id: landlordId,
           property_id: house.property_id || null,
           house_no: house.house_no,
           expected_rent: house.expected_rent,

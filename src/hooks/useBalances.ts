@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface Balance {
@@ -25,13 +25,13 @@ export interface BalanceWithHouse extends Balance {
 }
 
 export const useBalances = () => {
-  const { user } = useAuth();
+  const landlordId = useEffectiveLandlordId();
   const queryClient = useQueryClient();
 
   const balancesQuery = useQuery({
-    queryKey: ['balances', user?.id],
+    queryKey: ['balances', landlordId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!landlordId) return [];
 
       const { data, error } = await supabase
         .from('balances')
@@ -43,20 +43,19 @@ export const useBalances = () => {
             expected_rent
           )
         `)
-        .eq('landlord_id', user.id)
+        .eq('landlord_id', landlordId)
         .order('month', { ascending: false });
 
       if (error) throw error;
       return data as BalanceWithHouse[];
     },
-    enabled: !!user?.id,
+    enabled: !!landlordId,
   });
 
   const calculateMonthlyBalance = useMutation({
     mutationFn: async ({ houseId, month }: { houseId: string; month: string }) => {
-      if (!user?.id) throw new Error('User not authenticated');
+      if (!landlordId) throw new Error('No landlord context');
 
-      // Get house details
       const { data: house, error: houseError } = await supabase
         .from('houses')
         .select('expected_rent')
@@ -65,7 +64,6 @@ export const useBalances = () => {
 
       if (houseError) throw houseError;
 
-      // Get previous month's balance for carry forward
       const prevMonth = new Date(month);
       prevMonth.setMonth(prevMonth.getMonth() - 1);
       const prevMonthStr = prevMonth.toISOString().slice(0, 10);
@@ -79,7 +77,6 @@ export const useBalances = () => {
 
       const carryForward = prevBalance?.balance || 0;
 
-      // Get payments for this house in this month
       const monthStart = new Date(month);
       const monthEnd = new Date(month);
       monthEnd.setMonth(monthEnd.getMonth() + 1);
@@ -97,11 +94,10 @@ export const useBalances = () => {
       const expectedRent = Number(house.expected_rent);
       const balance = expectedRent + carryForward - paidAmount;
 
-      // Upsert balance record
       const { data, error } = await supabase
         .from('balances')
         .upsert({
-          landlord_id: user.id,
+          landlord_id: landlordId,
           house_id: houseId,
           month,
           expected_rent: expectedRent,
