@@ -237,6 +237,13 @@ const LandlordsPage = () => {
                             View Details
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            className="text-primary"
+                            onClick={() => handleLoginAs(landlord)}
+                          >
+                            <LogIn className="h-4 w-4 mr-2" />
+                            Login as Landlord
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             className="text-slate-200"
                             onClick={() => {
                               setSelectedLandlord(landlord);
