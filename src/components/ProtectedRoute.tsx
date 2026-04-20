@@ -21,6 +21,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/auth" replace />;
   }
 
+  // Note: Super Admins are also allowed here when impersonating (or just browsing
+  // a landlord's view). The ImpersonationBanner makes the mode explicit.
   return <>{children}</>;
 };
 

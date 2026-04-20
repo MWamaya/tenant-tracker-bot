@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SuperAdminProvider } from "@/hooks/useSuperAdmin";
+import { ImpersonationProvider } from "@/hooks/useImpersonation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SuperAdminRoute from "@/components/SuperAdminRoute";
 import Index from "./pages/Index";
@@ -36,6 +37,7 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <SuperAdminProvider>
+          <ImpersonationProvider>
           <DataProvider>
             <Toaster />
             <Sonner />
@@ -66,6 +68,7 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </DataProvider>
+          </ImpersonationProvider>
         </SuperAdminProvider>
       </AuthProvider>
     </TooltipProvider>
