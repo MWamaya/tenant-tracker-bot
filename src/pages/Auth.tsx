@@ -278,7 +278,7 @@ const Auth = () => {
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
           >
             <Shield className="h-3.5 w-3.5" />
-            Super Admin login
+            Admin login
           </Link>
         </div>
       </div>
