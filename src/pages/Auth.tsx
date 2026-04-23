@@ -7,7 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Mail, Lock, User, Phone, Building } from 'lucide-react';
+import { Mail, Lock, User, Phone, Building, Shield } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { z } from 'zod';
 
@@ -270,6 +271,16 @@ const Auth = () => {
         <p className="text-center text-sm text-muted-foreground mt-6">
           Secure property management for landlords
         </p>
+
+        <div className="text-center mt-3">
+          <Link
+            to="/super-admin/login"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+          >
+            <Shield className="h-3.5 w-3.5" />
+            Super Admin login
+          </Link>
+        </div>
       </div>
     </div>
   );
