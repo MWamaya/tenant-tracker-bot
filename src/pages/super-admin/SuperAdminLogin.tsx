@@ -137,6 +137,15 @@ const SuperAdminLogin = () => {
         <p className="text-center text-sm text-slate-500 mt-6">
           Kodipap Platform Administration
         </p>
+        <div className="text-center mt-4">
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/auth')}
+            className="text-slate-300 hover:text-white hover:bg-slate-800"
+          >
+            ← Back to Landlord Login
+          </Button>
+        </div>
       </div>
     </div>
   );
