@@ -97,12 +97,23 @@ const Payments = () => {
             </p>
           </div>
           <div className="flex gap-3">
+            <Button onClick={() => setUploadOpen(true)} className="gap-2 flex-1 sm:flex-none">
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Import Statement</span>
+              <span className="sm:hidden">Import</span>
+            </Button>
             <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
           </div>
         </div>
+
+        <PaymentStatementUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          landlordId={landlordId}
+        />
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
