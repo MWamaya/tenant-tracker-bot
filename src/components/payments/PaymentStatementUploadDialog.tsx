@@ -351,11 +351,11 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
                   <TableHeader>
                     <TableRow>
                       <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Name</TableHead>
                       <TableHead>Amount</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Sender</TableHead>
-                      <TableHead>House</TableHead>
+                      <TableHead>House Code</TableHead>
+                      <TableHead>M-Pesa Ref</TableHead>
+                      <TableHead>Date &amp; Time</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -374,15 +374,15 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="text-xs">
-                          {r.payment_date ? format(new Date(r.payment_date), 'MMM d, yyyy') : '—'}
-                        </TableCell>
+                        <TableCell className="text-xs">{r.sender_name || '—'}</TableCell>
                         <TableCell className="font-medium">
                           {r.amount ? `KES ${r.amount.toLocaleString()}` : '—'}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{r.mpesa_ref || '—'}</TableCell>
-                        <TableCell className="text-xs">{r.sender_name || '—'}</TableCell>
                         <TableCell className="text-xs">{r.house_no || '—'}</TableCell>
+                        <TableCell className="font-mono text-xs">{r.mpesa_ref || '—'}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.payment_date ? format(new Date(r.payment_date), 'MMM d, yyyy HH:mm') : '—'}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
