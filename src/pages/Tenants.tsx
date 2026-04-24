@@ -234,8 +234,14 @@ const Tenants = () => {
           {tenantData.map((tenant) => (
             <div key={tenant.id} className="stat-card">
               <div className="flex items-start gap-4">
-                <div className="p-3 rounded-xl bg-primary/10">
-                  <User className="h-6 w-6 text-primary" />
+                <div className="h-14 w-14 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                  {tenant.houses?.house_no ? (
+                    <span className="font-bold text-primary text-lg leading-none">
+                      {tenant.houses.house_no}
+                    </span>
+                  ) : (
+                    <Home className="h-6 w-6 text-muted-foreground" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold truncate">{tenant.name}</h3>
