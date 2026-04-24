@@ -165,17 +165,29 @@ const Payments = () => {
           <Table>
             <TableHeader>
               <TableRow className="table-header">
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Tenant</TableHead>
-                <TableHead>House</TableHead>
+                <TableHead>Name</TableHead>
                 <TableHead>Amount</TableHead>
+                <TableHead>House Code</TableHead>
                 <TableHead>M-Pesa Ref</TableHead>
+                <TableHead>Date &amp; Time</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredPayments.map((payment) => (
                 <TableRow key={payment.id} className="hover:bg-muted/30">
+                  <TableCell className="font-medium">
+                    {payment.tenants?.name || payment.sender_name || 'Unknown'}
+                  </TableCell>
+                  <TableCell className="font-semibold text-success">
+                    {formatCurrency(Number(payment.amount))}
+                  </TableCell>
+                  <TableCell>{payment.houses?.house_no || 'Unassigned'}</TableCell>
+                  <TableCell>
+                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                      {payment.mpesa_ref}
+                    </code>
+                  </TableCell>
                   <TableCell>
                     <div>
                       <p className="font-medium">
@@ -185,18 +197,6 @@ const Payments = () => {
                         {format(new Date(payment.payment_date), 'h:mm a')}
                       </p>
                     </div>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    {payment.tenants?.name || payment.sender_name || 'Unknown'}
-                  </TableCell>
-                  <TableCell>{payment.houses?.house_no || 'Unassigned'}</TableCell>
-                  <TableCell className="font-semibold text-success">
-                    {formatCurrency(Number(payment.amount))}
-                  </TableCell>
-                  <TableCell>
-                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
-                      {payment.mpesa_ref}
-                    </code>
                   </TableCell>
                   <TableCell className="text-right">
                     <Button variant="ghost" size="sm">
