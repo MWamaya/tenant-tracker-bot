@@ -34,6 +34,20 @@ interface Payment {
 
 const GlobalPaymentsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [selectedLandlord, setSelectedLandlord] = useState<string>('');
+
+  const { data: landlords } = useQuery({
+    queryKey: ['all-landlords-for-upload'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, company_name')
+        .order('full_name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   const { data: payments, isLoading } = useQuery({
     queryKey: ['all-payments'],
