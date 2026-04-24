@@ -284,8 +284,9 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
             Import Payment Statement
           </DialogTitle>
           <DialogDescription>
-            Upload an Excel or CSV file with columns: Date, Amount, Reference (required) and optionally Sender,
-            Phone, House No. {scopeLabel && <span className="font-medium">Scope: {scopeLabel}</span>}
+            Upload an Excel or CSV file with columns in this order: <span className="font-medium">Name, Amount, House Code, M-Pesa Ref, Date &amp; Time</span>.
+            Name and House Code are optional but recommended for auto-matching.
+            {scopeLabel && <span className="font-medium"> Scope: {scopeLabel}</span>}
           </DialogDescription>
         </DialogHeader>
 
