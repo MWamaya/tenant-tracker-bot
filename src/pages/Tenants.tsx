@@ -237,7 +237,7 @@ const Tenants = () => {
                 <div className="h-14 w-14 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
                   {tenant.houses?.house_no ? (
                     <span className="font-bold text-primary text-lg leading-none">
-                      {tenant.houses.house_no}
+                      {tenant.houses.house_no.match(/[A-Za-z].*$/)?.[0] || tenant.houses.house_no}
                     </span>
                   ) : (
                     <Home className="h-6 w-6 text-muted-foreground" />
