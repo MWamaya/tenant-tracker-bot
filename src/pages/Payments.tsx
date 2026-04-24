@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { usePayments } from '@/hooks/usePayments';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { PaymentStatementUploadDialog } from '@/components/payments/PaymentStatementUploadDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,13 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Download, CreditCard, Calendar, Loader2 } from 'lucide-react';
+import { Search, Download, CreditCard, Calendar, Loader2, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Payments = () => {
   const { payments, isLoading } = usePayments();
+  const landlordId = useEffectiveLandlordId();
   const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter] = useState('all');
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -93,12 +97,23 @@ const Payments = () => {
             </p>
           </div>
           <div className="flex gap-3">
+            <Button onClick={() => setUploadOpen(true)} className="gap-2 flex-1 sm:flex-none">
+              <Upload className="h-4 w-4" />
+              <span className="hidden sm:inline">Import Statement</span>
+              <span className="sm:hidden">Import</span>
+            </Button>
             <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Export</span>
             </Button>
           </div>
         </div>
+
+        <PaymentStatementUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          landlordId={landlordId}
+        />
 
         {/* Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">

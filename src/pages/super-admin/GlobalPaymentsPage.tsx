@@ -5,10 +5,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, DollarSign, AlertTriangle } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Search, DollarSign, AlertTriangle, Upload } from 'lucide-react';
 import { format } from 'date-fns';
+import { PaymentStatementUploadDialog } from '@/components/payments/PaymentStatementUploadDialog';
 
 interface Payment {
   id: string;
@@ -25,6 +34,20 @@ interface Payment {
 
 const GlobalPaymentsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [selectedLandlord, setSelectedLandlord] = useState<string>('');
+
+  const { data: landlords } = useQuery({
+    queryKey: ['all-landlords-for-upload'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, company_name')
+        .order('full_name');
+      if (error) throw error;
+      return data || [];
+    },
+  });
 
   const { data: payments, isLoading } = useQuery({
     queryKey: ['all-payments'],
@@ -102,10 +125,45 @@ const GlobalPaymentsPage = () => {
     <SuperAdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white">Global Payments</h1>
-          <p className="text-slate-400">View all payments across all landlords</p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Global Payments</h1>
+            <p className="text-slate-400">View all payments across all landlords</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Select value={selectedLandlord} onValueChange={setSelectedLandlord}>
+              <SelectTrigger className="w-full sm:w-64 bg-slate-900/50 border-slate-600 text-white">
+                <SelectValue placeholder="Select landlord for upload" />
+              </SelectTrigger>
+              <SelectContent>
+                {(landlords || []).map((l) => (
+                  <SelectItem key={l.id} value={l.id}>
+                    {l.full_name || l.company_name || l.id.slice(0, 8)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => setUploadOpen(true)}
+              disabled={!selectedLandlord}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Import Statement
+            </Button>
+          </div>
         </div>
+
+        <PaymentStatementUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          landlordId={selectedLandlord || null}
+          scopeLabel={
+            landlords?.find((l) => l.id === selectedLandlord)?.full_name ||
+            landlords?.find((l) => l.id === selectedLandlord)?.company_name ||
+            undefined
+          }
+        />
 
         {/* Search */}
         <Card className="bg-slate-800/50 border-slate-700">
