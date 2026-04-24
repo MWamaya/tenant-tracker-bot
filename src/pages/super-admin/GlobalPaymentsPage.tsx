@@ -125,10 +125,45 @@ const GlobalPaymentsPage = () => {
     <SuperAdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white">Global Payments</h1>
-          <p className="text-slate-400">View all payments across all landlords</p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Global Payments</h1>
+            <p className="text-slate-400">View all payments across all landlords</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Select value={selectedLandlord} onValueChange={setSelectedLandlord}>
+              <SelectTrigger className="w-full sm:w-64 bg-slate-900/50 border-slate-600 text-white">
+                <SelectValue placeholder="Select landlord for upload" />
+              </SelectTrigger>
+              <SelectContent>
+                {(landlords || []).map((l) => (
+                  <SelectItem key={l.id} value={l.id}>
+                    {l.full_name || l.company_name || l.id.slice(0, 8)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              onClick={() => setUploadOpen(true)}
+              disabled={!selectedLandlord}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Import Statement
+            </Button>
+          </div>
         </div>
+
+        <PaymentStatementUploadDialog
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+          landlordId={selectedLandlord || null}
+          scopeLabel={
+            landlords?.find((l) => l.id === selectedLandlord)?.full_name ||
+            landlords?.find((l) => l.id === selectedLandlord)?.company_name ||
+            undefined
+          }
+        />
 
         {/* Search */}
         <Card className="bg-slate-800/50 border-slate-700">
