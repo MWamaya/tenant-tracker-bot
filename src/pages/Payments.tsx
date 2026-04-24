@@ -22,13 +22,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Download, CreditCard, Calendar, Loader2 } from 'lucide-react';
+import { Search, Download, CreditCard, Calendar, Loader2, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Payments = () => {
   const { payments, isLoading } = usePayments();
+  const landlordId = useEffectiveLandlordId();
   const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter] = useState('all');
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
