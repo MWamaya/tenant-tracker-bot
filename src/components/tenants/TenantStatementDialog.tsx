@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,9 +14,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Tenant, House, Payment } from '@/lib/mockData';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Pencil, Check, X, RotateCcw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TenantStatementDialogProps {
   open: boolean;
@@ -39,6 +44,7 @@ interface MonthlyRecord {
   balanceBroughtForward: number;
   balanceCarriedForward: number;
   status: 'paid' | 'partial' | 'unpaid';
+  isManualOverride: boolean;
 }
 
 const formatCurrency = (amount: number) => {
@@ -49,6 +55,9 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const getOverrideStorageKey = (tenantId: string, year: number) =>
+  `bf_overrides_${tenantId}_${year}`;
+
 export const TenantStatementDialog = ({
   open,
   onOpenChange,
@@ -56,13 +65,67 @@ export const TenantStatementDialog = ({
   house,
   payments,
 }: TenantStatementDialogProps) => {
-  if (!tenant || !house) return null;
-
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
+
+  // Manual B/F overrides keyed by month index
+  const [bfOverrides, setBfOverrides] = useState<Record<number, number>>({});
+  const [editingMonth, setEditingMonth] = useState<number | null>(null);
+  const [editValue, setEditValue] = useState<string>('');
+
+  // Load overrides whenever the tenant/dialog changes
+  useEffect(() => {
+    if (!tenant || !open) return;
+    try {
+      const stored = localStorage.getItem(getOverrideStorageKey(tenant.id, currentYear));
+      setBfOverrides(stored ? JSON.parse(stored) : {});
+    } catch {
+      setBfOverrides({});
+    }
+    setEditingMonth(null);
+  }, [tenant, open, currentYear]);
+
+  if (!tenant || !house) return null;
+
   const expectedRent = house.expectedRent;
 
-  // Generate yearly statement with balance carry forward
+  const persistOverrides = (next: Record<number, number>) => {
+    setBfOverrides(next);
+    try {
+      localStorage.setItem(
+        getOverrideStorageKey(tenant.id, currentYear),
+        JSON.stringify(next)
+      );
+    } catch {
+      /* ignore quota errors */
+    }
+  };
+
+  const handleStartEdit = (monthIndex: number, currentValue: number) => {
+    setEditingMonth(monthIndex);
+    setEditValue(String(currentValue || 0));
+  };
+
+  const handleSaveEdit = (monthIndex: number) => {
+    const parsed = Number(editValue);
+    if (Number.isNaN(parsed) || parsed < 0) {
+      toast.error('Enter a valid non-negative amount');
+      return;
+    }
+    persistOverrides({ ...bfOverrides, [monthIndex]: parsed });
+    setEditingMonth(null);
+    toast.success(`Balance brought forward updated for ${months[monthIndex]}`);
+  };
+
+  const handleResetOverride = (monthIndex: number) => {
+    const next = { ...bfOverrides };
+    delete next[monthIndex];
+    persistOverrides(next);
+    setEditingMonth(null);
+    toast.success(`Reverted to auto-calculated B/F for ${months[monthIndex]}`);
+  };
+
+  // Generate yearly statement with balance carry forward + manual overrides
   const generateYearlyStatement = (): MonthlyRecord[] => {
     const records: MonthlyRecord[] = [];
     let carryForwardBalance = 0;
@@ -74,7 +137,11 @@ export const TenantStatementDialog = ({
       });
 
       const totalPaid = monthPayments.reduce((sum, p) => sum + p.amount, 0);
-      const balanceBroughtForward = carryForwardBalance;
+
+      // Manual override takes precedence over auto-calc
+      const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
+      const balanceBroughtForward = hasOverride ? bfOverrides[i] : carryForwardBalance;
+
       const totalDue = expectedRent + balanceBroughtForward;
       const balanceCarriedForward = Math.max(0, totalDue - totalPaid);
 
@@ -98,6 +165,7 @@ export const TenantStatementDialog = ({
         balanceBroughtForward,
         balanceCarriedForward,
         status,
+        isManualOverride: hasOverride,
       });
 
       carryForwardBalance = balanceCarriedForward;
@@ -187,10 +255,86 @@ export const TenantStatementDialog = ({
                 <TableRow key={record.monthIndex}>
                   <TableCell className="font-medium">{record.month}</TableCell>
                   <TableCell className="text-right">
-                    {record.balanceBroughtForward > 0 ? (
-                      <span className="text-destructive">{formatCurrency(record.balanceBroughtForward)}</span>
+                    {editingMonth === record.monthIndex ? (
+                      <div className="flex items-center justify-end gap-1">
+                        <Input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit(record.monthIndex);
+                            if (e.key === 'Escape') setEditingMonth(null);
+                          }}
+                          className="h-7 w-24 text-right"
+                          autoFocus
+                        />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => handleSaveEdit(record.monthIndex)}
+                          title="Save"
+                        >
+                          <Check className="h-3.5 w-3.5 text-success" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-7 w-7"
+                          onClick={() => setEditingMonth(null)}
+                          title="Cancel"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     ) : (
-                      '-'
+                      <div className="flex items-center justify-end gap-1 group">
+                        {record.balanceBroughtForward > 0 ? (
+                          <span
+                            className={
+                              record.isManualOverride
+                                ? 'text-warning font-medium'
+                                : 'text-destructive'
+                            }
+                          >
+                            {formatCurrency(record.balanceBroughtForward)}
+                          </span>
+                        ) : (
+                          <span>{record.isManualOverride ? formatCurrency(0) : '-'}</span>
+                        )}
+                        {record.isManualOverride && (
+                          <Badge
+                            variant="outline"
+                            className="h-5 px-1 text-[10px] border-warning/40 text-warning"
+                          >
+                            Manual
+                          </Badge>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 opacity-60 hover:opacity-100"
+                          onClick={() =>
+                            handleStartEdit(record.monthIndex, record.balanceBroughtForward)
+                          }
+                          title="Edit B/F manually"
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        {record.isManualOverride && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-6 w-6 opacity-60 hover:opacity-100"
+                            onClick={() => handleResetOverride(record.monthIndex)}
+                            title="Reset to auto-calculated"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
                     )}
                   </TableCell>
                   <TableCell className="text-right">{formatCurrency(record.expectedRent)}</TableCell>
@@ -240,8 +384,8 @@ export const TenantStatementDialog = ({
         </ScrollArea>
 
         {/* Legend */}
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          <span><strong>B/F</strong> = Balance Brought Forward</span>
+        <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+          <span><strong>B/F</strong> = Balance Brought Forward (auto-calculated, click <Pencil className="inline h-3 w-3" /> to override)</span>
           <span><strong>C/F</strong> = Balance Carried Forward</span>
         </div>
       </DialogContent>
