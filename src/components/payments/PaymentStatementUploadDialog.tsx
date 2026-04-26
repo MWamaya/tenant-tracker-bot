@@ -259,10 +259,88 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
       const { error } = await supabase.from('payments').insert(inserts);
       if (error) throw error;
 
-      toast.success(`Imported ${inserts.length} payments`);
+      // Recompute monthly balances for each affected (house, month) pair
+      // so the Tenants page and tenant statements reflect the imported payments.
+      const houseMonthPairs = new Map<string, { houseId: string; month: string }>();
+      for (const ins of inserts) {
+        if (!ins.house_id || !ins.payment_date) continue;
+        const d = new Date(ins.payment_date);
+        if (isNaN(d.getTime())) continue;
+        const monthStr = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`;
+        houseMonthPairs.set(`${ins.house_id}_${monthStr}`, { houseId: ins.house_id, month: monthStr });
+      }
+
+      // Fetch house rents once
+      const houseIds = Array.from(new Set(Array.from(houseMonthPairs.values()).map((p) => p.houseId)));
+      let rentByHouse = new Map<string, number>();
+      if (houseIds.length > 0) {
+        const { data: houseRows } = await supabase
+          .from('houses')
+          .select('id, expected_rent')
+          .in('id', houseIds);
+        rentByHouse = new Map((houseRows || []).map((h) => [h.id, Number(h.expected_rent)]));
+      }
+
+      let recomputed = 0;
+      for (const { houseId, month } of houseMonthPairs.values()) {
+        try {
+          const expectedRent = rentByHouse.get(houseId) ?? 0;
+
+          // Previous month carry-forward
+          const prev = new Date(month);
+          prev.setUTCMonth(prev.getUTCMonth() - 1);
+          const prevMonthStr = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}-01`;
+          const { data: prevBalance } = await supabase
+            .from('balances')
+            .select('balance')
+            .eq('house_id', houseId)
+            .eq('month', prevMonthStr)
+            .maybeSingle();
+          const carryForward = Number(prevBalance?.balance || 0);
+
+          // Sum payments in the month for this house
+          const monthStart = new Date(month);
+          const monthEnd = new Date(month);
+          monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1);
+          const { data: monthPayments } = await supabase
+            .from('payments')
+            .select('amount')
+            .eq('house_id', houseId)
+            .gte('payment_date', monthStart.toISOString())
+            .lt('payment_date', monthEnd.toISOString());
+          const paidAmount = (monthPayments || []).reduce((s, p) => s + Number(p.amount), 0);
+
+          const balance = expectedRent + carryForward - paidAmount;
+
+          await supabase
+            .from('balances')
+            .upsert(
+              {
+                landlord_id: landlordId,
+                house_id: houseId,
+                month,
+                expected_rent: expectedRent,
+                paid_amount: paidAmount,
+                carry_forward: carryForward,
+                balance,
+              },
+              { onConflict: 'house_id,month' }
+            );
+          recomputed++;
+        } catch (e) {
+          console.error('Balance recompute failed for', houseId, month, e);
+        }
+      }
+
+      toast.success(
+        `Imported ${inserts.length} payments • Synced ${recomputed} tenant balance${recomputed === 1 ? '' : 's'}`
+      );
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['all-payments'] });
       queryClient.invalidateQueries({ queryKey: ['balances'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['houses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       handleClose(false);
     } catch (err: any) {
       toast.error(`Import failed: ${err.message}`);
