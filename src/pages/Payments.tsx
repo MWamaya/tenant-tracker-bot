@@ -4,6 +4,7 @@ import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { usePayments } from '@/hooks/usePayments';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { PaymentStatementUploadDialog } from '@/components/payments/PaymentStatementUploadDialog';
+import { PaymentTextPasteDialog } from '@/components/payments/PaymentTextPasteDialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Download, CreditCard, Calendar, Loader2, Upload, RefreshCw } from 'lucide-react';
+import { Search, Download, CreditCard, Calendar, Loader2, Upload, RefreshCw, ClipboardPaste } from 'lucide-react';
 import { format } from 'date-fns';
 import { syncPaymentsToTenants } from '@/lib/syncPayments';
 import { toast } from 'sonner';
@@ -34,6 +35,7 @@ const Payments = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter] = useState('all');
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [pasteOpen, setPasteOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const queryClient = useQueryClient();
 
@@ -127,6 +129,11 @@ const Payments = () => {
               <span className="hidden sm:inline">Import Statement</span>
               <span className="sm:hidden">Import</span>
             </Button>
+            <Button onClick={() => setPasteOpen(true)} variant="outline" className="gap-2 flex-1 sm:flex-none">
+              <ClipboardPaste className="h-4 w-4" />
+              <span className="hidden sm:inline">Paste Text</span>
+              <span className="sm:hidden">Paste</span>
+            </Button>
             <Button onClick={handleSync} disabled={syncing || !landlordId} variant="secondary" className="gap-2 flex-1 sm:flex-none">
               {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               <span className="hidden sm:inline">Sync to Tenants</span>
@@ -142,6 +149,12 @@ const Payments = () => {
         <PaymentStatementUploadDialog
           open={uploadOpen}
           onOpenChange={setUploadOpen}
+          landlordId={landlordId}
+        />
+
+        <PaymentTextPasteDialog
+          open={pasteOpen}
+          onOpenChange={setPasteOpen}
           landlordId={landlordId}
         />
 
