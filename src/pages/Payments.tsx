@@ -22,8 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Download, CreditCard, Calendar, Loader2, Upload } from 'lucide-react';
+import { Search, Download, CreditCard, Calendar, Loader2, Upload, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
+import { syncPaymentsToTenants } from '@/lib/syncPayments';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Payments = () => {
   const { payments, isLoading } = usePayments();
