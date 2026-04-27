@@ -67,6 +67,8 @@ const findKey = (row: Record<string, any>, candidates: string[]): string | null 
 
 const parseDate = (val: any): string | null => {
   if (val == null || val === '') return null;
+  // Native JS Date (when cellDates: true is used)
+  if (val instanceof Date && isValid(val)) return val.toISOString();
   // Excel serial date
   if (typeof val === 'number') {
     const d = XLSX.SSF.parse_date_code(val);
@@ -76,14 +78,19 @@ const parseDate = (val: any): string | null => {
     }
   }
   const s = String(val).trim();
-  // Try common formats
+  // Try common formats — DD/MM first since this app is Kenya-based
   const formats = [
     'yyyy-MM-dd HH:mm:ss',
     'yyyy-MM-dd',
+    'dd/MM/yyyy hh:mm:ss a',
+    'dd/MM/yyyy hh:mm a',
     'dd/MM/yyyy HH:mm:ss',
+    'dd/MM/yyyy HH:mm',
     'dd/MM/yyyy',
-    'MM/dd/yyyy',
+    'd/M/yyyy hh:mm a',
+    'd/M/yyyy HH:mm',
     'd/M/yyyy',
+    'MM/dd/yyyy',
     'dd-MM-yyyy',
     'yyyy/MM/dd',
   ];
@@ -135,9 +142,13 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
 
     try {
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array', cellDates: false });
+      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+      const rawJson = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+      // Filter out completely blank rows
+      const json = rawJson.filter((r) =>
+        Object.values(r).some((v) => v !== '' && v != null)
+      );
 
       if (json.length === 0) {
         toast.error('No rows found in the spreadsheet');
