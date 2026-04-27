@@ -34,6 +34,28 @@ const Payments = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter] = useState('all');
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleSync = async () => {
+    if (!landlordId) return;
+    setSyncing(true);
+    try {
+      const res = await syncPaymentsToTenants(landlordId);
+      toast.success(
+        `Linked ${res.linked} payments • Synced ${res.recomputed} balance${res.recomputed === 1 ? '' : 's'}${res.unmatched > 0 ? ` • ${res.unmatched} still unmatched` : ''}`
+      );
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['balances'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['houses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    } catch (err: any) {
+      toast.error(`Sync failed: ${err.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
