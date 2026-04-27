@@ -363,8 +363,10 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
         }
       }
 
+      const matchedCount = matchedInserts.length;
+      const unmatchedCount = inserts.length - matchedCount;
       toast.success(
-        `Imported ${inserts.length} payments • Synced ${recomputed} tenant balance${recomputed === 1 ? '' : 's'}`
+        `Imported ${inserts.length} payments • Linked ${matchedCount} to tenants • Synced ${recomputed} balance${recomputed === 1 ? '' : 's'}${unmatchedCount > 0 ? ` • ${unmatchedCount} unmatched` : ''}`
       );
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['all-payments'] });
