@@ -121,11 +121,16 @@ const Payments = () => {
               Track all rent payments received
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button onClick={() => setUploadOpen(true)} className="gap-2 flex-1 sm:flex-none">
               <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">Import Statement</span>
               <span className="sm:hidden">Import</span>
+            </Button>
+            <Button onClick={handleSync} disabled={syncing || !landlordId} variant="secondary" className="gap-2 flex-1 sm:flex-none">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              <span className="hidden sm:inline">Sync to Tenants</span>
+              <span className="sm:hidden">Sync</span>
             </Button>
             <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
               <Download className="h-4 w-4" />
