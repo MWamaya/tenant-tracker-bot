@@ -236,13 +236,41 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
 
       const { data: tenants } = await supabase
         .from('tenants')
-        .select('id, house_id')
+        .select('id, name, house_id')
         .eq('landlord_id', landlordId);
-      const tenantByHouse = new Map((tenants || []).filter((t) => t.house_id).map((t) => [t.house_id, t.id]));
+      const tenantByHouse = new Map(
+        (tenants || []).filter((t) => t.house_id).map((t) => [t.house_id, t.id])
+      );
+
+      // Build name-token index for fuzzy tenant→house matching
+      const normName = (s: string) =>
+        s.toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      const tenantsWithHouse = (tenants || []).filter((t) => t.house_id);
+      const matchByName = (sender: string | null): { houseId: string | null; tenantId: string | null } => {
+        if (!sender) return { houseId: null, tenantId: null };
+        const senderTokens = new Set(normName(sender).split(' ').filter((w) => w.length >= 3));
+        if (senderTokens.size === 0) return { houseId: null, tenantId: null };
+        let best: { score: number; tenant: typeof tenantsWithHouse[number] | null } = { score: 0, tenant: null };
+        for (const t of tenantsWithHouse) {
+          const tTokens = new Set(normName(t.name).split(' ').filter((w) => w.length >= 3));
+          let overlap = 0;
+          tTokens.forEach((tok) => { if (senderTokens.has(tok)) overlap++; });
+          if (overlap > best.score) best = { score: overlap, tenant: t };
+        }
+        if (best.score >= 2 || (best.score === 1 && best.tenant && normName(best.tenant.name).split(' ').length <= 2)) {
+          return { houseId: best.tenant!.house_id as string, tenantId: best.tenant!.id };
+        }
+        return { houseId: null, tenantId: null };
+      };
 
       const inserts = newRows.map((r) => {
-        const houseId = r.house_no ? houseMap.get(r.house_no.toLowerCase().trim()) || null : null;
-        const tenantId = houseId ? tenantByHouse.get(houseId) || null : null;
+        let houseId = r.house_no ? houseMap.get(r.house_no.toLowerCase().trim()) || null : null;
+        let tenantId = houseId ? tenantByHouse.get(houseId) || null : null;
+        if (!houseId) {
+          const fuzzy = matchByName(r.sender_name);
+          houseId = fuzzy.houseId;
+          tenantId = fuzzy.tenantId;
+        }
         return {
           landlord_id: landlordId,
           payment_date: r.payment_date,
@@ -258,6 +286,9 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
 
       const { error } = await supabase.from('payments').insert(inserts);
       if (error) throw error;
+
+      // Build affected (house, month) pairs from the inserts that did match a house
+      const matchedInserts = inserts.filter((i) => i.house_id);
 
       // Recompute monthly balances for each affected (house, month) pair
       // so the Tenants page and tenant statements reflect the imported payments.
@@ -332,8 +363,10 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
         }
       }
 
+      const matchedCount = matchedInserts.length;
+      const unmatchedCount = inserts.length - matchedCount;
       toast.success(
-        `Imported ${inserts.length} payments • Synced ${recomputed} tenant balance${recomputed === 1 ? '' : 's'}`
+        `Imported ${inserts.length} payments • Linked ${matchedCount} to tenants • Synced ${recomputed} balance${recomputed === 1 ? '' : 's'}${unmatchedCount > 0 ? ` • ${unmatchedCount} unmatched` : ''}`
       );
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['all-payments'] });

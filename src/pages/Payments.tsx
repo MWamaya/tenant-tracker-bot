@@ -22,8 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Download, CreditCard, Calendar, Loader2, Upload } from 'lucide-react';
+import { Search, Download, CreditCard, Calendar, Loader2, Upload, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
+import { syncPaymentsToTenants } from '@/lib/syncPayments';
+import { toast } from 'sonner';
+import { useQueryClient } from '@tanstack/react-query';
 
 const Payments = () => {
   const { payments, isLoading } = usePayments();
@@ -31,6 +34,28 @@ const Payments = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [monthFilter, setMonthFilter] = useState('all');
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const queryClient = useQueryClient();
+
+  const handleSync = async () => {
+    if (!landlordId) return;
+    setSyncing(true);
+    try {
+      const res = await syncPaymentsToTenants(landlordId);
+      toast.success(
+        `Linked ${res.linked} payments • Synced ${res.recomputed} balance${res.recomputed === 1 ? '' : 's'}${res.unmatched > 0 ? ` • ${res.unmatched} still unmatched` : ''}`
+      );
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['balances'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['houses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+    } catch (err: any) {
+      toast.error(`Sync failed: ${err.message}`);
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -96,11 +121,16 @@ const Payments = () => {
               Track all rent payments received
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <Button onClick={() => setUploadOpen(true)} className="gap-2 flex-1 sm:flex-none">
               <Upload className="h-4 w-4" />
               <span className="hidden sm:inline">Import Statement</span>
               <span className="sm:hidden">Import</span>
+            </Button>
+            <Button onClick={handleSync} disabled={syncing || !landlordId} variant="secondary" className="gap-2 flex-1 sm:flex-none">
+              {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              <span className="hidden sm:inline">Sync to Tenants</span>
+              <span className="sm:hidden">Sync</span>
             </Button>
             <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
               <Download className="h-4 w-4" />
