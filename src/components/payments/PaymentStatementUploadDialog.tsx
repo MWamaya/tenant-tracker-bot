@@ -142,9 +142,13 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
 
     try {
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: 'array', cellDates: false });
+      const wb = XLSX.read(buf, { type: 'array', cellDates: true });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+      const rawJson = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+      // Filter out completely blank rows
+      const json = rawJson.filter((r) =>
+        Object.values(r).some((v) => v !== '' && v != null)
+      );
 
       if (json.length === 0) {
         toast.error('No rows found in the spreadsheet');
