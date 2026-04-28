@@ -295,16 +295,50 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
         };
       });
 
-      const { error } = await supabase.from('payments').insert(inserts);
-      if (error) throw error;
+      // Batch inserts to avoid timeouts / payload limits on large statements.
+      // Continue on per-batch errors so a single bad row doesn't block the whole import.
+      const BATCH_SIZE = 200;
+      const totalBatches = Math.ceil(inserts.length / BATCH_SIZE);
+      let insertedCount = 0;
+      const successfulInserts: typeof inserts = [];
+      const batchErrors: string[] = [];
+
+      for (let b = 0; b < totalBatches; b++) {
+        const batch = inserts.slice(b * BATCH_SIZE, (b + 1) * BATCH_SIZE);
+        const { error: batchError } = await supabase.from('payments').insert(batch);
+        if (batchError) {
+          // Fallback: try row-by-row to salvage as many as possible
+          console.error(`Batch ${b + 1}/${totalBatches} failed, retrying per row:`, batchError);
+          for (const row of batch) {
+            const { error: rowError } = await supabase.from('payments').insert(row);
+            if (rowError) {
+              batchErrors.push(`Ref ${row.mpesa_ref}: ${rowError.message}`);
+            } else {
+              insertedCount++;
+              successfulInserts.push(row);
+            }
+          }
+        } else {
+          insertedCount += batch.length;
+          successfulInserts.push(...batch);
+        }
+      }
+
+      if (batchErrors.length > 0) {
+        console.warn('Skipped rows during import:', batchErrors);
+      }
+
+      if (insertedCount === 0) {
+        throw new Error(batchErrors[0] || 'No rows could be inserted');
+      }
 
       // Build affected (house, month) pairs from the inserts that did match a house
-      const matchedInserts = inserts.filter((i) => i.house_id);
+      const matchedInserts = successfulInserts.filter((i) => i.house_id);
 
       // Recompute monthly balances for each affected (house, month) pair
       // so the Tenants page and tenant statements reflect the imported payments.
       const houseMonthPairs = new Map<string, { houseId: string; month: string }>();
-      for (const ins of inserts) {
+      for (const ins of successfulInserts) {
         if (!ins.house_id || !ins.payment_date) continue;
         const d = new Date(ins.payment_date);
         if (isNaN(d.getTime())) continue;
@@ -375,9 +409,10 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
       }
 
       const matchedCount = matchedInserts.length;
-      const unmatchedCount = inserts.length - matchedCount;
+      const unmatchedCount = insertedCount - matchedCount;
+      const skippedCount = inserts.length - insertedCount;
       toast.success(
-        `Imported ${inserts.length} payments • Linked ${matchedCount} to tenants • Synced ${recomputed} balance${recomputed === 1 ? '' : 's'}${unmatchedCount > 0 ? ` • ${unmatchedCount} unmatched` : ''}`
+        `Imported ${insertedCount}/${inserts.length} payments • Linked ${matchedCount} to tenants • Synced ${recomputed} balance${recomputed === 1 ? '' : 's'}${unmatchedCount > 0 ? ` • ${unmatchedCount} unmatched` : ''}${skippedCount > 0 ? ` • ${skippedCount} skipped (see console)` : ''}`
       );
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['all-payments'] });
