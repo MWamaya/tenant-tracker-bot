@@ -177,7 +177,9 @@ export const PaymentTextPasteDialog = ({ open, onOpenChange, landlordId }: Props
           <DialogDescription>
             Paste raw payment SMS or bank notification text below. The system will detect
             each transaction, let you fix any missing fields, then save them to Payments and
-            sync to the Tenants page.
+            sync to the Tenants page. Instalments are supported — each transaction with a
+            different M-Pesa reference is saved as a separate payment and all of them are
+            counted toward that month's total.
           </DialogDescription>
         </DialogHeader>
 
