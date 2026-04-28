@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search, Download, CreditCard, Calendar, Loader2, Upload, RefreshCw, ClipboardPaste, Folder, FolderOpen, ChevronRight } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { format } from 'date-fns';
 import { syncPaymentsToTenants } from '@/lib/syncPayments';
 import { toast } from 'sonner';
