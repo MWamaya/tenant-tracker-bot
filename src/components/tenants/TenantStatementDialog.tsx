@@ -382,6 +382,13 @@ export const TenantStatementDialog = ({
                     )}
                   </TableCell>
                   <TableCell className="text-right">
+                    {record.totalPaid > 0 ? (
+                      <span className="font-semibold text-success">{formatCurrency(record.totalPaid)}</span>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
                     {record.balanceCarriedForward > 0 ? (
                       <span className="text-destructive font-medium">{formatCurrency(record.balanceCarriedForward)}</span>
                     ) : (
