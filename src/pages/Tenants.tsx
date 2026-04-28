@@ -74,11 +74,20 @@ const Tenants = () => {
           balance: Number(balance.balance),
         } : undefined,
       };
-    }).filter(tenant => 
+    })
+    .filter(tenant =>
       tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tenant.phone.includes(searchQuery) ||
       tenant.houses?.house_no?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    )
+    .sort((a, b) => {
+      const aNo = a.houses?.house_no || '';
+      const bNo = b.houses?.house_no || '';
+      // Tenants without an assigned house go to the bottom
+      if (!aNo && bNo) return 1;
+      if (aNo && !bNo) return -1;
+      return aNo.localeCompare(bNo, undefined, { numeric: true, sensitivity: 'base' });
+    });
   };
 
   const tenantData = getTenantData();
