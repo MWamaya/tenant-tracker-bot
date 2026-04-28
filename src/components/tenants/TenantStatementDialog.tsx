@@ -339,8 +339,19 @@ export const TenantStatementDialog = ({
                   </TableCell>
                   <TableCell className="text-right">{formatCurrency(record.expectedRent)}</TableCell>
                   <TableCell className="text-right">
-                    {record.totalPaid > 0 ? (
-                      <span className="text-success font-medium">{formatCurrency(record.totalPaid)}</span>
+                    {record.payments.length > 0 ? (
+                      <div className="space-y-1">
+                        {record.payments.map((p, idx) => (
+                          <div key={idx} className="text-xs text-success font-medium">
+                            {formatCurrency(p.amount)}
+                          </div>
+                        ))}
+                        {record.payments.length > 1 && (
+                          <div className="text-xs font-bold text-success border-t pt-1 mt-1">
+                            = {formatCurrency(record.totalPaid)}
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       '-'
                     )}
