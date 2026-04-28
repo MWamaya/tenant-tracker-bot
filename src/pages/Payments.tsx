@@ -204,82 +204,124 @@ const Payments = () => {
           </Badge>
         </div>
 
-        {/* Table - Desktop View */}
-        <div className="stat-card p-0 overflow-hidden hidden md:block">
-          <Table>
-            <TableHeader>
-              <TableRow className="table-header">
-                <TableHead>Name</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>House Code</TableHead>
-                <TableHead>M-Pesa Ref</TableHead>
-                <TableHead>Date &amp; Time</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredPayments.map((payment) => (
-                <TableRow key={payment.id} className="hover:bg-muted/30">
-                  <TableCell className="font-medium">
-                    {payment.tenants?.name || payment.sender_name || 'Unknown'}
-                  </TableCell>
-                  <TableCell className="font-semibold text-success">
-                    {formatCurrency(Number(payment.amount))}
-                  </TableCell>
-                  <TableCell>{payment.houses?.house_no || 'Unassigned'}</TableCell>
-                  <TableCell>
-                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
-                      {payment.mpesa_ref}
-                    </code>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">
-                        {format(new Date(payment.payment_date), 'MMM d, yyyy')}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(payment.payment_date), 'h:mm a')}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        {/* Month Folders */}
+        {(() => {
+          const groups = new Map<string, typeof filteredPayments>();
+          for (const p of filteredPayments) {
+            const key = format(new Date(p.payment_date), 'yyyy-MM');
+            if (!groups.has(key)) groups.set(key, []);
+            groups.get(key)!.push(p);
+          }
+          const sortedKeys = Array.from(groups.keys()).sort((a, b) => b.localeCompare(a));
+          const defaultOpen = sortedKeys[0] ? [sortedKeys[0]] : [];
 
-        {/* Mobile Card View */}
-        <div className="grid grid-cols-1 gap-4 md:hidden">
-          {filteredPayments.map((payment) => (
-            <div key={payment.id} className="stat-card">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold">
-                    {payment.tenants?.name || payment.sender_name || 'Unknown'}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {payment.houses?.house_no || 'Unassigned'}
-                  </p>
-                </div>
-                <p className="font-bold text-success">{formatCurrency(Number(payment.amount))}</p>
-              </div>
-              <div className="flex items-center justify-between mt-3 pt-3 border-t text-sm">
-                <div className="text-muted-foreground">
-                  {format(new Date(payment.payment_date), 'MMM d, yyyy h:mm a')}
-                </div>
-                <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
-                  {payment.mpesa_ref}
-                </code>
-              </div>
-            </div>
-          ))}
-        </div>
+          return (
+            <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-3">
+              {sortedKeys.map((key) => {
+                const monthPayments = groups.get(key)!;
+                const monthTotal = monthPayments.reduce((s, p) => s + Number(p.amount), 0);
+                return (
+                  <AccordionItem key={key} value={key} className="stat-card border-0 p-0 overflow-hidden">
+                    <AccordionTrigger className="px-4 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]_.folder-icon-closed]:hidden [&[data-state=closed]_.folder-icon-open]:hidden">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                          <Folder className="folder-icon-closed h-5 w-5" />
+                          <FolderOpen className="folder-icon-open h-5 w-5" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <p className="font-semibold text-base">
+                            {format(new Date(key + '-01'), 'MMMM yyyy')}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {monthPayments.length} payment{monthPayments.length === 1 ? '' : 's'}
+                          </p>
+                        </div>
+                        <div className="text-right mr-2">
+                          <p className="font-bold text-success">{formatCurrency(monthTotal)}</p>
+                        </div>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-0">
+                      {/* Desktop table */}
+                      <div className="hidden md:block">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="table-header">
+                              <TableHead>Name</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>House Code</TableHead>
+                              <TableHead>M-Pesa Ref</TableHead>
+                              <TableHead>Date &amp; Time</TableHead>
+                              <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {monthPayments.map((payment) => (
+                              <TableRow key={payment.id} className="hover:bg-muted/30">
+                                <TableCell className="font-medium">
+                                  {payment.tenants?.name || payment.sender_name || 'Unknown'}
+                                </TableCell>
+                                <TableCell className="font-semibold text-success">
+                                  {formatCurrency(Number(payment.amount))}
+                                </TableCell>
+                                <TableCell>{payment.houses?.house_no || 'Unassigned'}</TableCell>
+                                <TableCell>
+                                  <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                                    {payment.mpesa_ref}
+                                  </code>
+                                </TableCell>
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">
+                                      {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {format(new Date(payment.payment_date), 'h:mm a')}
+                                    </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <Button variant="ghost" size="sm">View</Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
 
+                      {/* Mobile cards */}
+                      <div className="grid grid-cols-1 gap-3 md:hidden p-3">
+                        {monthPayments.map((payment) => (
+                          <div key={payment.id} className="rounded-lg border p-3 bg-background">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <p className="font-semibold">
+                                  {payment.tenants?.name || payment.sender_name || 'Unknown'}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {payment.houses?.house_no || 'Unassigned'}
+                                </p>
+                              </div>
+                              <p className="font-bold text-success">{formatCurrency(Number(payment.amount))}</p>
+                            </div>
+                            <div className="flex items-center justify-between mt-3 pt-3 border-t text-sm">
+                              <div className="text-muted-foreground">
+                                {format(new Date(payment.payment_date), 'MMM d, h:mm a')}
+                              </div>
+                              <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                                {payment.mpesa_ref}
+                              </code>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          );
+        })()}
         {filteredPayments.length === 0 && !isLoading && (
           <div className="text-center py-12">
             <CreditCard className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
