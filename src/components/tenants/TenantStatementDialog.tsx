@@ -347,11 +347,6 @@ export const TenantStatementDialog = ({
                             {formatCurrency(p.amount)}
                           </div>
                         ))}
-                        {record.payments.length > 1 && (
-                          <div className="text-xs font-bold text-success border-t pt-1 mt-1">
-                            = {formatCurrency(record.totalPaid)}
-                          </div>
-                        )}
                       </div>
                     ) : (
                       '-'
@@ -372,8 +367,8 @@ export const TenantStatementDialog = ({
                     {record.payments.length > 0 ? (
                       <div className="space-y-1">
                         {record.payments.map((p, idx) => (
-                          <div key={idx} className="text-xs">
-                            {format(new Date(p.date), 'dd MMM yyyy')}
+                          <div key={idx} className="text-xs whitespace-nowrap">
+                            {format(new Date(p.date), 'd/M/yy')}
                           </div>
                         ))}
                       </div>
