@@ -244,6 +244,7 @@ export const TenantStatementDialog = ({
                 <TableHead className="text-right">Paid</TableHead>
                 <TableHead>M-Pesa Ref</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead className="text-right">TMC</TableHead>
                 <TableHead className="text-right">C/F</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
