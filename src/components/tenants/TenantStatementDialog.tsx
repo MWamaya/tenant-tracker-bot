@@ -244,6 +244,7 @@ export const TenantStatementDialog = ({
                 <TableHead className="text-right">Paid</TableHead>
                 <TableHead>M-Pesa Ref</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead className="text-right">TMC</TableHead>
                 <TableHead className="text-right">C/F</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
@@ -381,6 +382,13 @@ export const TenantStatementDialog = ({
                     )}
                   </TableCell>
                   <TableCell className="text-right">
+                    {record.totalPaid > 0 ? (
+                      <span className="font-semibold text-success">{formatCurrency(record.totalPaid)}</span>
+                    ) : (
+                      '-'
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
                     {record.balanceCarriedForward > 0 ? (
                       <span className="text-destructive font-medium">{formatCurrency(record.balanceCarriedForward)}</span>
                     ) : (
@@ -397,6 +405,7 @@ export const TenantStatementDialog = ({
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
           <span><strong>B/F</strong> = Balance Brought Forward (auto-calculated, click <Pencil className="inline h-3 w-3" /> to override)</span>
+          <span><strong>TMC</strong> = Total Monthly Collection</span>
           <span><strong>C/F</strong> = Balance Carried Forward</span>
         </div>
       </DialogContent>
