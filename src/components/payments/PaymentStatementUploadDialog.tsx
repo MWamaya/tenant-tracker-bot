@@ -338,7 +338,7 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
       // Recompute monthly balances for each affected (house, month) pair
       // so the Tenants page and tenant statements reflect the imported payments.
       const houseMonthPairs = new Map<string, { houseId: string; month: string }>();
-      for (const ins of inserts) {
+      for (const ins of successfulInserts) {
         if (!ins.house_id || !ins.payment_date) continue;
         const d = new Date(ins.payment_date);
         if (isNaN(d.getTime())) continue;
