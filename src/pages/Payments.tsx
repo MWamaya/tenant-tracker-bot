@@ -211,9 +211,15 @@ const Payments = () => {
 
         {/* Month Folders */}
         {(() => {
+          const now = new Date();
+          const currentMonthKey = format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM');
           const groups = new Map<string, typeof filteredPayments>();
           for (const p of filteredPayments) {
-            const key = format(new Date(p.payment_date), 'yyyy-MM');
+            const d = new Date(p.payment_date);
+            // Skip payments before April 2026 or in future months
+            if (d < APP_START) continue;
+            const key = format(d, 'yyyy-MM');
+            if (key > currentMonthKey) continue;
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key)!.push(p);
           }
