@@ -135,23 +135,18 @@ const Payments = () => {
 
   const totalAmount = filteredPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
-  // App goes live April 1, 2026 — never show months before this
-  const APP_START = new Date(2026, 3, 1); // April 2026
-
-  // Generate month options from April 2026 up to current month
+  // Build month options from the actual payment data so nothing is hidden
   const getMonthOptions = () => {
-    const months = [];
-    const now = new Date();
-    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    let cursor = new Date(currentMonth);
-    while (cursor >= APP_START) {
-      months.push({
-        value: format(cursor, 'yyyy-MM'),
-        label: format(cursor, 'MMMM yyyy'),
-      });
-      cursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+    const set = new Set<string>();
+    for (const p of payments) {
+      set.add(format(new Date(p.payment_date), 'yyyy-MM'));
     }
-    return months;
+    return Array.from(set)
+      .sort((a, b) => b.localeCompare(a))
+      .map((value) => ({
+        value,
+        label: format(new Date(value + '-01'), 'MMMM yyyy'),
+      }));
   };
 
   if (isLoading) {
@@ -259,15 +254,10 @@ const Payments = () => {
 
         {/* Month Folders */}
         {(() => {
-          const now = new Date();
-          const currentMonthKey = format(new Date(now.getFullYear(), now.getMonth(), 1), 'yyyy-MM');
           const groups = new Map<string, typeof filteredPayments>();
           for (const p of filteredPayments) {
             const d = new Date(p.payment_date);
-            // Skip payments before April 2026 or in future months
-            if (d < APP_START) continue;
             const key = format(d, 'yyyy-MM');
-            if (key > currentMonthKey) continue;
             if (!groups.has(key)) groups.set(key, []);
             groups.get(key)!.push(p);
           }
