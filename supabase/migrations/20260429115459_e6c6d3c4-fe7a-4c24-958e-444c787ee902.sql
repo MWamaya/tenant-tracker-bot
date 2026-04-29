@@ -1,0 +1,6 @@
+-- Clear all payment-related data
+TRUNCATE TABLE public.balances RESTART IDENTITY CASCADE;
+TRUNCATE TABLE public.email_logs RESTART IDENTITY CASCADE;
+TRUNCATE TABLE public.bank_transactions RESTART IDENTITY CASCADE;
+TRUNCATE TABLE public.mpesa_transactions RESTART IDENTITY CASCADE;
+TRUNCATE TABLE public.payments RESTART IDENTITY CASCADE;
