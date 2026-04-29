@@ -215,7 +215,7 @@ const LandlordsPage = () => {
                           {landlord.subscription?.plan_name || 'No subscription'}
                         </p>
                         <p className="text-xs text-slate-500">
-                          Joined {format(new Date(landlord.created_at), 'MMM d, yyyy')}
+                          Joined {format(new Date(landlord.created_at), 'd/M/yyyy')}
                         </p>
                       </div>
 
@@ -334,14 +334,14 @@ const LandlordsPage = () => {
                 <div>
                   <Label className="text-slate-400">Joined</Label>
                   <p className="text-white">
-                    {format(new Date(selectedLandlord.created_at), 'MMM d, yyyy')}
+                    {format(new Date(selectedLandlord.created_at), 'd/M/yyyy')}
                   </p>
                 </div>
                 <div>
                   <Label className="text-slate-400">Last Login</Label>
                   <p className="text-white">
                     {selectedLandlord.last_login_at
-                      ? format(new Date(selectedLandlord.last_login_at), 'MMM d, yyyy HH:mm')
+                      ? format(new Date(selectedLandlord.last_login_at), 'd/M/yyyy HH:mm')
                       : 'Never'}
                   </p>
                 </div>

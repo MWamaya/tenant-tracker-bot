@@ -469,7 +469,7 @@ const PropertyDetail = () => {
                   {propertyPayments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell>
-                        {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                        {format(new Date(payment.payment_date), 'd/M/yyyy')}
                       </TableCell>
                       <TableCell className="font-medium">
                         {payment.tenants?.name || payment.sender_name || 'Unknown'}

@@ -309,7 +309,7 @@ const EmailLogs = () => {
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {format(new Date(log.created_at), 'MMM d, yyyy')}
+                        {format(new Date(log.created_at), 'd/M/yyyy')}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(log.created_at), 'h:mm a')}

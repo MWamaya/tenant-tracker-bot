@@ -179,7 +179,7 @@ const SuperAdminDashboard = () => {
                         {landlord.account_status}
                       </Badge>
                       <p className="text-xs text-slate-500 mt-1">
-                        {format(new Date(landlord.created_at), 'MMM d, yyyy')}
+                        {format(new Date(landlord.created_at), 'd/M/yyyy')}
                       </p>
                     </div>
                   </div>
