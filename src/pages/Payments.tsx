@@ -29,6 +29,8 @@ import { format } from 'date-fns';
 import { syncPaymentsToTenants } from '@/lib/syncPayments';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Payments = () => {
   const { payments, isLoading } = usePayments();
