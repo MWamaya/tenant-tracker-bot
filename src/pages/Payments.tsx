@@ -193,9 +193,9 @@ const Payments = () => {
               <span className="hidden sm:inline">Sync to Tenants</span>
               <span className="sm:hidden">Sync</span>
             </Button>
-            <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
+            <Button onClick={handleExport} variant="outline" className="gap-2 flex-1 sm:flex-none">
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">Export PDF</span>
             </Button>
           </div>
         </div>
