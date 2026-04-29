@@ -29,6 +29,8 @@ import { format } from 'date-fns';
 import { syncPaymentsToTenants } from '@/lib/syncPayments';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const Payments = () => {
   const { payments, isLoading } = usePayments();
@@ -57,6 +59,52 @@ const Payments = () => {
       toast.error(`Sync failed: ${err.message}`);
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleExport = () => {
+    if (filteredPayments.length === 0) {
+      toast.error('No payments to export');
+      return;
+    }
+    try {
+      const doc = new jsPDF();
+      const title = 'KODI PAP — Payments Report';
+      const subtitle =
+        monthFilter === 'all'
+          ? 'All Time'
+          : format(new Date(monthFilter + '-01'), 'MMMM yyyy');
+
+      doc.setFontSize(16);
+      doc.text(title, 14, 16);
+      doc.setFontSize(10);
+      doc.text(subtitle, 14, 22);
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 27);
+      doc.text(
+        `Total: ${formatCurrency(totalAmount)}  •  ${filteredPayments.length} payment(s)`,
+        14,
+        32
+      );
+
+      autoTable(doc, {
+        startY: 38,
+        head: [['Date', 'Name', 'House', 'M-Pesa Ref', 'Amount (KES)']],
+        body: filteredPayments.map((p) => [
+          format(new Date(p.payment_date), 'dd/MM/yy'),
+          p.tenants?.name || p.sender_name || 'Unknown',
+          p.houses?.house_no || 'Unassigned',
+          p.mpesa_ref,
+          Number(p.amount).toLocaleString(),
+        ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [16, 122, 87] },
+      });
+
+      const fname = `payments-${monthFilter === 'all' ? 'all' : monthFilter}-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
+      doc.save(fname);
+      toast.success('PDF exported');
+    } catch (err: any) {
+      toast.error(`Export failed: ${err.message}`);
     }
   };
 
@@ -145,9 +193,9 @@ const Payments = () => {
               <span className="hidden sm:inline">Sync to Tenants</span>
               <span className="sm:hidden">Sync</span>
             </Button>
-            <Button variant="outline" className="gap-2 flex-1 sm:flex-none">
+            <Button onClick={handleExport} variant="outline" className="gap-2 flex-1 sm:flex-none">
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Export</span>
+              <span className="hidden sm:inline">Export PDF</span>
             </Button>
           </div>
         </div>
