@@ -79,7 +79,7 @@ const Payments = () => {
       doc.text(title, 14, 16);
       doc.setFontSize(10);
       doc.text(subtitle, 14, 22);
-      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 27);
+      doc.text(`Generated: ${format(new Date(), 'd/M/yyyy HH:mm')}`, 14, 27);
       doc.text(
         `Total: ${formatCurrency(totalAmount)}  •  ${filteredPayments.length} payment(s)`,
         14,
@@ -90,7 +90,7 @@ const Payments = () => {
         startY: 38,
         head: [['Date', 'Name', 'House', 'M-Pesa Ref', 'Amount (KES)']],
         body: filteredPayments.map((p) => [
-          format(new Date(p.payment_date), 'dd/MM/yy'),
+          format(new Date(p.payment_date), 'd/M/yyyy'),
           p.tenants?.name || p.sender_name || 'Unknown',
           p.houses?.house_no || 'Unassigned',
           p.mpesa_ref,
@@ -322,7 +322,7 @@ const Payments = () => {
                                 <TableCell>
                                   <div>
                                     <p className="font-medium">
-                                      {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                                      {format(new Date(payment.payment_date), 'd/M/yyyy')}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                       {format(new Date(payment.payment_date), 'h:mm a')}
@@ -355,7 +355,7 @@ const Payments = () => {
                             </div>
                             <div className="flex items-center justify-between mt-3 pt-3 border-t text-sm">
                               <div className="text-muted-foreground">
-                                {format(new Date(payment.payment_date), 'MMM d, h:mm a')}
+                                {format(new Date(payment.payment_date), 'd/M/yyyy HH:mm')}
                               </div>
                               <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
                                 {payment.mpesa_ref}

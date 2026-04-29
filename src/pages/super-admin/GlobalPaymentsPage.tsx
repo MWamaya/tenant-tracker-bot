@@ -109,7 +109,7 @@ const GlobalPaymentsPage = () => {
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-300">
-                {format(new Date(payment.payment_date), 'MMM d, yyyy')}
+                {format(new Date(payment.payment_date), 'd/M/yyyy')}
               </p>
               <p className="text-xs text-slate-500">
                 {format(new Date(payment.payment_date), 'HH:mm')}

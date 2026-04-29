@@ -538,7 +538,7 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
                         <TableCell className="text-xs">{r.house_no || '—'}</TableCell>
                         <TableCell className="font-mono text-xs">{r.mpesa_ref || '—'}</TableCell>
                         <TableCell className="text-xs">
-                          {r.payment_date ? format(new Date(r.payment_date), 'MMM d, yyyy HH:mm') : '—'}
+                          {r.payment_date ? format(new Date(r.payment_date), 'd/M/yyyy HH:mm') : '—'}
                         </TableCell>
                       </TableRow>
                     ))}

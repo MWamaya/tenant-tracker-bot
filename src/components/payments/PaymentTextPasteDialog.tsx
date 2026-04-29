@@ -280,7 +280,7 @@ export const PaymentTextPasteDialog = ({ open, onOpenChange, landlordId }: Props
                           />
                         </TableCell>
                         <TableCell className="text-xs">
-                          {r.payment_date ? format(new Date(r.payment_date), 'MMM d, yyyy HH:mm') : '—'}
+                          {r.payment_date ? format(new Date(r.payment_date), 'd/M/yyyy HH:mm') : '—'}
                         </TableCell>
                         <TableCell>
                           <Button

@@ -81,7 +81,7 @@ const AuditLogsPage = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-slate-300">
-                        {format(new Date(log.created_at), 'MMM d, yyyy')}
+                        {format(new Date(log.created_at), 'd/M/yyyy')}
                       </p>
                       <p className="text-xs text-slate-500">
                         {format(new Date(log.created_at), 'HH:mm:ss')}

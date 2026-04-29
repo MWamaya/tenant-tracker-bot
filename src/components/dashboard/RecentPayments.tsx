@@ -33,7 +33,7 @@ export const RecentPayments = () => {
             <div className="space-y-1">
               <p className="font-medium text-sm">{payment.tenantName}</p>
               <p className="text-xs text-muted-foreground">
-                {payment.houseNo} • {format(new Date(payment.date), 'MMM d, yyyy h:mm a')}
+                {payment.houseNo} • {format(new Date(payment.date), 'd/M/yyyy HH:mm')}
               </p>
             </div>
             <div className="text-right">
