@@ -1,0 +1,1 @@
+TRUNCATE TABLE public.payments, public.balances, public.bank_transactions, public.mpesa_transactions, public.email_logs RESTART IDENTITY;
