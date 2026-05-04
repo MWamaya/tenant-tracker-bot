@@ -333,7 +333,7 @@ const Payments = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  <Button variant="ghost" size="sm">View</Button>
+                                  <Button variant="ghost" size="sm" onClick={() => setSelectedPayment(payment)}>View</Button>
                                 </TableCell>
                               </TableRow>
                             ))}
