@@ -5,6 +5,8 @@ import { usePayments } from '@/hooks/usePayments';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { PaymentStatementUploadDialog } from '@/components/payments/PaymentStatementUploadDialog';
 import { PaymentTextPasteDialog } from '@/components/payments/PaymentTextPasteDialog';
+import { PaymentDetailDialog } from '@/components/payments/PaymentDetailDialog';
+import type { PaymentWithDetails } from '@/hooks/usePayments';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
