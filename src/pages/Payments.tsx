@@ -5,6 +5,8 @@ import { usePayments } from '@/hooks/usePayments';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { PaymentStatementUploadDialog } from '@/components/payments/PaymentStatementUploadDialog';
 import { PaymentTextPasteDialog } from '@/components/payments/PaymentTextPasteDialog';
+import { PaymentDetailDialog } from '@/components/payments/PaymentDetailDialog';
+import type { PaymentWithDetails } from '@/hooks/usePayments';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,6 +42,7 @@ const Payments = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentWithDetails | null>(null);
   const queryClient = useQueryClient();
 
   const handleSync = async () => {
@@ -330,7 +333,7 @@ const Payments = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  <Button variant="ghost" size="sm">View</Button>
+                                  <Button variant="ghost" size="sm" onClick={() => setSelectedPayment(payment)}>View</Button>
                                 </TableCell>
                               </TableRow>
                             ))}
@@ -361,6 +364,11 @@ const Payments = () => {
                                 {payment.mpesa_ref}
                               </code>
                             </div>
+                            <div className="flex justify-end mt-2">
+                              <Button variant="ghost" size="sm" onClick={() => setSelectedPayment(payment)}>
+                                View
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -379,6 +387,12 @@ const Payments = () => {
           </div>
         )}
       </div>
+
+      <PaymentDetailDialog
+        payment={selectedPayment}
+        open={!!selectedPayment}
+        onOpenChange={(o) => !o && setSelectedPayment(null)}
+      />
     </MainLayout>
   );
 };
