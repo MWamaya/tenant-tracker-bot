@@ -42,6 +42,7 @@ const Payments = () => {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [pasteOpen, setPasteOpen] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentWithDetails | null>(null);
   const queryClient = useQueryClient();
 
   const handleSync = async () => {
