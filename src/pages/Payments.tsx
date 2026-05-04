@@ -364,6 +364,11 @@ const Payments = () => {
                                 {payment.mpesa_ref}
                               </code>
                             </div>
+                            <div className="flex justify-end mt-2">
+                              <Button variant="ghost" size="sm" onClick={() => setSelectedPayment(payment)}>
+                                View
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
