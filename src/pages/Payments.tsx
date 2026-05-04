@@ -387,6 +387,12 @@ const Payments = () => {
           </div>
         )}
       </div>
+
+      <PaymentDetailDialog
+        payment={selectedPayment}
+        open={!!selectedPayment}
+        onOpenChange={(o) => !o && setSelectedPayment(null)}
+      />
     </MainLayout>
   );
 };
