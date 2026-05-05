@@ -3,8 +3,8 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { usePayments } from '@/hooks/usePayments';
+import { useProperties } from '@/hooks/useProperties';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -21,14 +21,16 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, FileText, Users, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
+import { FileText, Users, TrendingUp, AlertTriangle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 const Reports = () => {
   const { data, isLoading } = useDashboardStats();
   const { payments } = usePayments();
+  const { properties } = useProperties();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const [selectedProperty, setSelectedProperty] = useState<string>('all');
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-KE', {
@@ -37,11 +39,35 @@ const Reports = () => {
       minimumFractionDigits: 0,
     }).format(amount);
 
-  const stats = data?.stats;
-  const houseBalances = data?.houseBalances || [];
-  const unpaidTenants = [...(data?.unpaidHouses || []), ...(data?.partialHouses || [])];
+  const allHouseBalances = data?.houseBalances || [];
 
-  const collectionRate = stats && stats.totalExpected > 0
+  const houseBalances = useMemo(() => {
+    if (selectedProperty === 'all') return allHouseBalances;
+    if (selectedProperty === 'none') return allHouseBalances.filter(b => !b.propertyId);
+    return allHouseBalances.filter(b => b.propertyId === selectedProperty);
+  }, [allHouseBalances, selectedProperty]);
+
+  const stats = useMemo(() => {
+    const totalExpected = houseBalances.reduce((s, b) => s + b.expectedRent, 0);
+    const totalCollected = houseBalances.reduce((s, b) => s + b.paidAmount, 0);
+    const totalOutstanding = houseBalances.reduce((s, b) => s + b.balance, 0);
+    return {
+      totalHouses: houseBalances.length,
+      totalExpected,
+      totalCollected,
+      totalOutstanding,
+      paidHouses: houseBalances.filter(b => b.status === 'paid').length,
+      partialHouses: houseBalances.filter(b => b.status === 'partial').length,
+      unpaidHouses: houseBalances.filter(b => b.status === 'unpaid').length,
+    };
+  }, [houseBalances]);
+
+  const unpaidTenants = useMemo(
+    () => houseBalances.filter(b => b.status === 'unpaid' || b.status === 'partial'),
+    [houseBalances]
+  );
+
+  const collectionRate = stats.totalExpected > 0
     ? Math.round((stats.totalCollected / stats.totalExpected) * 100)
     : 0;
 
@@ -52,6 +78,13 @@ const Reports = () => {
       .sort((a, b) => b.localeCompare(a))
       .map((value) => ({ value, label: format(new Date(value + '-01'), 'MMMM yyyy') }));
   }, [payments, currentMonth]);
+
+  const selectedPropertyName =
+    selectedProperty === 'all'
+      ? 'All Properties'
+      : selectedProperty === 'none'
+      ? 'Unassigned Houses'
+      : properties.find(p => p.id === selectedProperty)?.name || 'Property';
 
   if (isLoading) {
     return (
@@ -77,19 +110,39 @@ const Reports = () => {
               Generate and export rent collection reports
             </p>
           </div>
-          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Select month" />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOptions.map((m) => (
-                <SelectItem key={m.value} value={m.value}>
-                  {m.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Select value={selectedProperty} onValueChange={setSelectedProperty}>
+              <SelectTrigger className="w-full sm:w-56">
+                <SelectValue placeholder="Select property" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Properties</SelectItem>
+                {properties.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+                <SelectItem value="none">Unassigned Houses</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Select month" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>
+                    {m.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
+
+        <p className="text-sm text-muted-foreground">
+          Showing: <span className="font-medium text-foreground">{selectedPropertyName}</span>
+        </p>
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -111,7 +164,7 @@ const Reports = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Collected</p>
-                <p className="text-xl font-bold">{formatCurrency(stats?.totalCollected || 0)}</p>
+                <p className="text-xl font-bold">{formatCurrency(stats.totalCollected)}</p>
               </div>
             </div>
           </div>
@@ -122,7 +175,7 @@ const Reports = () => {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Outstanding</p>
-                <p className="text-xl font-bold">{formatCurrency(stats?.totalOutstanding || 0)}</p>
+                <p className="text-xl font-bold">{formatCurrency(stats.totalOutstanding)}</p>
               </div>
             </div>
           </div>
@@ -134,7 +187,7 @@ const Reports = () => {
               <div>
                 <p className="text-xs text-muted-foreground">Defaulters</p>
                 <p className="text-xl font-bold">
-                  {(stats?.unpaidHouses || 0) + (stats?.partialHouses || 0)}
+                  {stats.unpaidHouses + stats.partialHouses}
                 </p>
               </div>
             </div>
@@ -161,6 +214,7 @@ const Reports = () => {
                   <TableHeader>
                     <TableRow className="table-header">
                       <TableHead>House No.</TableHead>
+                      {selectedProperty === 'all' && <TableHead>Property</TableHead>}
                       <TableHead>Expected Rent</TableHead>
                       <TableHead>Paid Amount</TableHead>
                       <TableHead>Balance</TableHead>
@@ -171,6 +225,11 @@ const Reports = () => {
                     {houseBalances.map((b) => (
                       <TableRow key={b.houseId} className="hover:bg-muted/30">
                         <TableCell className="font-medium">{b.houseNo}</TableCell>
+                        {selectedProperty === 'all' && (
+                          <TableCell className="text-muted-foreground">
+                            {b.propertyName || '-'}
+                          </TableCell>
+                        )}
                         <TableCell>{formatCurrency(b.expectedRent)}</TableCell>
                         <TableCell className="text-success font-medium">
                           {formatCurrency(b.paidAmount)}
@@ -201,19 +260,19 @@ const Reports = () => {
                 <h3 className="font-semibold mb-4">Summary</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                   <div className="p-4 rounded-lg bg-muted/50">
-                    <p className="text-2xl font-bold">{stats?.totalHouses || 0}</p>
+                    <p className="text-2xl font-bold">{stats.totalHouses}</p>
                     <p className="text-sm text-muted-foreground">Total Houses</p>
                   </div>
                   <div className="p-4 rounded-lg bg-success/10">
-                    <p className="text-2xl font-bold text-success">{stats?.paidHouses || 0}</p>
+                    <p className="text-2xl font-bold text-success">{stats.paidHouses}</p>
                     <p className="text-sm text-muted-foreground">Fully Paid</p>
                   </div>
                   <div className="p-4 rounded-lg bg-warning/10">
-                    <p className="text-2xl font-bold text-warning">{stats?.partialHouses || 0}</p>
+                    <p className="text-2xl font-bold text-warning">{stats.partialHouses}</p>
                     <p className="text-sm text-muted-foreground">Partial</p>
                   </div>
                   <div className="p-4 rounded-lg bg-destructive/10">
-                    <p className="text-2xl font-bold text-destructive">{stats?.unpaidHouses || 0}</p>
+                    <p className="text-2xl font-bold text-destructive">{stats.unpaidHouses}</p>
                     <p className="text-sm text-muted-foreground">Unpaid</p>
                   </div>
                 </div>
@@ -233,6 +292,7 @@ const Reports = () => {
                     <TableRow className="table-header">
                       <TableHead>Tenant Name</TableHead>
                       <TableHead>House No.</TableHead>
+                      {selectedProperty === 'all' && <TableHead>Property</TableHead>}
                       <TableHead>Phone</TableHead>
                       <TableHead>Expected</TableHead>
                       <TableHead>Paid</TableHead>
@@ -245,6 +305,11 @@ const Reports = () => {
                       <TableRow key={item.houseId} className="hover:bg-muted/30">
                         <TableCell className="font-medium">{item.tenantName || 'Unassigned'}</TableCell>
                         <TableCell>{item.houseNo}</TableCell>
+                        {selectedProperty === 'all' && (
+                          <TableCell className="text-muted-foreground">
+                            {item.propertyName || '-'}
+                          </TableCell>
+                        )}
                         <TableCell>{item.tenantPhone || '-'}</TableCell>
                         <TableCell>{formatCurrency(item.expectedRent)}</TableCell>
                         <TableCell className="text-success">{formatCurrency(item.paidAmount)}</TableCell>
