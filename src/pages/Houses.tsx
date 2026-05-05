@@ -519,6 +519,26 @@ const Houses = () => {
         }}
       />
 
+      {/* Add Tenant Dialog (scoped to current property) */}
+      <TenantFormDialog
+        open={addTenantDialogOpen}
+        onOpenChange={setAddTenantDialogOpen}
+        houses={houses.map(h => ({
+          id: h.id,
+          houseNo: h.house_no,
+          expectedRent: Number(h.expected_rent),
+        }))}
+        assignedHouseIds={tenants.map(t => t.house_id).filter(Boolean) as string[]}
+        onSave={async (data) => {
+          await addTenant.mutateAsync({
+            name: data.name,
+            phone: data.phone,
+            secondary_phone: data.secondaryPhone || null,
+            house_id: data.houseId || null,
+          });
+        }}
+      />
+
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
