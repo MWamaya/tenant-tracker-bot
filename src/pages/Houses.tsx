@@ -68,7 +68,7 @@ const Houses = () => {
   const propertyFilter = searchParams.get('property');
   
   const { houses, isLoading: housesLoading, addHouse, deleteHouse } = useHouses(propertyFilter);
-  const { tenants, isLoading: tenantsLoading, updateTenant } = useTenants();
+  const { tenants, isLoading: tenantsLoading, updateTenant, addTenant } = useTenants();
   const { balances } = useBalances();
   const { payments } = usePayments();
   const { properties, isLoading: propertiesLoading } = useProperties();
