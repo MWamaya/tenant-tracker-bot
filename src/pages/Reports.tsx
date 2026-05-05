@@ -284,6 +284,55 @@ const Reports = () => {
           <TabsContent value="defaulters" className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-lg md:text-xl font-semibold">Defaulters List</h2>
+              {unpaidTenants.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const win = window.open('', '_blank', 'width=900,height=700');
+                    if (!win) return;
+                    const rows = unpaidTenants.map(item => `
+                      <tr>
+                        <td>${item.tenantName || 'Unassigned'}</td>
+                        <td>${item.houseNo}</td>
+                        ${selectedProperty === 'all' ? `<td>${item.propertyName || '-'}</td>` : ''}
+                        <td>${item.tenantPhone || '-'}</td>
+                        <td>${formatCurrency(item.expectedRent)}</td>
+                        <td>${formatCurrency(item.paidAmount)}</td>
+                        <td style="color:#dc2626;font-weight:600">${formatCurrency(item.balance)}</td>
+                        <td>${item.status}</td>
+                      </tr>
+                    `).join('');
+                    win.document.write(`
+                      <html><head><title>Defaulters List - ${selectedPropertyName}</title>
+                      <style>
+                        body{font-family:Arial,sans-serif;padding:24px;color:#0f172a}
+                        h1{font-size:20px;margin:0 0 4px}
+                        p{margin:0 0 16px;color:#64748b;font-size:13px}
+                        table{width:100%;border-collapse:collapse;font-size:13px}
+                        th,td{border:1px solid #e2e8f0;padding:8px 10px;text-align:left}
+                        th{background:#f1f5f9;font-weight:600}
+                      </style></head><body>
+                      <h1>KODI PAP — Defaulters List</h1>
+                      <p>${selectedPropertyName} — Printed ${format(new Date(), 'dd/MM/yyyy')}</p>
+                      <table>
+                        <thead><tr>
+                          <th>Tenant</th><th>House No.</th>
+                          ${selectedProperty === 'all' ? '<th>Property</th>' : ''}
+                          <th>Phone</th><th>Expected</th><th>Paid</th><th>Outstanding</th><th>Status</th>
+                        </tr></thead>
+                        <tbody>${rows}</tbody>
+                      </table>
+                      </body></html>
+                    `);
+                    win.document.close();
+                    win.focus();
+                    setTimeout(() => win.print(), 300);
+                  }}
+                >
+                  <Printer className="h-4 w-4" /> Print
+                </Button>
+              )}
             </div>
 
             {unpaidTenants.length > 0 ? (
