@@ -4,6 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useHouses, HouseWithProperty } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
+import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { useBalances } from '@/hooks/useBalances';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
