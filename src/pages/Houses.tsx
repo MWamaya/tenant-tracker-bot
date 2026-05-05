@@ -4,6 +4,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useHouses, HouseWithProperty } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
+import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { useBalances } from '@/hooks/useBalances';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
@@ -67,7 +68,7 @@ const Houses = () => {
   const propertyFilter = searchParams.get('property');
   
   const { houses, isLoading: housesLoading, addHouse, deleteHouse } = useHouses(propertyFilter);
-  const { tenants, isLoading: tenantsLoading, updateTenant } = useTenants();
+  const { tenants, isLoading: tenantsLoading, updateTenant, addTenant } = useTenants();
   const { balances } = useBalances();
   const { payments } = usePayments();
   const { properties, isLoading: propertiesLoading } = useProperties();
@@ -77,6 +78,7 @@ const Houses = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [addTenantDialogOpen, setAddTenantDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [houseToDelete, setHouseToDelete] = useState<HouseData | null>(null);
 
@@ -219,25 +221,37 @@ const Houses = () => {
               Manage all rental units
             </p>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button className="gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-2 flex-1 sm:flex-none">
+                  <Plus className="h-4 w-4" />
+                  Add House
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setAddDialogOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Single House
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setBulkDialogOpen(true)}>
+                  <ListPlus className="h-4 w-4 mr-2" />
+                  Bulk Add Houses
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {propertyFilter && (
+              <Button
+                variant="outline"
+                className="gap-2 flex-1 sm:flex-none"
+                onClick={() => setAddTenantDialogOpen(true)}
+              >
                 <Plus className="h-4 w-4" />
-                Add House
-                <ChevronDown className="h-3 w-3" />
+                Add Tenant
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setAddDialogOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Single House
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setBulkDialogOpen(true)}>
-                <ListPlus className="h-4 w-4 mr-2" />
-                Bulk Add Houses
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
+          </div>
         </div>
 
         {/* Property Filter Badge */}
@@ -502,6 +516,26 @@ const Houses = () => {
               property_id: h.propertyId || null,
             });
           }
+        }}
+      />
+
+      {/* Add Tenant Dialog (scoped to current property) */}
+      <TenantFormDialog
+        open={addTenantDialogOpen}
+        onOpenChange={setAddTenantDialogOpen}
+        houses={houses.map(h => ({
+          id: h.id,
+          houseNo: h.house_no,
+          expectedRent: Number(h.expected_rent),
+        }))}
+        assignedHouseIds={tenants.map(t => t.house_id).filter(Boolean) as string[]}
+        onSave={async (data) => {
+          await addTenant.mutateAsync({
+            name: data.name,
+            phone: data.phone,
+            secondary_phone: data.secondaryPhone || null,
+            house_id: data.houseId || null,
+          });
         }}
       />
 
