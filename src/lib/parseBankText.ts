@@ -47,7 +47,7 @@ const RX_AMOUNT    = /(?:Ksh|KES|KSH)\s*\.?\s*([\d,]+(?:\.\d{1,2})?)/i;         
 const RX_PHONE     = /(\+?254\d{9}|07\d{8}|01\d{8})/;                           // KE phone numbers
 const RX_DATE_TIME = /(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(?:at\s+)?(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)/;
 const RX_FROM_NAME = /from\s+([A-Z][A-Z\s.'-]{2,}?)(?:\s+\d|\s+0?7|\s+0?1|\s+\+?254|\s*\.|\s*$)/i;
-const RX_HOUSE_ACC = /(?:Acc(?:ount)?\.?(?:\s*No\.?)?|Account\s*#|for\s+account|account)\s*[:#-]?\s*([A-Za-z0-9-]+)/i;
+const RX_HOUSE_ACC = /(?:Acc(?:ount)?\.?(?:\s*No\.?)?|Account\s*#|for\s+account|account|\bfor)\s*[:#-]?\s*([A-Za-z0-9-]+)/i;
 const RX_NEW_BAL   = /New\s+M-?PESA\s+balance/i;
 
 /**
