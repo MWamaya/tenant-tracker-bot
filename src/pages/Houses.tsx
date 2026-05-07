@@ -67,7 +67,7 @@ const Houses = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const propertyFilter = searchParams.get('property');
   
-  const { houses, isLoading: housesLoading, addHouse, deleteHouse } = useHouses(propertyFilter);
+  const { houses, isLoading: housesLoading, addHouse, updateHouse, deleteHouse } = useHouses(propertyFilter);
   const { tenants, isLoading: tenantsLoading, updateTenant, addTenant } = useTenants();
   const { balances } = useBalances();
   const { payments } = usePayments();
@@ -83,6 +83,8 @@ const Houses = () => {
   const [tenantToEdit, setTenantToEdit] = useState<HouseData['tenant'] | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [houseToDelete, setHouseToDelete] = useState<HouseData | null>(null);
+  const [editHouseDialogOpen, setEditHouseDialogOpen] = useState(false);
+  const [houseToEdit, setHouseToEdit] = useState<HouseData | null>(null);
 
   const isLoading = housesLoading || tenantsLoading || propertiesLoading;
 
@@ -367,6 +369,19 @@ const Houses = () => {
                       >
                         View Details
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHouseToEdit(house);
+                          setEditHouseDialogOpen(true);
+                        }}
+                        title="Edit House"
+                      >
+                        <Home className="h-4 w-4" />
+                        <Pencil className="h-3 w-3 ml-1" />
+                      </Button>
                       {house.tenant && (
                         <Button
                           variant="ghost"
@@ -421,6 +436,19 @@ const Houses = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   {house.balance && <StatusBadge status={house.balance.status} />}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHouseToEdit(house);
+                      setEditHouseDialogOpen(true);
+                    }}
+                    title="Edit House"
+                  >
+                    <Home className="h-4 w-4" />
+                  </Button>
                   {house.tenant && (
                     <Button
                       variant="ghost"
@@ -566,6 +594,36 @@ const Houses = () => {
             phone: data.phone,
             secondary_phone: data.secondaryPhone || null,
             house_id: data.houseId || null,
+          });
+        }}
+      />
+
+      {/* Edit House Dialog */}
+      <HouseFormDialog
+        open={editHouseDialogOpen}
+        onOpenChange={(open) => {
+          setEditHouseDialogOpen(open);
+          if (!open) setHouseToEdit(null);
+        }}
+        tenants={[]}
+        properties={properties}
+        house={houseToEdit ? {
+          id: houseToEdit.id,
+          houseNo: houseToEdit.house_no,
+          expectedRent: houseToEdit.expected_rent,
+          propertyId: houseToEdit.property_id,
+          status: houseToEdit.status,
+        } : null}
+        onSave={async (data) => {
+          if (!houseToEdit) return;
+          await updateHouse.mutateAsync({
+            id: houseToEdit.id,
+            data: {
+              house_no: data.houseNo,
+              expected_rent: data.expectedRent,
+              property_id: data.propertyId || null,
+              status: data.isOccupied ? 'occupied' : 'vacant',
+            },
           });
         }}
       />
