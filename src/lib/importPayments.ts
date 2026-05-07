@@ -66,8 +66,21 @@ export async function importPaymentRows(
     return { houseId: null, tenantId: null };
   };
 
+  const houseEntries = Array.from(houseMap.entries()); // [house_no_lower, id]
+  const matchHouseRef = (ref: string | null): string | null => {
+    if (!ref) return null;
+    const r = ref.toLowerCase().trim();
+    if (houseMap.has(r)) return houseMap.get(r)!;
+    // Try suffix match: e.g. bill ref "212245b12" should match house "b12"
+    // Prefer the longest house_no that is a suffix or substring of ref
+    const candidates = houseEntries
+      .filter(([hn]) => hn.length >= 2 && (r.endsWith(hn) || r.includes(hn)))
+      .sort((a, b) => b[0].length - a[0].length);
+    return candidates.length ? candidates[0][1] : null;
+  };
+
   const inserts = rows.map((r) => {
-    let houseId = r.house_no ? houseMap.get(r.house_no.toLowerCase().trim()) || null : null;
+    let houseId = matchHouseRef(r.house_no);
     let tenantId = houseId ? tenantByHouse.get(houseId) || null : null;
     if (!houseId) {
       const fuzzy = matchByName(r.sender_name);
