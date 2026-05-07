@@ -217,7 +217,7 @@ export const HouseFormDialog = ({
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">Add House</Button>
+            <Button type="submit">{isEditing ? 'Save Changes' : 'Add House'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>
