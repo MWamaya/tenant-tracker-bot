@@ -79,31 +79,33 @@ const PropertyDetail = () => {
 
   // Get houses for this property with balance info
   const propertyHouses = useMemo(() => {
+    const currentMonthPrefix = new Date().toISOString().slice(0, 7);
     return houses.map(house => {
       const tenant = tenants.find(t => t.house_id === house.id);
-      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-      const balance = balances.find(b => b.house_id === house.id && b.month === currentMonth);
-      
+      const expected = Number(house.expected_rent);
+      const paidAmount = payments
+        .filter(p => p.house_id === house.id && p.payment_date?.startsWith(currentMonthPrefix))
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+      const outstanding = Math.max(0, expected - paidAmount);
+
       let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-      if (balance) {
-        if (balance.balance <= 0) balanceStatus = 'paid';
-        else if (balance.paid_amount > 0) balanceStatus = 'partial';
-      }
+      if (paidAmount >= expected && expected > 0) balanceStatus = 'paid';
+      else if (paidAmount > 0) balanceStatus = 'partial';
 
       return {
         ...house,
         tenant,
-        balance: balance ? {
+        balance: {
           status: balanceStatus,
-          paid_amount: Number(balance.paid_amount),
-          balance: Number(balance.balance),
-        } : undefined,
+          paid_amount: paidAmount,
+          balance: outstanding,
+        },
       };
     }).filter(house => 
       house.house_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
       house.tenant?.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
-  }, [houses, tenants, balances, searchQuery]);
+  }, [houses, tenants, payments, searchQuery]);
 
   // Get tenants for this property
   const propertyTenants = useMemo(() => {
