@@ -421,6 +421,20 @@ const Houses = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   {house.balance && <StatusBadge status={house.balance.status} />}
+                  {house.tenant && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTenantToEdit(house.tenant!);
+                        setEditTenantDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="sm"
