@@ -47,6 +47,9 @@ const RefreshRedirect = () => {
     }
   }, [navigate, location.pathname]);
 
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -57,6 +60,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <RefreshRedirect />
               <Routes>
                 {/* Landlord Auth & Routes */}
                 <Route path="/auth" element={<Auth />} />
