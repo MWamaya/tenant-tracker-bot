@@ -20,6 +20,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('unpaid');
   const [addPropertyOpen, setAddPropertyOpen] = useState(false);
   const [addHouseOpen, setAddHouseOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading: statsLoading } = useDashboardStats();
