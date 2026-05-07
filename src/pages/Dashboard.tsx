@@ -12,6 +12,7 @@ import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, Message
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -19,6 +20,7 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('unpaid');
   const [addPropertyOpen, setAddPropertyOpen] = useState(false);
   const [addHouseOpen, setAddHouseOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data, isLoading: statsLoading } = useDashboardStats();
@@ -214,31 +216,51 @@ const Dashboard = () => {
     );
   }
 
-  const stats = data?.stats || {
-    totalHouses: 0,
-    occupiedHouses: 0,
-    vacantHouses: 0,
-    totalExpected: 0,
-    totalCollected: 0,
-    totalOutstanding: 0,
-    paidHouses: 0,
-    partialHouses: 0,
-    unpaidHouses: 0,
+  const allHouseBalances = data?.houseBalances || [];
+  const filteredBalances = selectedPropertyId === 'all'
+    ? allHouseBalances
+    : allHouseBalances.filter(h => h.propertyId === selectedPropertyId);
+
+  const stats = {
+    totalHouses: filteredBalances.length,
+    occupiedHouses: filteredBalances.filter(h => h.tenantId).length,
+    vacantHouses: filteredBalances.filter(h => !h.tenantId).length,
+    totalExpected: filteredBalances.reduce((s, h) => s + h.expectedRent, 0),
+    totalCollected: filteredBalances.reduce((s, h) => s + h.paidAmount, 0),
+    totalOutstanding: filteredBalances.reduce((s, h) => s + h.balance, 0),
+    paidHouses: filteredBalances.filter(h => h.status === 'paid').length,
+    partialHouses: filteredBalances.filter(h => h.status === 'partial').length,
+    unpaidHouses: filteredBalances.filter(h => h.status === 'unpaid').length,
   };
 
-  const unpaidHouses = data?.unpaidHouses || [];
-  const partialHouses = data?.partialHouses || [];
-  const paidHouses = data?.paidHouses || [];
+  const unpaidHouses = filteredBalances.filter(h => h.status === 'unpaid');
+  const partialHouses = filteredBalances.filter(h => h.status === 'partial');
+  const paidHouses = filteredBalances.filter(h => h.status === 'paid');
 
   return (
     <MainLayout>
       <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Landlord Dashboard</h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} rent collection overview
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Landlord Dashboard</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
+              {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} rent collection overview
+            </p>
+          </div>
+          {properties.length > 1 && (
+            <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="Filter by property" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Properties</SelectItem>
+                {properties.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Stats Grid */}
