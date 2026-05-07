@@ -177,7 +177,7 @@ export const HouseFormDialog = ({
             </Select>
           </div>
 
-          {isOccupied && (
+          {isOccupied && !isEditing && (
             <>
               <div className="space-y-2">
                 <Label htmlFor="tenant">Assign Tenant</Label>
