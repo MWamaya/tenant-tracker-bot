@@ -1,8 +1,9 @@
+import { useEffect } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SuperAdminProvider } from "@/hooks/useSuperAdmin";
@@ -32,6 +33,23 @@ import SettingsPage from "./pages/super-admin/SettingsPage";
 
 const queryClient = new QueryClient();
 
+const RefreshRedirect = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const navEntries = performance.getEntriesByType('navigation');
+    if (navEntries.length > 0) {
+      const navEntry = navEntries[0] as PerformanceNavigationTiming;
+      if (navEntry.type === 'reload' && location.pathname !== '/') {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [navigate, location.pathname]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -42,6 +60,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <RefreshRedirect />
               <Routes>
                 {/* Landlord Auth & Routes */}
                 <Route path="/auth" element={<Auth />} />
