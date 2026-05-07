@@ -598,6 +598,36 @@ const Houses = () => {
         }}
       />
 
+      {/* Edit House Dialog */}
+      <HouseFormDialog
+        open={editHouseDialogOpen}
+        onOpenChange={(open) => {
+          setEditHouseDialogOpen(open);
+          if (!open) setHouseToEdit(null);
+        }}
+        tenants={[]}
+        properties={properties}
+        house={houseToEdit ? {
+          id: houseToEdit.id,
+          houseNo: houseToEdit.house_no,
+          expectedRent: houseToEdit.expected_rent,
+          propertyId: houseToEdit.property_id,
+          status: houseToEdit.status,
+        } : null}
+        onSave={async (data) => {
+          if (!houseToEdit) return;
+          await updateHouse.mutateAsync({
+            id: houseToEdit.id,
+            data: {
+              house_no: data.houseNo,
+              expected_rent: data.expectedRent,
+              property_id: data.propertyId || null,
+              status: data.isOccupied ? 'occupied' : 'vacant',
+            },
+          });
+        }}
+      />
+
       {/* Edit Tenant Dialog */}
       <TenantFormDialog
         open={editTenantDialogOpen}
