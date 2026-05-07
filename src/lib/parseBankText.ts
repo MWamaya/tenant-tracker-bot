@@ -106,13 +106,22 @@ export function parseTransactionBlock(block: string): ParsedTextRow | null {
     ? nameMatch[1].replace(/\s+/g, ' ').trim().replace(/\.$/, '')
     : null;
 
+  // Normalize house ref: bank bill refs are often "<accountPrefix><houseCode>"
+  // e.g. "212245B12" -> "B12". Extract the trailing letter+digits token if present.
+  let house_no: string | null = houseMatch ? houseMatch[1] : null;
+  if (house_no) {
+    const tail = house_no.match(/[A-Za-z]+\d+$/);
+    if (tail) house_no = tail[0].toUpperCase();
+    else house_no = house_no.toUpperCase();
+  }
+
   return {
     payment_date,
     amount,
     mpesa_ref: refMatch[1].toUpperCase(),
     sender_name,
     sender_phone: phoneMatch ? phoneMatch[1] : null,
-    house_no: houseMatch ? houseMatch[1] : null,
+    house_no,
     raw: text,
   };
 }
