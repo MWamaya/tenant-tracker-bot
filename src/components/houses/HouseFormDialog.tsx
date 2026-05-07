@@ -31,6 +31,14 @@ interface HouseFormDialogProps {
   tenants: Tenant[];
   properties: Property[];
   defaultPropertyId?: string | null;
+  house?: {
+    id: string;
+    houseNo: string;
+    expectedRent: number;
+    propertyId?: string | null;
+    status?: 'vacant' | 'occupied';
+    occupancyDate?: string | null;
+  } | null;
   onSave: (houseData: {
     houseNo: string;
     expectedRent: number;
@@ -47,6 +55,7 @@ export const HouseFormDialog = ({
   tenants,
   properties,
   defaultPropertyId,
+  house,
   onSave,
 }: HouseFormDialogProps) => {
   const [houseNo, setHouseNo] = useState('');
@@ -56,16 +65,27 @@ export const HouseFormDialog = ({
   const [tenantId, setTenantId] = useState('');
   const [occupancyDate, setOccupancyDate] = useState('');
 
+  const isEditing = !!house;
+
   useEffect(() => {
     if (open) {
-      setHouseNo('');
-      setExpectedRent('');
-      setPropertyId(defaultPropertyId || '');
-      setIsOccupied(false);
-      setTenantId('');
-      setOccupancyDate('');
+      if (house) {
+        setHouseNo(house.houseNo);
+        setExpectedRent(String(house.expectedRent));
+        setPropertyId(house.propertyId || '');
+        setIsOccupied(house.status === 'occupied');
+        setTenantId('');
+        setOccupancyDate(house.occupancyDate || '');
+      } else {
+        setHouseNo('');
+        setExpectedRent('');
+        setPropertyId(defaultPropertyId || '');
+        setIsOccupied(false);
+        setTenantId('');
+        setOccupancyDate('');
+      }
     }
-  }, [open, defaultPropertyId]);
+  }, [open, defaultPropertyId, house]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
