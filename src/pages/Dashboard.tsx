@@ -216,21 +216,26 @@ const Dashboard = () => {
     );
   }
 
-  const stats = data?.stats || {
-    totalHouses: 0,
-    occupiedHouses: 0,
-    vacantHouses: 0,
-    totalExpected: 0,
-    totalCollected: 0,
-    totalOutstanding: 0,
-    paidHouses: 0,
-    partialHouses: 0,
-    unpaidHouses: 0,
+  const allHouseBalances = data?.houseBalances || [];
+  const filteredBalances = selectedPropertyId === 'all'
+    ? allHouseBalances
+    : allHouseBalances.filter(h => h.propertyId === selectedPropertyId);
+
+  const stats = {
+    totalHouses: filteredBalances.length,
+    occupiedHouses: filteredBalances.filter(h => h.tenantId).length,
+    vacantHouses: filteredBalances.filter(h => !h.tenantId).length,
+    totalExpected: filteredBalances.reduce((s, h) => s + h.expectedRent, 0),
+    totalCollected: filteredBalances.reduce((s, h) => s + h.paidAmount, 0),
+    totalOutstanding: filteredBalances.reduce((s, h) => s + h.balance, 0),
+    paidHouses: filteredBalances.filter(h => h.status === 'paid').length,
+    partialHouses: filteredBalances.filter(h => h.status === 'partial').length,
+    unpaidHouses: filteredBalances.filter(h => h.status === 'unpaid').length,
   };
 
-  const unpaidHouses = data?.unpaidHouses || [];
-  const partialHouses = data?.partialHouses || [];
-  const paidHouses = data?.paidHouses || [];
+  const unpaidHouses = filteredBalances.filter(h => h.status === 'unpaid');
+  const partialHouses = filteredBalances.filter(h => h.status === 'partial');
+  const paidHouses = filteredBalances.filter(h => h.status === 'paid');
 
   return (
     <MainLayout>
