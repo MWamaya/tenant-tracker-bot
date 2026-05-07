@@ -137,7 +137,8 @@ const PropertyDetail = () => {
       .filter(h => h.status === 'occupied' && !!h.tenant)
       .reduce((sum, h) => sum + Number(h.expected_rent), 0);
     const totalCollected = propertyHouses.reduce((sum, h) => sum + (h.balance?.paid_amount || 0), 0);
-    const totalBalance = propertyHouses.reduce((sum, h) => sum + (h.balance?.balance || 0), 0);
+    // Aggregate outstanding = expected - collected (overpayments offset other balances)
+    const totalBalance = Math.max(0, totalExpected - totalCollected);
     
     return {
       totalUnits: propertyHouses.length,
