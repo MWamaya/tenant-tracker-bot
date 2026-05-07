@@ -119,6 +119,7 @@ const Houses = () => {
           id: tenant.id,
           name: tenant.name,
           phone: tenant.phone,
+          secondary_phone: tenant.secondary_phone,
           house_id: tenant.house_id,
         } : undefined,
         balance: balance ? {
