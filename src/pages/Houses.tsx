@@ -37,7 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, Home, Trash2, Loader2, Building2, X, ChevronDown, ListPlus } from 'lucide-react';
+import { Search, Plus, Home, Trash2, Loader2, Building2, X, ChevronDown, ListPlus, Pencil } from 'lucide-react';
 import { HouseDetailDialog } from '@/components/houses/HouseDetailDialog';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
 import { BulkHouseFormDialog } from '@/components/houses/BulkHouseFormDialog';
@@ -55,7 +55,7 @@ interface HouseData {
   status: 'vacant' | 'occupied';
   property_id: string | null;
   property_name: string | null;
-  tenant?: { id: string; name: string; phone: string; house_id: string | null };
+  tenant?: { id: string; name: string; phone: string; secondary_phone?: string | null; house_id: string | null };
   balance?: {
     status: 'paid' | 'partial' | 'unpaid';
     paid_amount: number;
@@ -79,6 +79,8 @@ const Houses = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [addTenantDialogOpen, setAddTenantDialogOpen] = useState(false);
+  const [editTenantDialogOpen, setEditTenantDialogOpen] = useState(false);
+  const [tenantToEdit, setTenantToEdit] = useState<HouseData['tenant'] | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [houseToDelete, setHouseToDelete] = useState<HouseData | null>(null);
 
@@ -117,6 +119,7 @@ const Houses = () => {
           id: tenant.id,
           name: tenant.name,
           phone: tenant.phone,
+          secondary_phone: tenant.secondary_phone,
           house_id: tenant.house_id,
         } : undefined,
         balance: balance ? {
@@ -364,6 +367,20 @@ const Houses = () => {
                       >
                         View Details
                       </Button>
+                      {house.tenant && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTenantToEdit(house.tenant!);
+                            setEditTenantDialogOpen(true);
+                          }}
+                          title="Edit Tenant"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button 
                         variant="ghost" 
                         size="sm"
@@ -404,6 +421,20 @@ const Houses = () => {
                 </div>
                 <div className="flex items-center gap-2">
                   {house.balance && <StatusBadge status={house.balance.status} />}
+                  {house.tenant && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTenantToEdit(house.tenant!);
+                        setEditTenantDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button 
                     variant="ghost" 
                     size="sm"
@@ -535,6 +566,40 @@ const Houses = () => {
             phone: data.phone,
             secondary_phone: data.secondaryPhone || null,
             house_id: data.houseId || null,
+          });
+        }}
+      />
+
+      {/* Edit Tenant Dialog */}
+      <TenantFormDialog
+        open={editTenantDialogOpen}
+        onOpenChange={(open) => {
+          setEditTenantDialogOpen(open);
+          if (!open) setTenantToEdit(null);
+        }}
+        tenant={tenantToEdit ? {
+          id: tenantToEdit.id,
+          name: tenantToEdit.name,
+          phone: tenantToEdit.phone,
+          secondaryPhone: tenantToEdit.secondary_phone || undefined,
+          houseId: tenantToEdit.house_id || '',
+        } : null}
+        houses={houses.map(h => ({
+          id: h.id,
+          houseNo: h.house_no,
+          expectedRent: Number(h.expected_rent),
+        }))}
+        assignedHouseIds={tenants.map(t => t.house_id).filter(Boolean) as string[]}
+        onSave={async (data) => {
+          if (!tenantToEdit) return;
+          await updateTenant.mutateAsync({
+            id: tenantToEdit.id,
+            data: {
+              name: data.name,
+              phone: data.phone,
+              secondary_phone: data.secondaryPhone || null,
+              house_id: data.houseId || null,
+            },
           });
         }}
       />
