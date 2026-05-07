@@ -82,14 +82,16 @@ const PropertyDetail = () => {
     const currentMonthPrefix = new Date().toISOString().slice(0, 7);
     return houses.map(house => {
       const tenant = tenants.find(t => t.house_id === house.id);
-      const expected = Number(house.expected_rent);
+      const isOccupied = house.status === 'occupied' && !!tenant;
+      const expected = isOccupied ? Number(house.expected_rent) : 0;
       const paidAmount = payments
         .filter(p => p.house_id === house.id && p.payment_date?.startsWith(currentMonthPrefix))
         .reduce((sum, p) => sum + Number(p.amount), 0);
-      const outstanding = Math.max(0, expected - paidAmount);
+      const outstanding = isOccupied ? Math.max(0, expected - paidAmount) : 0;
 
       let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-      if (paidAmount >= expected && expected > 0) balanceStatus = 'paid';
+      if (!isOccupied) balanceStatus = 'paid'; // vacant — nothing owed
+      else if (paidAmount >= expected && expected > 0) balanceStatus = 'paid';
       else if (paidAmount > 0) balanceStatus = 'partial';
 
       return {
@@ -131,7 +133,9 @@ const PropertyDetail = () => {
   const stats = useMemo(() => {
     const occupiedCount = propertyHouses.filter(h => h.status === 'occupied').length;
     const vacantCount = propertyHouses.filter(h => h.status === 'vacant').length;
-    const totalExpected = propertyHouses.reduce((sum, h) => sum + Number(h.expected_rent), 0);
+    const totalExpected = propertyHouses
+      .filter(h => h.status === 'occupied' && !!h.tenant)
+      .reduce((sum, h) => sum + Number(h.expected_rent), 0);
     const totalCollected = propertyHouses.reduce((sum, h) => sum + (h.balance?.paid_amount || 0), 0);
     const totalBalance = propertyHouses.reduce((sum, h) => sum + (h.balance?.balance || 0), 0);
     
