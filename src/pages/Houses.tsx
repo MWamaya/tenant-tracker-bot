@@ -83,6 +83,8 @@ const Houses = () => {
   const [tenantToEdit, setTenantToEdit] = useState<HouseData['tenant'] | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [houseToDelete, setHouseToDelete] = useState<HouseData | null>(null);
+  const [editHouseDialogOpen, setEditHouseDialogOpen] = useState(false);
+  const [houseToEdit, setHouseToEdit] = useState<HouseData | null>(null);
 
   const isLoading = housesLoading || tenantsLoading || propertiesLoading;
 
