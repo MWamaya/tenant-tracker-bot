@@ -33,7 +33,22 @@ import SettingsPage from "./pages/super-admin/SettingsPage";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const RefreshRedirect = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const navEntries = performance.getEntriesByType('navigation');
+    if (navEntries.length > 0) {
+      const navEntry = navEntries[0] as PerformanceNavigationTiming;
+      if (navEntry.type === 'reload' && location.pathname !== '/') {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [navigate, location.pathname]);
+
+  return null;
+};
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
