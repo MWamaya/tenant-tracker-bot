@@ -241,11 +241,26 @@ const Dashboard = () => {
     <MainLayout>
       <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Landlord Dashboard</h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} rent collection overview
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Landlord Dashboard</h1>
+            <p className="text-muted-foreground mt-1 text-sm md:text-base">
+              {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} rent collection overview
+            </p>
+          </div>
+          {properties.length > 1 && (
+            <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <SelectValue placeholder="Filter by property" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Properties</SelectItem>
+                {properties.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Stats Grid */}
