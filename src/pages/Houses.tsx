@@ -369,6 +369,19 @@ const Houses = () => {
                       >
                         View Details
                       </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setHouseToEdit(house);
+                          setEditHouseDialogOpen(true);
+                        }}
+                        title="Edit House"
+                      >
+                        <Home className="h-4 w-4" />
+                        <Pencil className="h-3 w-3 ml-1" />
+                      </Button>
                       {house.tenant && (
                         <Button
                           variant="ghost"
