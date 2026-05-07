@@ -55,7 +55,7 @@ interface HouseData {
   status: 'vacant' | 'occupied';
   property_id: string | null;
   property_name: string | null;
-  tenant?: { id: string; name: string; phone: string; house_id: string | null };
+  tenant?: { id: string; name: string; phone: string; secondary_phone?: string | null; house_id: string | null };
   balance?: {
     status: 'paid' | 'partial' | 'unpaid';
     paid_amount: number;
