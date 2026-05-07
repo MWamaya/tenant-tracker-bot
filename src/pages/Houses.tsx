@@ -79,6 +79,8 @@ const Houses = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [addTenantDialogOpen, setAddTenantDialogOpen] = useState(false);
+  const [editTenantDialogOpen, setEditTenantDialogOpen] = useState(false);
+  const [tenantToEdit, setTenantToEdit] = useState<HouseData['tenant'] | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [houseToDelete, setHouseToDelete] = useState<HouseData | null>(null);
 
