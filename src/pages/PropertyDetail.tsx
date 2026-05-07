@@ -133,7 +133,9 @@ const PropertyDetail = () => {
   const stats = useMemo(() => {
     const occupiedCount = propertyHouses.filter(h => h.status === 'occupied').length;
     const vacantCount = propertyHouses.filter(h => h.status === 'vacant').length;
-    const totalExpected = propertyHouses.reduce((sum, h) => sum + Number(h.expected_rent), 0);
+    const totalExpected = propertyHouses
+      .filter(h => h.status === 'occupied' && !!h.tenant)
+      .reduce((sum, h) => sum + Number(h.expected_rent), 0);
     const totalCollected = propertyHouses.reduce((sum, h) => sum + (h.balance?.paid_amount || 0), 0);
     const totalBalance = propertyHouses.reduce((sum, h) => sum + (h.balance?.balance || 0), 0);
     
