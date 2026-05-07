@@ -107,7 +107,7 @@ export const HouseFormDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add New House</DialogTitle>
+          <DialogTitle>{isEditing ? 'Edit House' : 'Add New House'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           {/* Property Selection */}
