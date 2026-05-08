@@ -110,6 +110,7 @@ export function parseTransactionBlock(block: string): ParsedTextRow | null {
   // e.g. "212245B12" -> "B12". Extract the trailing letter+digits token if present.
   let house_no: string | null = houseMatch ? houseMatch[1] : null;
   if (house_no) {
+    house_no = house_no.replace(/\s+/g, '');
     const tail = house_no.match(/[A-Za-z]+\d+$/);
     if (tail) house_no = tail[0].toUpperCase();
     else house_no = house_no.toUpperCase();
