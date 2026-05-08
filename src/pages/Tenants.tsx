@@ -43,8 +43,10 @@ const Tenants = () => {
   const { tenants, isLoading: tenantsLoading, addTenant, updateTenant, deleteTenant } = useTenants();
   const { balances } = useBalances();
   const { payments } = usePayments();
+  const { properties, isLoading: propertiesLoading } = useProperties();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<TenantWithHouse | null>(null);
@@ -53,7 +55,7 @@ const Tenants = () => {
   const [statementDialogOpen, setStatementDialogOpen] = useState(false);
   const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<TenantWithHouse | null>(null);
 
-  const isLoading = housesLoading || tenantsLoading;
+  const isLoading = housesLoading || tenantsLoading || propertiesLoading;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
