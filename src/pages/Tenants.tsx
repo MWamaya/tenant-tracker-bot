@@ -5,10 +5,18 @@ import { useHouses } from '@/hooks/useHouses';
 import { useTenants, TenantWithHouse } from '@/hooks/useTenants';
 import { useBalances } from '@/hooks/useBalances';
 import { usePayments } from '@/hooks/usePayments';
+import { useProperties } from '@/hooks/useProperties';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users, Building2 } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { BulkTenantFormDialog } from '@/components/tenants/BulkTenantFormDialog';
 import { TenantStatementDialog } from '@/components/tenants/TenantStatementDialog';
@@ -35,8 +43,10 @@ const Tenants = () => {
   const { tenants, isLoading: tenantsLoading, addTenant, updateTenant, deleteTenant } = useTenants();
   const { balances } = useBalances();
   const { payments } = usePayments();
+  const { properties, isLoading: propertiesLoading } = useProperties();
   
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<TenantWithHouse | null>(null);
@@ -45,7 +55,7 @@ const Tenants = () => {
   const [statementDialogOpen, setStatementDialogOpen] = useState(false);
   const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<TenantWithHouse | null>(null);
 
-  const isLoading = housesLoading || tenantsLoading;
+  const isLoading = housesLoading || tenantsLoading || propertiesLoading;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -56,6 +66,10 @@ const Tenants = () => {
   };
 
   const getTenantData = () => {
+    // Map house_id -> property_id for filtering
+    const housePropertyMap = new Map<string, string | null>();
+    houses.forEach(h => housePropertyMap.set(h.id, h.property_id));
+
     return tenants.map(tenant => {
       const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
       const balance = balances.find(b => b.house_id === tenant.house_id && b.month === currentMonth);
@@ -75,11 +89,17 @@ const Tenants = () => {
         } : undefined,
       };
     })
-    .filter(tenant =>
-      tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tenant.phone.includes(searchQuery) ||
-      tenant.houses?.house_no?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    .filter(tenant => {
+      const matchesSearch =
+        tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tenant.phone.includes(searchQuery) ||
+        tenant.houses?.house_no?.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+
+      if (selectedPropertyId === 'all') return true;
+      const tenantPropertyId = tenant.house_id ? housePropertyMap.get(tenant.house_id) : null;
+      return tenantPropertyId === selectedPropertyId;
+    })
     .sort((a, b) => {
       const aNo = a.houses?.house_no || '';
       const bNo = b.houses?.house_no || '';
@@ -225,8 +245,8 @@ const Tenants = () => {
           </DropdownMenu>
         </div>
 
-        {/* Search */}
-        <div className="flex items-center gap-4">
+        {/* Search & Property Filter */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="relative flex-1 max-w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -236,6 +256,20 @@ const Tenants = () => {
               className="pl-10"
             />
           </div>
+          {properties.length > 0 && (
+            <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+              <SelectTrigger className="w-full sm:w-[200px] gap-2">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <SelectValue placeholder="All Properties" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Properties</SelectItem>
+                {properties.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Tenant Cards Grid */}
