@@ -245,8 +245,8 @@ const Tenants = () => {
           </DropdownMenu>
         </div>
 
-        {/* Search */}
-        <div className="flex items-center gap-4">
+        {/* Search & Property Filter */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="relative flex-1 max-w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -256,6 +256,20 @@ const Tenants = () => {
               className="pl-10"
             />
           </div>
+          {properties.length > 0 && (
+            <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+              <SelectTrigger className="w-full sm:w-[200px] gap-2">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <SelectValue placeholder="All Properties" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Properties</SelectItem>
+                {properties.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
         {/* Tenant Cards Grid */}
