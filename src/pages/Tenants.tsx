@@ -66,6 +66,10 @@ const Tenants = () => {
   };
 
   const getTenantData = () => {
+    // Map house_id -> property_id for filtering
+    const housePropertyMap = new Map<string, string | null>();
+    houses.forEach(h => housePropertyMap.set(h.id, h.property_id));
+
     return tenants.map(tenant => {
       const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
       const balance = balances.find(b => b.house_id === tenant.house_id && b.month === currentMonth);
@@ -85,11 +89,17 @@ const Tenants = () => {
         } : undefined,
       };
     })
-    .filter(tenant =>
-      tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tenant.phone.includes(searchQuery) ||
-      tenant.houses?.house_no?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
+    .filter(tenant => {
+      const matchesSearch =
+        tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        tenant.phone.includes(searchQuery) ||
+        tenant.houses?.house_no?.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+
+      if (selectedPropertyId === 'all') return true;
+      const tenantPropertyId = tenant.house_id ? housePropertyMap.get(tenant.house_id) : null;
+      return tenantPropertyId === selectedPropertyId;
+    })
     .sort((a, b) => {
       const aNo = a.houses?.house_no || '';
       const bNo = b.houses?.house_no || '';
