@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useImpersonation } from '@/hooks/useImpersonation';
@@ -14,7 +14,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const { isSuperAdmin, loading: superAdminLoading } = useSuperAdmin();
   const { impersonating } = useImpersonation();
-  const { isSuspended, loading: statusLoading } = useAccountStatus();
+  const { isSuspended, isPending, loading: statusLoading } = useAccountStatus();
+  const location = useLocation();
 
   if (loading || superAdminLoading || statusLoading) {
     return (
@@ -28,14 +29,15 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Suspended landlords see the payment instructions gate.
-  // Super Admins bypass it (including while impersonating) so they can investigate.
   if (isSuspended && !isSuperAdmin && !impersonating) {
     return <AccountSuspended />;
   }
 
-  // Note: Super Admins are also allowed here when impersonating (or just browsing
-  // a landlord's view). The ImpersonationBanner makes the mode explicit.
+  // New signups must choose a subscription plan before accessing the app.
+  if (isPending && !isSuperAdmin && !impersonating && location.pathname !== '/subscribe') {
+    return <Navigate to="/subscribe" replace />;
+  }
+
   return <>{children}</>;
 };
 

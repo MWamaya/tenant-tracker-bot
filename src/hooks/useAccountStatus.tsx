@@ -29,6 +29,7 @@ export const useAccountStatus = () => {
     status: query.data ?? 'active',
     isSuspended: query.data === 'suspended',
     isExpired: query.data === 'expired',
+    isPending: query.data === 'pending',
     loading: query.isLoading,
   };
 };
