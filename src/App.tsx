@@ -21,6 +21,7 @@ import EmailLogs from "./pages/EmailLogs";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import ChoosePlan from "./pages/ChoosePlan";
 
 // Super Admin Pages
 import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
