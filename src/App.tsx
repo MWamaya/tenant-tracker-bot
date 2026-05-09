@@ -65,6 +65,7 @@ const App = () => (
               <Routes>
                 {/* Landlord Auth & Routes */}
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/subscribe" element={<ProtectedRoute><ChoosePlan /></ProtectedRoute>} />
                 <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/properties" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
                 <Route path="/property" element={<ProtectedRoute><PropertyDetail /></ProtectedRoute>} />
