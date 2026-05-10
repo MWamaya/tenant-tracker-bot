@@ -22,6 +22,8 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ChoosePlan from "./pages/ChoosePlan";
+import Landing from "./pages/Landing";
+import { useAuth } from "@/hooks/useAuth";
 
 // Super Admin Pages
 import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
