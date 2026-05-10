@@ -80,7 +80,7 @@ const App = () => (
                 {/* Landlord Auth & Routes */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/subscribe" element={<ProtectedRoute><ChoosePlan /></ProtectedRoute>} />
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/" element={<RootRoute />} />
                 <Route path="/properties" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
                 <Route path="/property" element={<ProtectedRoute><PropertyDetail /></ProtectedRoute>} />
                 <Route path="/houses" element={<ProtectedRoute><Houses /></ProtectedRoute>} />
