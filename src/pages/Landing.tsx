@@ -24,22 +24,24 @@ const Landing = () => {
         <div className="flex items-center gap-2">
           <img src={kodiPapLogo} alt="KODI PAP" className="h-10 w-auto" />
         </div>
-        <a
-          href="#pricing"
-          className="text-sm font-semibold text-foreground hover:text-primary underline-offset-4 hover:underline"
-          onClick={(e) => {
-            e.preventDefault();
-            document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-          }}
-        >
-          Pricing
-        </a>
-        <Link
-          to="/auth"
-          className="text-sm font-semibold text-foreground hover:text-primary underline-offset-4 hover:underline"
-        >
-          Log in
-        </Link>
+        <nav className="flex items-center gap-4 sm:gap-6">
+          <a
+            href="#pricing"
+            className="text-sm font-semibold text-foreground hover:text-primary underline-offset-4 hover:underline"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            Pricing
+          </a>
+          <Link
+            to="/auth"
+            className="text-sm font-semibold text-foreground hover:text-primary underline-offset-4 hover:underline"
+          >
+            Log in
+          </Link>
+        </nav>
       </header>
 
       {/* Hero */}
