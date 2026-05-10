@@ -22,6 +22,8 @@ import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import ChoosePlan from "./pages/ChoosePlan";
+import Landing from "./pages/Landing";
+import { useAuth } from "@/hooks/useAuth";
 
 // Super Admin Pages
 import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
@@ -51,6 +53,18 @@ const RefreshRedirect = () => {
   return null;
 };
 
+const RootRoute = () => {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+  return user ? <ProtectedRoute><Index /></ProtectedRoute> : <Landing />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -66,7 +80,7 @@ const App = () => (
                 {/* Landlord Auth & Routes */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/subscribe" element={<ProtectedRoute><ChoosePlan /></ProtectedRoute>} />
-                <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/" element={<RootRoute />} />
                 <Route path="/properties" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
                 <Route path="/property" element={<ProtectedRoute><PropertyDetail /></ProtectedRoute>} />
                 <Route path="/houses" element={<ProtectedRoute><Houses /></ProtectedRoute>} />
