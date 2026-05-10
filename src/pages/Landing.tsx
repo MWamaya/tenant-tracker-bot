@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Building2, ShieldCheck, Wallet, ArrowRight } from 'lucide-react';
+import { Building2, ShieldCheck, Wallet, ArrowRight, Check } from 'lucide-react';
 import heroImage from '@/assets/landing-hero.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 
