@@ -31,7 +31,8 @@ import {
   Trash2, 
   Edit, 
   Loader2,
-  MapPin 
+  MapPin,
+  ExternalLink
 } from 'lucide-react';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { useNavigate } from 'react-router-dom';
@@ -190,22 +191,31 @@ const Properties = () => {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 mt-4 pt-3 border-t">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
+                <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handlePropertyClick(property);
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    Open
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
                       setSelectedProperty(property);
                       setEditDialogOpen(true);
                     }}
                   >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
+                    <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
                     onClick={(e) => {
