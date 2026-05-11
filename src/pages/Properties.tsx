@@ -31,7 +31,8 @@ import {
   Trash2, 
   Edit, 
   Loader2,
-  MapPin 
+  MapPin,
+  ExternalLink
 } from 'lucide-react';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { useNavigate } from 'react-router-dom';
