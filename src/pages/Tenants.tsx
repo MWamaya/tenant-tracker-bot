@@ -86,6 +86,8 @@ const Tenants = () => {
           status: balanceStatus,
           paid_amount: Number(balance.paid_amount),
           balance: Number(balance.balance),
+          carry_forward: Number(balance.carry_forward),
+          expected_rent: Number(balance.expected_rent),
         } : undefined,
       };
     })
