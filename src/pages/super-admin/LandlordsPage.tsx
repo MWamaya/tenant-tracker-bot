@@ -219,6 +219,15 @@ const LandlordsPage = () => {
                         </p>
                       </div>
 
+                      <Button
+                        size="sm"
+                        onClick={() => handleLoginAs(landlord)}
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Manage
+                      </Button>
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="text-slate-400">
