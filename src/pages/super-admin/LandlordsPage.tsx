@@ -230,6 +230,7 @@ const LandlordsPage = () => {
                         </p>
                       </div>
 
+                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="text-slate-400">
                             <MoreVertical className="h-4 w-4" />
