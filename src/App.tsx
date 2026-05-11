@@ -62,7 +62,7 @@ const RootRoute = () => {
       </div>
     );
   }
-  return user ? <ProtectedRoute><Index /></ProtectedRoute> : <Landing />;
+  return user ? <ProtectedRoute><Index /></ProtectedRoute> : <Navigate to="/auth" replace />;
 };
 
 const App = () => (
