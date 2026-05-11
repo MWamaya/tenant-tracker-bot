@@ -86,6 +86,8 @@ const Tenants = () => {
           status: balanceStatus,
           paid_amount: Number(balance.paid_amount),
           balance: Number(balance.balance),
+          carry_forward: Number(balance.carry_forward),
+          expected_rent: Number(balance.expected_rent),
         } : undefined,
       };
     })
@@ -316,6 +318,11 @@ const Tenants = () => {
                   <p className={`font-semibold ${tenant.balance?.balance ? 'text-destructive' : 'text-success'}`}>
                     {formatCurrency(tenant.balance?.balance || 0)}
                   </p>
+                  {tenant.balance && tenant.balance.carry_forward > 0 && (
+                    <p className="text-xs text-destructive mt-0.5">
+                      C/F: {formatCurrency(tenant.balance.carry_forward)}
+                    </p>
+                  )}
                 </div>
               </div>
 
