@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Building2, ShieldCheck, Wallet, ArrowRight, Check } from 'lucide-react';
@@ -5,6 +6,14 @@ import heroImage from '@/assets/landing-hero.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 
 const Landing = () => {
+  const [showPricing, setShowPricing] = useState(false);
+  const pricingRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (showPricing && pricingRef.current) {
+      pricingRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [showPricing]);
   return (
     <div className="min-h-screen relative">
       {/* Background image */}
