@@ -118,9 +118,12 @@ const LandlordsPage = () => {
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
-        {/* Header */}
+      {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
+            <Link to="/super-admin" className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 mb-1">
+              ← Back to Dashboard
+            </Link>
             <h1 className="text-2xl font-bold text-white">Landlord Management</h1>
             <p className="text-slate-400">Manage landlord accounts and subscriptions</p>
           </div>
