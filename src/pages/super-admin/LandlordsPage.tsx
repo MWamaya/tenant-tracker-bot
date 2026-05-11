@@ -201,6 +201,14 @@ const LandlordsPage = () => {
                         </p>
                         <p className="text-xs text-slate-500">{landlord.phone || 'No phone'}</p>
                       </div>
+                      <Button
+                        size="sm"
+                        onClick={() => handleLoginAs(landlord)}
+                        className="bg-primary hover:bg-primary/90 ml-2"
+                      >
+                        <LogIn className="h-4 w-4 mr-2" />
+                        Manage
+                      </Button>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
@@ -221,15 +229,6 @@ const LandlordsPage = () => {
                           Joined {format(new Date(landlord.created_at), 'd/M/yyyy')}
                         </p>
                       </div>
-
-                      <Button
-                        size="sm"
-                        onClick={() => handleLoginAs(landlord)}
-                        className="bg-primary hover:bg-primary/90"
-                      >
-                        <LogIn className="h-4 w-4 mr-2" />
-                        Manage
-                      </Button>
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
