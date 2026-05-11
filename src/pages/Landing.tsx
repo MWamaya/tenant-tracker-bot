@@ -39,7 +39,7 @@ const Landing = () => {
             className="text-sm font-semibold text-foreground hover:text-primary underline-offset-4 hover:underline"
             onClick={(e) => {
               e.preventDefault();
-              document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+              setShowPricing(true);
             }}
           >
             Pricing
