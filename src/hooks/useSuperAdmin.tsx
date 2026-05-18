@@ -16,7 +16,12 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const checkSuperAdmin = async (): Promise<boolean> => {
-    if (!user) {
+    // Fetch the current authenticated user directly to avoid stale context state
+    // right after a fresh signIn (the useAuth context may not have updated yet).
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const activeUser = currentUser ?? user;
+
+    if (!activeUser) {
       setIsSuperAdmin(false);
       setLoading(false);
       return false;
@@ -26,7 +31,7 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', activeUser.id)
         .eq('role', 'SUPER_ADMIN')
         .maybeSingle();
 
