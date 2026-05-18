@@ -43,13 +43,17 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
+      <NavLink
+        to="/"
+        onClick={onNavigate}
+        className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 hover:bg-sidebar-accent/50 transition-colors"
+      >
         <img src={kodiPapLogo} alt="Kodi Pap Logo" className="h-10 w-auto" />
         <div>
           <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight">KODI PAP</h1>
           <p className="text-xs text-sidebar-foreground/60">Collection Manager</p>
         </div>
-      </div>
+      </NavLink>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
@@ -93,16 +97,24 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
 
 export const Sidebar = () => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <>
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border">
         <div className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              navigate('/');
+              setOpen(true);
+            }}
+            className="flex items-center gap-2"
+          >
             <img src={kodiPapLogo} alt="Kodi Pap Logo" className="h-8 w-auto" />
             <span className="text-base font-bold text-sidebar-foreground tracking-tight">KODI PAP</span>
-          </div>
+          </button>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-sidebar-foreground">
