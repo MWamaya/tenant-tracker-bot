@@ -43,13 +43,17 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6">
+      <NavLink
+        to="/"
+        onClick={onNavigate}
+        className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 hover:bg-sidebar-accent/50 transition-colors"
+      >
         <img src={kodiPapLogo} alt="Kodi Pap Logo" className="h-10 w-auto" />
         <div>
           <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight">KODI PAP</h1>
           <p className="text-xs text-sidebar-foreground/60">Collection Manager</p>
         </div>
-      </div>
+      </NavLink>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 px-3 py-4">
