@@ -97,6 +97,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
 
 export const Sidebar = () => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <>
