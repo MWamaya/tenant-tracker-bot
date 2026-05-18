@@ -103,10 +103,17 @@ export const Sidebar = () => {
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border">
         <div className="flex h-14 items-center justify-between px-4">
-          <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              navigate('/');
+              setOpen(true);
+            }}
+            className="flex items-center gap-2"
+          >
             <img src={kodiPapLogo} alt="Kodi Pap Logo" className="h-8 w-auto" />
             <span className="text-base font-bold text-sidebar-foreground tracking-tight">KODI PAP</span>
-          </div>
+          </button>
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-sidebar-foreground">
