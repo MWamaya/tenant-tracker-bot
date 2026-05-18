@@ -201,44 +201,48 @@ const LandlordsPage = () => {
                         </p>
                         <p className="text-xs text-slate-500">{landlord.phone || 'No phone'}</p>
                       </div>
-                      <Button
-                        size="sm"
-                        onClick={() => handleLoginAs(landlord)}
-                        className="bg-primary hover:bg-primary/90 ml-2"
-                      >
-                        <LogIn className="h-4 w-4 mr-2" />
-                        Manage
-                      </Button>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleLoginAs(landlord, '/properties')}
-                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
-                      >
-                        <Building2 className="h-4 w-4 mr-2" />
-                        Add Property
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleLoginAs(landlord, '/houses')}
-                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
-                      >
-                        <Home className="h-4 w-4 mr-2" />
-                        Add House
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleLoginAs(landlord, '/tenants')}
-                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
-                      >
-                        <Users className="h-4 w-4 mr-2" />
-                        Add Tenant
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="sm"
+                            className="bg-primary hover:bg-primary/90 ml-2"
+                          >
+                            <LogIn className="h-4 w-4 mr-2" />
+                            Manage
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="bg-slate-800 border-slate-700">
+                          <DropdownMenuItem
+                            className="text-primary font-medium focus:bg-primary/20 focus:text-primary"
+                            onClick={() => handleLoginAs(landlord)}
+                          >
+                            <LogIn className="h-4 w-4 mr-2" />
+                            Open Dashboard
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="bg-slate-700" />
+                          <DropdownMenuItem
+                            className="text-emerald-400 font-medium focus:bg-emerald-500/20 focus:text-emerald-300"
+                            onClick={() => handleLoginAs(landlord, '/properties')}
+                          >
+                            <Building2 className="h-4 w-4 mr-2" />
+                            Add Property
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-amber-400 font-medium focus:bg-amber-500/20 focus:text-amber-300"
+                            onClick={() => handleLoginAs(landlord, '/houses')}
+                          >
+                            <Home className="h-4 w-4 mr-2" />
+                            Add House
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-sky-400 font-medium focus:bg-sky-500/20 focus:text-sky-300"
+                            onClick={() => handleLoginAs(landlord, '/tenants')}
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            Add Tenant
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-3">
