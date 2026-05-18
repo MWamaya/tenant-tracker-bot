@@ -239,6 +239,7 @@ const LandlordsPage = () => {
                         <Users className="h-4 w-4 mr-2" />
                         Add Tenant
                       </Button>
+                    </div>
 
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="text-right">
