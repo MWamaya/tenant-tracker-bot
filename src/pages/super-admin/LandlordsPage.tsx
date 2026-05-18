@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare, LogIn } from 'lucide-react';
+import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare, LogIn, Building2, Users, Home } from 'lucide-react';
 import { format } from 'date-fns';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 
@@ -44,13 +44,13 @@ const LandlordsPage = () => {
   const assignSubscription = useAssignSubscription();
   const allocateTokens = useAllocateSmsTokens();
 
-  const handleLoginAs = async (landlord: LandlordProfile) => {
+  const handleLoginAs = async (landlord: LandlordProfile, destination = '/') => {
     await startImpersonation({
       id: landlord.id,
       name: landlord.full_name || 'Unknown Landlord',
       company: landlord.company_name,
     });
-    navigate('/');
+    navigate(destination);
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -208,6 +208,36 @@ const LandlordsPage = () => {
                       >
                         <LogIn className="h-4 w-4 mr-2" />
                         Manage
+                      </Button>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleLoginAs(landlord, '/properties')}
+                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      >
+                        <Building2 className="h-4 w-4 mr-2" />
+                        Add Property
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleLoginAs(landlord, '/houses')}
+                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      >
+                        <Home className="h-4 w-4 mr-2" />
+                        Add House
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleLoginAs(landlord, '/tenants')}
+                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Add Tenant
                       </Button>
                     </div>
 
