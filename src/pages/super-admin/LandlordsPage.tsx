@@ -44,13 +44,13 @@ const LandlordsPage = () => {
   const assignSubscription = useAssignSubscription();
   const allocateTokens = useAllocateSmsTokens();
 
-  const handleLoginAs = async (landlord: LandlordProfile) => {
+  const handleLoginAs = async (landlord: LandlordProfile, destination = '/') => {
     await startImpersonation({
       id: landlord.id,
       name: landlord.full_name || 'Unknown Landlord',
       company: landlord.company_name,
     });
-    navigate('/');
+    navigate(destination);
   };
 
   const [searchQuery, setSearchQuery] = useState('');
