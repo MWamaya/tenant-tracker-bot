@@ -211,6 +211,35 @@ const LandlordsPage = () => {
                       </Button>
                     </div>
 
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleLoginAs(landlord, '/properties')}
+                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      >
+                        <Building2 className="h-4 w-4 mr-2" />
+                        Add Property
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleLoginAs(landlord, '/houses')}
+                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      >
+                        <Home className="h-4 w-4 mr-2" />
+                        Add House
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleLoginAs(landlord, '/tenants')}
+                        className="border-slate-600 text-slate-200 hover:bg-slate-700"
+                      >
+                        <Users className="h-4 w-4 mr-2" />
+                        Add Tenant
+                      </Button>
+
                     <div className="flex flex-wrap items-center gap-3">
                       <div className="text-right">
                         <Badge variant="outline" className={getStatusBadgeColor(landlord.account_status)}>
