@@ -31,7 +31,7 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', user.id)
+        .eq('user_id', activeUser.id)
         .eq('role', 'SUPER_ADMIN')
         .maybeSingle();
 
