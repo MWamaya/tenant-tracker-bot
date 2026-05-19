@@ -1,5 +1,6 @@
 import { usePlatformStats, useLandlords } from '@/hooks/useSuperAdminData';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,6 +23,7 @@ const StatCard = ({
   icon: Icon,
   trend,
   loading,
+  onClick,
 }: {
   title: string;
   value: string | number;
@@ -29,8 +31,12 @@ const StatCard = ({
   icon: React.ComponentType<{ className?: string }>;
   trend?: 'up' | 'down' | 'neutral';
   loading?: boolean;
+  onClick?: () => void;
 }) => (
-  <Card className="bg-slate-800/50 border-slate-700">
+  <Card
+    onClick={onClick}
+    className={`bg-slate-800/50 border-slate-700 ${onClick ? 'cursor-pointer hover:bg-slate-800/80 hover:border-primary/60 transition-colors' : ''}`}
+  >
     <CardHeader className="flex flex-row items-center justify-between pb-2">
       <CardTitle className="text-sm font-medium text-slate-300">{title}</CardTitle>
       <div className="p-2 rounded-lg bg-slate-700/50">
@@ -55,6 +61,7 @@ const StatCard = ({
 const SuperAdminDashboard = () => {
   const { data: stats, isLoading: statsLoading } = usePlatformStats();
   const { data: landlords, isLoading: landlordsLoading } = useLandlords();
+  const navigate = useNavigate();
 
   const recentLandlords = landlords?.slice(0, 5) || [];
 
@@ -72,9 +79,10 @@ const SuperAdminDashboard = () => {
           <StatCard
             title="Total Landlords"
             value={stats?.totalLandlords || 0}
-            description={`${stats?.activeLandlords || 0} active`}
+            description={`${stats?.activeLandlords || 0} active · View all`}
             icon={Users}
             loading={statsLoading}
+            onClick={() => navigate('/super-admin/landlords')}
           />
           <StatCard
             title="Total Properties"
