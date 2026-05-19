@@ -11,7 +11,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { email, newPassword, bootstrapToken } = await req.json();
+    const { userId, newPassword, bootstrapToken } = await req.json();
 
     if (bootstrapToken !== "RESET-KODIPAP-SUPER-ADMIN-2026") {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
@@ -25,16 +25,14 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find user by email
-    const { data: list, error: listErr } = await admin.auth.admin.listUsers();
-    if (listErr) throw listErr;
-    const user = list.users.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-    if (!user) {
+    const { data: userData, error: getErr } = await admin.auth.admin.getUserById(userId);
+    if (getErr || !userData?.user) {
       return new Response(JSON.stringify({ error: "User not found" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const user = userData.user;
 
     // Confirm role
     const { data: roleRow } = await admin
