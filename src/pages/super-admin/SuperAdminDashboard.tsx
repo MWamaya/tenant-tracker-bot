@@ -23,6 +23,7 @@ const StatCard = ({
   icon: Icon,
   trend,
   loading,
+  onClick,
 }: {
   title: string;
   value: string | number;
@@ -30,8 +31,12 @@ const StatCard = ({
   icon: React.ComponentType<{ className?: string }>;
   trend?: 'up' | 'down' | 'neutral';
   loading?: boolean;
+  onClick?: () => void;
 }) => (
-  <Card className="bg-slate-800/50 border-slate-700">
+  <Card
+    onClick={onClick}
+    className={`bg-slate-800/50 border-slate-700 ${onClick ? 'cursor-pointer hover:bg-slate-800/80 hover:border-primary/60 transition-colors' : ''}`}
+  >
     <CardHeader className="flex flex-row items-center justify-between pb-2">
       <CardTitle className="text-sm font-medium text-slate-300">{title}</CardTitle>
       <div className="p-2 rounded-lg bg-slate-700/50">
