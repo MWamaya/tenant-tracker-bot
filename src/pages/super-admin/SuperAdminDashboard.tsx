@@ -79,9 +79,10 @@ const SuperAdminDashboard = () => {
           <StatCard
             title="Total Landlords"
             value={stats?.totalLandlords || 0}
-            description={`${stats?.activeLandlords || 0} active`}
+            description={`${stats?.activeLandlords || 0} active · View all`}
             icon={Users}
             loading={statsLoading}
+            onClick={() => navigate('/super-admin/landlords')}
           />
           <StatCard
             title="Total Properties"
