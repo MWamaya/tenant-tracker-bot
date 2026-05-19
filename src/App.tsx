@@ -33,6 +33,7 @@ import SubscriptionsPage from "./pages/super-admin/SubscriptionsPage";
 import AuditLogsPage from "./pages/super-admin/AuditLogsPage";
 import GlobalPaymentsPage from "./pages/super-admin/GlobalPaymentsPage";
 import SettingsPage from "./pages/super-admin/SettingsPage";
+import SuperAdminPropertiesPage from "./pages/super-admin/PropertiesPage";
 
 const queryClient = new QueryClient();
 
