@@ -61,6 +61,7 @@ const StatCard = ({
 const SuperAdminDashboard = () => {
   const { data: stats, isLoading: statsLoading } = usePlatformStats();
   const { data: landlords, isLoading: landlordsLoading } = useLandlords();
+  const navigate = useNavigate();
 
   const recentLandlords = landlords?.slice(0, 5) || [];
 
