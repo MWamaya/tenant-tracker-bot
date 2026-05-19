@@ -20,7 +20,7 @@ const SuperAdminLogin = () => {
   const { user, loading: authLoading, signIn } = useAuth();
   const { isSuperAdmin, loading: roleLoading, checkSuperAdmin } = useSuperAdmin();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState('zaragency50@gmail.com');
   const [password, setPassword] = useState('');
 
   useEffect(() => {
