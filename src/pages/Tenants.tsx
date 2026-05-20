@@ -318,7 +318,7 @@ const Tenants = () => {
                   <p className={`font-semibold ${(tenant.balance?.balance ?? 0) - (tenant.balance?.carry_forward ?? 0) > 0 ? 'text-destructive' : 'text-success'}`}>
                     {formatCurrency(Math.max(0, (tenant.balance?.balance ?? 0) - (tenant.balance?.carry_forward ?? 0)))}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">Total B/F</p>
+                  <p className="text-xs text-muted-foreground mt-1">Total C/F</p>
                   <p className="text-xs font-semibold text-destructive">
                     {formatCurrency(tenant.balance?.carry_forward || 0)}
                   </p>
