@@ -105,6 +105,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <BodyPointerEventsGuard />
               <RefreshRedirect />
               <Routes>
                 {/* Landlord Auth & Routes */}
