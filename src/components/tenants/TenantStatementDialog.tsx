@@ -390,7 +390,7 @@ export const TenantStatementDialog = ({
 
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          <span><strong>C/F</strong> = Balance Carried Forward (auto-calculated; one-time manual override locks the value)</span>
+          <span><strong>B/F</strong> = Balance Brought Forward (auto-calculated; one-time manual override locks the value)</span>
           <span><strong>TMC</strong> = Total Monthly Collection</span>
           <span><strong>C/F</strong> = Balance Carried Forward</span>
         </div>
