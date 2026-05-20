@@ -54,6 +54,35 @@ const RefreshRedirect = () => {
   return null;
 };
 
+/**
+ * Fixes a Radix UI bug where `pointer-events: none` is occasionally left
+ * stuck on <body> after a Dialog/AlertDialog closes (especially when nested
+ * inputs had focus). Without this guard the whole app appears frozen —
+ * sidebar links and tabs stop responding to clicks until a page refresh.
+ */
+const BodyPointerEventsGuard = () => {
+  useEffect(() => {
+    const clearStuckPointerEvents = () => {
+      if (document.body.style.pointerEvents === 'none') {
+        const openOverlay = document.querySelector(
+          '[data-state="open"][role="dialog"], [data-state="open"][role="alertdialog"]'
+        );
+        if (!openOverlay) {
+          document.body.style.pointerEvents = '';
+        }
+      }
+    };
+    const observer = new MutationObserver(clearStuckPointerEvents);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['style'] });
+    const interval = window.setInterval(clearStuckPointerEvents, 500);
+    return () => {
+      observer.disconnect();
+      window.clearInterval(interval);
+    };
+  }, []);
+  return null;
+};
+
 const RootRoute = () => {
   const { user, loading } = useAuth();
   if (loading) {
@@ -76,6 +105,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <BodyPointerEventsGuard />
               <RefreshRedirect />
               <Routes>
                 {/* Landlord Auth & Routes */}
