@@ -239,7 +239,7 @@ export const TenantStatementDialog = ({
             <TableHeader className="sticky top-0 bg-background">
               <TableRow>
                 <TableHead className="w-[100px]">Month</TableHead>
-                <TableHead className="text-right">C/F</TableHead>
+                <TableHead className="text-right">B/F</TableHead>
                 <TableHead className="text-right">Rent Due</TableHead>
                 <TableHead className="text-right">Paid</TableHead>
                 <TableHead>M-Pesa Ref</TableHead>
@@ -321,7 +321,7 @@ export const TenantStatementDialog = ({
                             onClick={() =>
                               handleStartEdit(record.monthIndex, record.balanceBroughtForward)
                             }
-                            title="Edit C/F (one-time — locks after saving)"
+                            title="Edit B/F (one-time — locks after saving)"
                           >
                             <Pencil className="h-3 w-3" />
                           </Button>
@@ -390,7 +390,7 @@ export const TenantStatementDialog = ({
 
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          <span><strong>C/F</strong> = Balance Carried Forward (auto-calculated; one-time manual override locks the value)</span>
+          <span><strong>B/F</strong> = Balance Brought Forward (auto-calculated; one-time manual override locks the value)</span>
           <span><strong>TMC</strong> = Total Monthly Collection</span>
           <span><strong>C/F</strong> = Balance Carried Forward</span>
         </div>
