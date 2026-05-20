@@ -73,7 +73,16 @@ const Tenants = () => {
     return tenants.map(tenant => {
       const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
       const balance = balances.find(b => b.house_id === tenant.house_id && b.month === currentMonth);
-      
+
+      // Fallback C/F: latest prior balance's remaining balance carries into this month
+      let fallbackCarryForward = 0;
+      if (!balance && tenant.house_id) {
+        const prior = balances
+          .filter(b => b.house_id === tenant.house_id && b.month < currentMonth)
+          .sort((a, b) => b.month.localeCompare(a.month))[0];
+        if (prior) fallbackCarryForward = Number(prior.balance) || 0;
+      }
+
       let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
       if (balance) {
         if (balance.balance <= 0) balanceStatus = 'paid';
@@ -88,7 +97,13 @@ const Tenants = () => {
           balance: Number(balance.balance),
           carry_forward: Number(balance.carry_forward),
           expected_rent: Number(balance.expected_rent),
-        } : undefined,
+        } : {
+          status: 'unpaid' as const,
+          paid_amount: 0,
+          balance: fallbackCarryForward + Number(tenant.houses?.expected_rent || 0),
+          carry_forward: fallbackCarryForward,
+          expected_rent: Number(tenant.houses?.expected_rent || 0),
+        },
       };
     })
     .filter(tenant => {
