@@ -70,42 +70,77 @@ const Tenants = () => {
     const housePropertyMap = new Map<string, string | null>();
     houses.forEach(h => housePropertyMap.set(h.id, h.property_id));
 
-    return tenants.map(tenant => {
-      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-      const balance = balances.find(b => b.house_id === tenant.house_id && b.month === currentMonth);
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonthIdx = now.getMonth();
 
-      // Fallback C/F: latest prior balance's remaining balance carries into this month
-      let fallbackCarryForward = 0;
-      if (!balance && tenant.house_id) {
-        const prior = balances
-          .filter(b => b.house_id === tenant.house_id && b.month < currentMonth)
-          .sort((a, b) => b.month.localeCompare(a.month))[0];
-        if (prior) fallbackCarryForward = Number(prior.balance) || 0;
+    return tenants.map(tenant => {
+      const expectedRent = Number(tenant.houses?.expected_rent || 0);
+
+      // Load manual B/F overrides saved from the Statement dialog (per tenant/year)
+      let bfOverrides: Record<number, number> = {};
+      try {
+        const stored = localStorage.getItem(`bf_overrides_${tenant.id}_${currentYear}`);
+        if (stored) bfOverrides = JSON.parse(stored);
+      } catch { /* ignore */ }
+
+      // Tenant's payments for the current year, grouped by month index
+      const tenantPayments = payments.filter(p => p.tenant_id === tenant.id);
+      const paidByMonth: Record<number, number> = {};
+      tenantPayments.forEach(p => {
+        const d = new Date(p.payment_date);
+        if (d.getFullYear() !== currentYear) return;
+        paidByMonth[d.getMonth()] = (paidByMonth[d.getMonth()] || 0) + Number(p.amount);
+      });
+
+      // Walk months Jan..current to derive C/F into the current month
+      let carryForward = 0;
+      let monthlyBalance = 0;
+      let totalPaidCurrentMonth = 0;
+      for (let i = 0; i <= currentMonthIdx; i++) {
+        const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
+        const bf = hasOverride ? Number(bfOverrides[i]) || 0 : carryForward;
+        const paid = paidByMonth[i] || 0;
+        if (i === currentMonthIdx) {
+          carryForward = bf;
+          totalPaidCurrentMonth = paid;
+          monthlyBalance = Math.max(0, expectedRent - paid);
+        }
+        carryForward = Math.max(0, expectedRent + bf - paid);
       }
+      // After loop, carryForward holds end-of-current-month balance; we want bf INTO current month
+      // Recompute correctly:
+      carryForward = 0;
+      for (let i = 0; i < currentMonthIdx; i++) {
+        const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
+        const bf = hasOverride ? Number(bfOverrides[i]) || 0 : carryForward;
+        const paid = paidByMonth[i] || 0;
+        carryForward = Math.max(0, expectedRent + bf - paid);
+      }
+      // Apply current-month override if present
+      if (Object.prototype.hasOwnProperty.call(bfOverrides, currentMonthIdx)) {
+        carryForward = Number(bfOverrides[currentMonthIdx]) || 0;
+      }
+
+      const totalDue = expectedRent + carryForward;
+      const balanceRemaining = Math.max(0, totalDue - totalPaidCurrentMonth);
 
       let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-      if (balance) {
-        if (balance.balance <= 0) balanceStatus = 'paid';
-        else if (balance.paid_amount > 0) balanceStatus = 'partial';
-      }
+      if (totalPaidCurrentMonth >= totalDue) balanceStatus = 'paid';
+      else if (totalPaidCurrentMonth > 0) balanceStatus = 'partial';
 
       return {
         ...tenant,
-        balance: balance ? {
+        balance: {
           status: balanceStatus,
-          paid_amount: Number(balance.paid_amount),
-          balance: Number(balance.balance),
-          carry_forward: Number(balance.carry_forward),
-          expected_rent: Number(balance.expected_rent),
-        } : {
-          status: 'unpaid' as const,
-          paid_amount: 0,
-          balance: fallbackCarryForward + Number(tenant.houses?.expected_rent || 0),
-          carry_forward: fallbackCarryForward,
-          expected_rent: Number(tenant.houses?.expected_rent || 0),
+          paid_amount: totalPaidCurrentMonth,
+          balance: balanceRemaining,
+          carry_forward: carryForward,
+          expected_rent: expectedRent,
         },
       };
     })
+
     .filter(tenant => {
       const matchesSearch =
         tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
