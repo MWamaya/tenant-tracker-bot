@@ -321,7 +321,7 @@ export const TenantStatementDialog = ({
                             onClick={() =>
                               handleStartEdit(record.monthIndex, record.balanceBroughtForward)
                             }
-                            title="Edit C/F (one-time — locks after saving)"
+                            title="Edit B/F (one-time — locks after saving)"
                           >
                             <Pencil className="h-3 w-3" />
                           </Button>
