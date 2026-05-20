@@ -239,7 +239,7 @@ export const TenantStatementDialog = ({
             <TableHeader className="sticky top-0 bg-background">
               <TableRow>
                 <TableHead className="w-[100px]">Month</TableHead>
-                <TableHead className="text-right">C/F</TableHead>
+                <TableHead className="text-right">B/F</TableHead>
                 <TableHead className="text-right">Rent Due</TableHead>
                 <TableHead className="text-right">Paid</TableHead>
                 <TableHead>M-Pesa Ref</TableHead>
