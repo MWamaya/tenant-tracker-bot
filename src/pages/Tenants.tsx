@@ -323,7 +323,7 @@ const Tenants = () => {
                 {tenant.balance && <StatusBadge status={tenant.balance.status} />}
               </div>
               
-              <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
+              <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-3">
                 <div>
                   <p className="text-xs text-muted-foreground">Expected Rent</p>
                   <p className="font-semibold">{formatCurrency(Number(tenant.houses?.expected_rent) || 0)}</p>
@@ -333,12 +333,15 @@ const Tenants = () => {
                   <p className={`font-semibold ${(tenant.balance?.balance ?? 0) - (tenant.balance?.carry_forward ?? 0) > 0 ? 'text-destructive' : 'text-success'}`}>
                     {formatCurrency(Math.max(0, (tenant.balance?.balance ?? 0) - (tenant.balance?.carry_forward ?? 0)))}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">C/F</p>
-                  <p className="text-xs font-semibold text-destructive">
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">C/F</p>
+                  <p className="font-semibold text-destructive">
                     {formatCurrency(tenant.balance?.carry_forward || 0)}
                   </p>
                 </div>
               </div>
+
 
               <div className="mt-4 flex gap-2">
                 <Button 
