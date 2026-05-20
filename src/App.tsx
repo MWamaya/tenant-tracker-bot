@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DataProvider } from "@/context/DataContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SuperAdminProvider } from "@/hooks/useSuperAdmin";
@@ -36,23 +36,6 @@ import SettingsPage from "./pages/super-admin/SettingsPage";
 import SuperAdminPropertiesPage from "./pages/super-admin/PropertiesPage";
 
 const queryClient = new QueryClient();
-
-const RefreshRedirect = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-
-  useEffect(() => {
-    const navEntries = performance.getEntriesByType('navigation');
-    if (navEntries.length > 0) {
-      const navEntry = navEntries[0] as PerformanceNavigationTiming;
-      if (navEntry.type === 'reload' && location.pathname !== '/') {
-        navigate('/', { replace: true });
-      }
-    }
-  }, [navigate, location.pathname]);
-
-  return null;
-};
 
 /**
  * Fixes a Radix UI bug where `pointer-events: none` is occasionally left
@@ -106,7 +89,6 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <BodyPointerEventsGuard />
-              <RefreshRedirect />
               <Routes>
                 {/* Landlord Auth & Routes */}
                 <Route path="/auth" element={<Auth />} />
