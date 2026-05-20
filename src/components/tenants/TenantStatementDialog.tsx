@@ -305,34 +305,25 @@ export const TenantStatementDialog = ({
                         ) : (
                           <span>{record.isManualOverride ? formatCurrency(0) : '-'}</span>
                         )}
-                        {record.isManualOverride && (
+                        {record.isManualOverride ? (
                           <Badge
                             variant="outline"
-                            className="h-5 px-1 text-[10px] border-warning/40 text-warning"
+                            className="h-5 px-1 text-[10px] border-success/40 text-success"
+                            title="Locked — balance brought forward cannot be edited again"
                           >
-                            Manual
+                            Locked
                           </Badge>
-                        )}
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-6 w-6 opacity-60 hover:opacity-100"
-                          onClick={() =>
-                            handleStartEdit(record.monthIndex, record.balanceBroughtForward)
-                          }
-                          title="Edit B/F manually"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </Button>
-                        {record.isManualOverride && (
+                        ) : (
                           <Button
                             size="icon"
                             variant="ghost"
                             className="h-6 w-6 opacity-60 hover:opacity-100"
-                            onClick={() => handleResetOverride(record.monthIndex)}
-                            title="Reset to auto-calculated"
+                            onClick={() =>
+                              handleStartEdit(record.monthIndex, record.balanceBroughtForward)
+                            }
+                            title="Edit B/F (one-time — locks after saving)"
                           >
-                            <RotateCcw className="h-3 w-3" />
+                            <Pencil className="h-3 w-3" />
                           </Button>
                         )}
                       </div>
@@ -399,7 +390,7 @@ export const TenantStatementDialog = ({
 
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-          <span><strong>B/F</strong> = Balance Brought Forward (auto-calculated, click <Pencil className="inline h-3 w-3" /> to override)</span>
+          <span><strong>B/F</strong> = Balance Brought Forward (auto-calculated; one-time manual override locks the value)</span>
           <span><strong>TMC</strong> = Total Monthly Collection</span>
           <span><strong>C/F</strong> = Balance Carried Forward</span>
         </div>
