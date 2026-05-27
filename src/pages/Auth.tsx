@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Mail, Lock, User, Phone, Building, Shield } from 'lucide-react';
+import { Mail, Lock, User, Phone, Building, Shield, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { z } from 'zod';
