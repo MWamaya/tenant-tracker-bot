@@ -363,17 +363,20 @@ const Tenants = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Monthly Balance</p>
-                  <p className={`font-semibold ${(tenant.balance?.balance ?? 0) - (tenant.balance?.carry_forward ?? 0) > 0 ? 'text-destructive' : 'text-success'}`}>
-                    {formatCurrency(Math.max(0, (tenant.balance?.balance ?? 0) - (tenant.balance?.carry_forward ?? 0)))}
+                  <p className={`font-semibold ${(tenant.balance?.monthly_balance ?? 0) > 0 ? 'text-destructive' : 'text-success'}`}>
+                    {formatCurrency(tenant.balance?.monthly_balance ?? 0)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">C/F</p>
-                  <p className="font-semibold text-destructive">
-                    {formatCurrency(tenant.balance?.carry_forward || 0)}
+                  <p className="text-xs text-muted-foreground">
+                    {(tenant.balance?.carry_forward ?? 0) < 0 ? 'Credit C/F' : 'C/F'}
+                  </p>
+                  <p className={`font-semibold ${(tenant.balance?.carry_forward ?? 0) < 0 ? 'text-success' : (tenant.balance?.carry_forward ?? 0) > 0 ? 'text-destructive' : ''}`}>
+                    {formatCurrency(Math.abs(tenant.balance?.carry_forward || 0))}
                   </p>
                 </div>
               </div>
+
 
 
               <div className="mt-4 flex gap-2">
