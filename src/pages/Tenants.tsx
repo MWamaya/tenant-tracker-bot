@@ -132,8 +132,10 @@ const Tenants = () => {
           paid_amount: totalPaidCurrentMonth,
           balance: balanceRemaining,
           carry_forward: carryForward,
+          monthly_balance: monthlyBalance,
           expected_rent: expectedRent,
         },
+
       };
     })
 
