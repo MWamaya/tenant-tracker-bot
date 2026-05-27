@@ -142,8 +142,9 @@ export const TenantStatementDialog = ({
       const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
       const balanceBroughtForward = hasOverride ? bfOverrides[i] : carryForwardBalance;
 
+      // Allow negative C/F = credit that rolls into next month's B/F
       const totalDue = expectedRent + balanceBroughtForward;
-      const balanceCarriedForward = Math.max(0, totalDue - totalPaid);
+      const balanceCarriedForward = totalDue - totalPaid;
 
       let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
       if (totalPaid >= totalDue) {
