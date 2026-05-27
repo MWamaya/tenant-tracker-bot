@@ -142,8 +142,9 @@ export const TenantStatementDialog = ({
       const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
       const balanceBroughtForward = hasOverride ? bfOverrides[i] : carryForwardBalance;
 
+      // Allow negative C/F = credit that rolls into next month's B/F
       const totalDue = expectedRent + balanceBroughtForward;
-      const balanceCarriedForward = Math.max(0, totalDue - totalPaid);
+      const balanceCarriedForward = totalDue - totalPaid;
 
       let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
       if (totalPaid >= totalDue) {
@@ -302,6 +303,10 @@ export const TenantStatementDialog = ({
                           >
                             {formatCurrency(record.balanceBroughtForward)}
                           </span>
+                        ) : record.balanceBroughtForward < 0 ? (
+                          <span className="text-success font-medium" title="Credit from previous month">
+                            +{formatCurrency(Math.abs(record.balanceBroughtForward))}
+                          </span>
                         ) : (
                           <span>{record.isManualOverride ? formatCurrency(0) : '-'}</span>
                         )}
@@ -377,6 +382,10 @@ export const TenantStatementDialog = ({
                   <TableCell className="text-right">
                     {record.balanceCarriedForward > 0 ? (
                       <span className="text-destructive font-medium">{formatCurrency(record.balanceCarriedForward)}</span>
+                    ) : record.balanceCarriedForward < 0 ? (
+                      <span className="text-success font-medium" title="Credit rolling to next month">
+                        +{formatCurrency(Math.abs(record.balanceCarriedForward))}
+                      </span>
                     ) : (
                       '-'
                     )}
