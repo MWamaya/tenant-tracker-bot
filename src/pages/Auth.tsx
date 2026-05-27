@@ -184,13 +184,21 @@ const Auth = () => {
                       <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="login-password"
-                        type="password"
+                        type={showLoginPassword ? 'text' : 'password'}
                         placeholder="••••••••"
-                        className="pl-10"
+                        className="pl-10 pr-10"
                         value={loginPassword}
                         onChange={(e) => setLoginPassword(e.target.value)}
                         required
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowLoginPassword((v) => !v)}
+                        className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                        aria-label={showLoginPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
                   <div className="flex justify-end">
