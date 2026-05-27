@@ -148,6 +148,31 @@ export const useProperties = () => {
 
   const deleteProperty = useMutation({
     mutationFn: async (id: string) => {
+      // Find all houses under this property
+      const { data: houses, error: housesErr } = await supabase
+        .from('houses')
+        .select('id')
+        .eq('property_id', id);
+      if (housesErr) throw housesErr;
+
+      const houseIds = (houses || []).map((h) => h.id);
+
+      if (houseIds.length > 0) {
+        // Delete tenants assigned to those houses
+        const { error: tenantsErr } = await supabase
+          .from('tenants')
+          .delete()
+          .in('house_id', houseIds);
+        if (tenantsErr) throw tenantsErr;
+
+        // Delete the houses themselves
+        const { error: hDelErr } = await supabase
+          .from('houses')
+          .delete()
+          .in('id', houseIds);
+        if (hDelErr) throw hDelErr;
+      }
+
       const { error } = await supabase
         .from('properties')
         .delete()
@@ -159,12 +184,15 @@ export const useProperties = () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
       queryClient.invalidateQueries({ queryKey: ['properties-with-stats'] });
       queryClient.invalidateQueries({ queryKey: ['houses'] });
-      toast.success('Property deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      toast.success('Property, its houses and tenants deleted');
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete property: ${error.message}`);
     },
   });
+
 
   return {
     properties: propertiesQuery.data || [],
