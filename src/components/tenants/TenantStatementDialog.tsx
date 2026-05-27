@@ -39,7 +39,7 @@ interface MonthlyRecord {
   month: string;
   monthIndex: number;
   expectedRent: number;
-  payments: { amount: number; mpesaRef: string; date: string }[];
+  payments: { amount: number; mpesaRef: string; date: string; isRollover?: boolean }[];
   totalPaid: number;
   balanceBroughtForward: number;
   balanceCarriedForward: number;
@@ -129,22 +129,53 @@ export const TenantStatementDialog = ({
   const generateYearlyStatement = (): MonthlyRecord[] => {
     const records: MonthlyRecord[] = [];
     let carryForwardBalance = 0;
+    let rolloverPayments: MonthlyRecord['payments'] = [];
 
     for (let i = 0; i < 12; i++) {
       const monthPayments = payments.filter(p => {
         const paymentDate = new Date(p.date);
         return paymentDate.getMonth() === i && paymentDate.getFullYear() === currentYear;
-      });
-
-      const totalPaid = monthPayments.reduce((sum, p) => sum + p.amount, 0);
+      }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
       // Manual override takes precedence over auto-calc
       const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
       const balanceBroughtForward = hasOverride ? bfOverrides[i] : carryForwardBalance;
 
-      // Allow negative C/F = credit that rolls into next month's B/F
+      // Apply payments to this month only up to the amount due. Any excess is
+      // moved to the next month's row with the original M-Pesa ref/date.
       const totalDue = expectedRent + balanceBroughtForward;
-      const balanceCarriedForward = totalDue - totalPaid;
+      let remainingDue = totalDue;
+      const appliedPayments: MonthlyRecord['payments'] = [];
+      const nextRolloverPayments: MonthlyRecord['payments'] = [];
+
+      [...rolloverPayments, ...monthPayments.map(p => ({
+        amount: p.amount,
+        mpesaRef: p.mpesaRef,
+        date: p.date,
+      }))].forEach((payment) => {
+        if (remainingDue > 0) {
+          const appliedAmount = Math.min(payment.amount, remainingDue);
+          appliedPayments.push({ ...payment, amount: appliedAmount });
+          remainingDue -= appliedAmount;
+
+          const excessAmount = payment.amount - appliedAmount;
+          if (excessAmount > 0) {
+            nextRolloverPayments.push({
+              ...payment,
+              amount: excessAmount,
+              isRollover: true,
+            });
+          }
+        } else {
+          nextRolloverPayments.push({
+            ...payment,
+            isRollover: true,
+          });
+        }
+      });
+
+      const totalPaid = appliedPayments.reduce((sum, p) => sum + p.amount, 0);
+      const balanceCarriedForward = Math.max(0, totalDue - totalPaid);
 
       let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
       if (totalPaid >= totalDue) {
@@ -157,11 +188,7 @@ export const TenantStatementDialog = ({
         month: months[i],
         monthIndex: i,
         expectedRent,
-        payments: monthPayments.map(p => ({
-          amount: p.amount,
-          mpesaRef: p.mpesaRef,
-          date: p.date,
-        })),
+        payments: appliedPayments,
         totalPaid,
         balanceBroughtForward,
         balanceCarriedForward,
@@ -170,6 +197,7 @@ export const TenantStatementDialog = ({
       });
 
       carryForwardBalance = balanceCarriedForward;
+      rolloverPayments = nextRolloverPayments;
     }
 
     return records;
