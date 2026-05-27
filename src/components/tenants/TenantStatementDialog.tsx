@@ -378,6 +378,10 @@ export const TenantStatementDialog = ({
                   <TableCell className="text-right">
                     {record.balanceCarriedForward > 0 ? (
                       <span className="text-destructive font-medium">{formatCurrency(record.balanceCarriedForward)}</span>
+                    ) : record.balanceCarriedForward < 0 ? (
+                      <span className="text-success font-medium" title="Credit rolling to next month">
+                        +{formatCurrency(Math.abs(record.balanceCarriedForward))}
+                      </span>
                     ) : (
                       '-'
                     )}
