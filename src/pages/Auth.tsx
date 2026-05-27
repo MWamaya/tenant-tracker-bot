@@ -17,6 +17,10 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+const resetSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
 const signupSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -27,8 +31,9 @@ const signupSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { user, loading, signIn, signUp } = useAuth();
+  const { user, loading, signIn, signUp, resetPassword } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
   
   // Login form
   const [loginEmail, setLoginEmail] = useState('');
@@ -69,6 +74,24 @@ const Auth = () => {
     } else {
       toast.success('Welcome back!');
       navigate('/');
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    const validation = resetSchema.safeParse({ email: loginEmail });
+    if (!validation.success) {
+      toast.error('Enter your email address first');
+      return;
+    }
+
+    setIsResetting(true);
+    const { error } = await resetPassword(loginEmail);
+    setIsResetting(false);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Password reset email sent. Check your inbox.');
     }
   };
 
@@ -167,6 +190,17 @@ const Auth = () => {
                         required
                       />
                     </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <Button
+                      type="button"
+                      variant="link"
+                      className="h-auto px-0 py-0 text-sm"
+                      disabled={isResetting}
+                      onClick={handlePasswordReset}
+                    >
+                      {isResetting ? 'Sending reset email...' : 'Forgot password?'}
+                    </Button>
                   </div>
                 </CardContent>
                 <CardFooter>
