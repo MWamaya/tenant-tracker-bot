@@ -93,41 +93,37 @@ const Tenants = () => {
         paidByMonth[d.getMonth()] = (paidByMonth[d.getMonth()] || 0) + Number(p.amount);
       });
 
-      // Walk months Jan..current to derive C/F into the current month
-      let carryForward = 0;
-      let monthlyBalance = 0;
-      let totalPaidCurrentMonth = 0;
-      for (let i = 0; i <= currentMonthIdx; i++) {
-        const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
-        const bf = hasOverride ? Number(bfOverrides[i]) || 0 : carryForward;
-        const paid = paidByMonth[i] || 0;
-        if (i === currentMonthIdx) {
-          carryForward = bf;
-          totalPaidCurrentMonth = paid;
-          monthlyBalance = Math.max(0, expectedRent - paid);
-        }
-        carryForward = Math.max(0, expectedRent + bf - paid);
-      }
-      // After loop, carryForward holds end-of-current-month balance; we want bf INTO current month
-      // Recompute correctly:
-      carryForward = 0;
+      // Walk months Jan..prev to derive C/F INTO the current month (allow negative = credit)
+      let bfIntoCurrent = 0;
       for (let i = 0; i < currentMonthIdx; i++) {
         const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
-        const bf = hasOverride ? Number(bfOverrides[i]) || 0 : carryForward;
+        const bf = hasOverride ? Number(bfOverrides[i]) || 0 : bfIntoCurrent;
         const paid = paidByMonth[i] || 0;
-        carryForward = Math.max(0, expectedRent + bf - paid);
+        bfIntoCurrent = expectedRent + bf - paid; // no clamp: negative = credit
       }
-      // Apply current-month override if present
+      // Apply current-month override if present (overrides incoming BF)
       if (Object.prototype.hasOwnProperty.call(bfOverrides, currentMonthIdx)) {
-        carryForward = Number(bfOverrides[currentMonthIdx]) || 0;
+        bfIntoCurrent = Number(bfOverrides[currentMonthIdx]) || 0;
       }
 
-      const totalDue = expectedRent + carryForward;
+      const totalPaidCurrentMonth = paidByMonth[currentMonthIdx] || 0;
+
+      // End-of-current-month projected balance (negative = credit rolling to next month)
+      const endOfMonthBalance = expectedRent + bfIntoCurrent - totalPaidCurrentMonth;
+
+      // Display "C/F" as what will roll into NEXT month (credit if overpaid)
+      const carryForward = endOfMonthBalance;
+
+      // Monthly balance still owed for the current month (0 if fully paid / overpaid)
+      const monthlyBalance = Math.max(0, expectedRent + Math.max(0, bfIntoCurrent) - totalPaidCurrentMonth);
+
+      const totalDue = expectedRent + Math.max(0, bfIntoCurrent);
       const balanceRemaining = Math.max(0, totalDue - totalPaidCurrentMonth);
 
       let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
       if (totalPaidCurrentMonth >= totalDue) balanceStatus = 'paid';
       else if (totalPaidCurrentMonth > 0) balanceStatus = 'partial';
+
 
       return {
         ...tenant,
@@ -136,8 +132,10 @@ const Tenants = () => {
           paid_amount: totalPaidCurrentMonth,
           balance: balanceRemaining,
           carry_forward: carryForward,
+          monthly_balance: monthlyBalance,
           expected_rent: expectedRent,
         },
+
       };
     })
 
@@ -365,17 +363,20 @@ const Tenants = () => {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Monthly Balance</p>
-                  <p className={`font-semibold ${(tenant.balance?.balance ?? 0) - (tenant.balance?.carry_forward ?? 0) > 0 ? 'text-destructive' : 'text-success'}`}>
-                    {formatCurrency(Math.max(0, (tenant.balance?.balance ?? 0) - (tenant.balance?.carry_forward ?? 0)))}
+                  <p className={`font-semibold ${(tenant.balance?.monthly_balance ?? 0) > 0 ? 'text-destructive' : 'text-success'}`}>
+                    {formatCurrency(tenant.balance?.monthly_balance ?? 0)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">C/F</p>
-                  <p className="font-semibold text-destructive">
-                    {formatCurrency(tenant.balance?.carry_forward || 0)}
+                  <p className="text-xs text-muted-foreground">
+                    {(tenant.balance?.carry_forward ?? 0) < 0 ? 'Credit C/F' : 'C/F'}
+                  </p>
+                  <p className={`font-semibold ${(tenant.balance?.carry_forward ?? 0) < 0 ? 'text-success' : (tenant.balance?.carry_forward ?? 0) > 0 ? 'text-destructive' : ''}`}>
+                    {formatCurrency(Math.abs(tenant.balance?.carry_forward || 0))}
                   </p>
                 </div>
               </div>
+
 
 
               <div className="mt-4 flex gap-2">
