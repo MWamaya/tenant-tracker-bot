@@ -303,6 +303,10 @@ export const TenantStatementDialog = ({
                           >
                             {formatCurrency(record.balanceBroughtForward)}
                           </span>
+                        ) : record.balanceBroughtForward < 0 ? (
+                          <span className="text-success font-medium" title="Credit from previous month">
+                            +{formatCurrency(Math.abs(record.balanceBroughtForward))}
+                          </span>
                         ) : (
                           <span>{record.isManualOverride ? formatCurrency(0) : '-'}</span>
                         )}
