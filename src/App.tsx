@@ -20,6 +20,7 @@ import Reports from "./pages/Reports";
 import EmailLogs from "./pages/EmailLogs";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import ChoosePlan from "./pages/ChoosePlan";
 import Landing from "./pages/Landing";
@@ -92,6 +93,7 @@ const App = () => (
               <Routes>
                 {/* Landlord Auth & Routes */}
                 <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/subscribe" element={<ProtectedRoute><ChoosePlan /></ProtectedRoute>} />
                 <Route path="/" element={<RootRoute />} />
                 <Route path="/properties" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
