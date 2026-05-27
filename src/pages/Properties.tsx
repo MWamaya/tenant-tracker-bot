@@ -262,7 +262,7 @@ const Properties = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {selectedProperty?.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this property. Houses under this property will become unassigned. This action cannot be undone.
+              This will permanently delete this property along with all its houses and tenants. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
