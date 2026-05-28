@@ -285,9 +285,11 @@ export const TenantStatementDialog = ({
             <TableBody>
               {yearlyStatement
                 .filter((record) => {
-                  if (record.monthIndex === currentMonth) return true;
-                  // Show future months that received a credit roll-forward or have payments
-                  if (record.monthIndex > currentMonth) {
+                  const pos = monthOrder.indexOf(record.monthIndex);
+                  const currentPos = monthOrder.indexOf(currentMonth);
+                  if (pos === currentPos) return true;
+                  // Show later months in the statement that received a credit roll-forward or have payments
+                  if (pos > currentPos) {
                     return record.balanceBroughtForward < 0 || record.payments.length > 0;
                   }
                   return false;
