@@ -264,6 +264,13 @@ const Dashboard = () => {
           )}
         </div>
 
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList className="grid w-full sm:w-auto sm:inline-grid grid-cols-2">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="mt-6 space-y-8">
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
