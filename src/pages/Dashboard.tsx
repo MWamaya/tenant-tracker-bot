@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PaymentsContent } from '@/components/payments/PaymentsContent';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('unpaid');
