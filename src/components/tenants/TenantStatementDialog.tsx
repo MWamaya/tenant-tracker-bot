@@ -125,13 +125,17 @@ export const TenantStatementDialog = ({
     toast.success(`Reverted to auto-calculated C/F for ${months[monthIndex]}`);
   };
 
+  // Statement year starts in May (month index 4)
+  const STATEMENT_START_MONTH = 4;
+  const monthOrder = Array.from({ length: 12 }, (_, k) => (STATEMENT_START_MONTH + k) % 12);
+
   // Generate yearly statement with balance carry forward + manual overrides
   const generateYearlyStatement = (): MonthlyRecord[] => {
     const records: MonthlyRecord[] = [];
     let carryForwardBalance = 0;
     let rolloverPayments: MonthlyRecord['payments'] = [];
 
-    for (let i = 0; i < 12; i++) {
+    for (const i of monthOrder) {
       const monthPayments = payments.filter(p => {
         const paymentDate = new Date(p.date);
         return paymentDate.getMonth() === i && paymentDate.getFullYear() === currentYear;
