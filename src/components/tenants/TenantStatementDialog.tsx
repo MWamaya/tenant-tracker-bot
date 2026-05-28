@@ -210,7 +210,7 @@ export const TenantStatementDialog = ({
   const yearlyStatement = generateYearlyStatement();
   const totalExpected = yearlyStatement.reduce((sum, r) => sum + r.expectedRent, 0);
   const totalPaid = yearlyStatement.reduce((sum, r) => sum + r.totalPaid, 0);
-  const totalOutstanding = yearlyStatement[11]?.balanceCarriedForward || 0;
+  const totalOutstanding = yearlyStatement[yearlyStatement.length - 1]?.balanceCarriedForward || 0;
 
   const getStatusBadge = (status: 'paid' | 'partial' | 'unpaid') => {
     switch (status) {
