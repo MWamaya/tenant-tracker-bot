@@ -509,6 +509,12 @@ const Dashboard = () => {
             </TabsContent>
           </Tabs>
         </div>
+          </TabsContent>
+
+          <TabsContent value="payments" className="mt-6">
+            <PaymentsContent />
+          </TabsContent>
+        </Tabs>
       </div>
       
       <PropertyFormDialog
