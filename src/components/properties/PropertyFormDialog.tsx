@@ -144,7 +144,25 @@ export const PropertyFormDialog = ({
             </div>
           </div>
 
-          <DialogFooter className="pt-4">
+          <DialogFooter className="pt-4 gap-2">
+            {editProperty && onDelete && (
+              <Button
+                type="button"
+                variant={confirmDelete ? 'destructive' : 'outline'}
+                className="mr-auto gap-1"
+                onClick={() => {
+                  if (confirmDelete) {
+                    onDelete();
+                    onOpenChange(false);
+                  } else {
+                    setConfirmDelete(true);
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                {confirmDelete ? 'Confirm Delete' : 'Delete'}
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
