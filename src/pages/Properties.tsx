@@ -12,23 +12,12 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { 
   Search, 
   Plus, 
   Building2, 
   Home, 
   Users, 
-  Trash2, 
   Edit, 
   Loader2,
   MapPin,
@@ -44,7 +33,6 @@ const Properties = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<PropertyWithStats | null>(null);
 
   const filteredProperties = propertiesWithStats.filter(property =>
@@ -79,7 +67,6 @@ const Properties = () => {
     if (selectedProperty) {
       await deleteProperty.mutateAsync(selectedProperty.id);
       setSelectedProperty(null);
-      setDeleteDialogOpen(false);
     }
   };
 
@@ -241,29 +228,10 @@ const Properties = () => {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onSave={handleEditProperty}
+        onDelete={handleDeleteConfirm}
         editProperty={selectedProperty}
       />
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedProperty?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete this property along with all its houses and tenants. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteConfirm}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </MainLayout>
   );
 };

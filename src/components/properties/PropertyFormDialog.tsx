@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,7 @@ interface PropertyFormDialogProps {
     town?: string;
     property_type?: string;
   }) => void;
+  onDelete?: () => void;
   editProperty?: Property | null;
 }
 
@@ -35,9 +37,11 @@ export const PropertyFormDialog = ({
   open,
   onOpenChange,
   onSave,
+  onDelete,
   editProperty,
 }: PropertyFormDialogProps) => {
   const [name, setName] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [address, setAddress] = useState('');
   const [county, setCounty] = useState('');
   const [town, setTown] = useState('');
@@ -45,6 +49,7 @@ export const PropertyFormDialog = ({
 
   useEffect(() => {
     if (open) {
+      setConfirmDelete(false);
       if (editProperty) {
         setName(editProperty.name);
         setAddress(editProperty.address || '');
@@ -139,7 +144,25 @@ export const PropertyFormDialog = ({
             </div>
           </div>
 
-          <DialogFooter className="pt-4">
+          <DialogFooter className="pt-4 gap-2">
+            {editProperty && onDelete && (
+              <Button
+                type="button"
+                variant={confirmDelete ? 'destructive' : 'outline'}
+                className="mr-auto gap-1"
+                onClick={() => {
+                  if (confirmDelete) {
+                    onDelete();
+                    onOpenChange(false);
+                  } else {
+                    setConfirmDelete(true);
+                  }
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+                {confirmDelete ? 'Confirm Delete' : 'Delete'}
+              </Button>
+            )}
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
