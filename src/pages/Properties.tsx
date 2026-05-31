@@ -241,6 +241,7 @@ const Properties = () => {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onSave={handleEditProperty}
+        onDelete={handleDeleteConfirm}
         editProperty={selectedProperty}
       />
 
