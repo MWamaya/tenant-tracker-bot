@@ -29,6 +29,7 @@ interface PropertyFormDialogProps {
     town?: string;
     property_type?: string;
   }) => void;
+  onDelete?: () => void;
   editProperty?: Property | null;
 }
 
