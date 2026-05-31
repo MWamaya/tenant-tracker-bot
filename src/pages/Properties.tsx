@@ -67,7 +67,6 @@ const Properties = () => {
     if (selectedProperty) {
       await deleteProperty.mutateAsync(selectedProperty.id);
       setSelectedProperty(null);
-      setDeleteDialogOpen(false);
     }
   };
 
