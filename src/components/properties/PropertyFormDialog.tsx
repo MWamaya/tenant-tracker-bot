@@ -37,9 +37,11 @@ export const PropertyFormDialog = ({
   open,
   onOpenChange,
   onSave,
+  onDelete,
   editProperty,
 }: PropertyFormDialogProps) => {
   const [name, setName] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [address, setAddress] = useState('');
   const [county, setCounty] = useState('');
   const [town, setTown] = useState('');
