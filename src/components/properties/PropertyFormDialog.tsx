@@ -49,6 +49,7 @@ export const PropertyFormDialog = ({
 
   useEffect(() => {
     if (open) {
+      setConfirmDelete(false);
       if (editProperty) {
         setName(editProperty.name);
         setAddress(editProperty.address || '');
