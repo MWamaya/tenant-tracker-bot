@@ -163,15 +163,7 @@ export const TenantStatementDialog = ({
           remainingDue -= appliedAmount;
 
           const excessAmount = payment.amount - appliedAmount;
-          // If this payment fully clears the month (with or without excess),
-          // also count the FULL payment amount as a credit on the next month.
-          if (appliedAmount > 0 && remainingDue === 0) {
-            nextRolloverPayments.push({
-              ...payment,
-              amount: payment.amount,
-              isRollover: true,
-            });
-          } else if (excessAmount > 0) {
+          if (excessAmount > 0) {
             nextRolloverPayments.push({
               ...payment,
               amount: excessAmount,
