@@ -380,8 +380,17 @@ export const TenantStatementDialog = ({
                     {record.payments.length > 0 ? (
                       <div className="space-y-1">
                         {record.payments.map((p, idx) => (
-                          <div key={idx} className="text-xs text-success font-medium">
+                          <div key={idx} className="text-xs text-success font-medium flex items-center justify-end gap-1">
                             {formatCurrency(p.amount)}
+                            {p.isRollover && (
+                              <Badge
+                                variant="outline"
+                                className="h-4 px-1 text-[9px] border-primary/40 text-primary"
+                                title={`Carried over from ${months[new Date(p.date).getMonth()]}`}
+                              >
+                                Carried
+                              </Badge>
+                            )}
                           </div>
                         ))}
                       </div>
