@@ -283,18 +283,7 @@ export const TenantStatementDialog = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {yearlyStatement
-                .filter((record) => {
-                  const pos = monthOrder.indexOf(record.monthIndex);
-                  const currentPos = monthOrder.indexOf(currentMonth);
-                  if (pos === currentPos) return true;
-                  // Show later months in the statement that received a credit roll-forward or have payments
-                  if (pos > currentPos) {
-                    return record.balanceBroughtForward < 0 || record.payments.length > 0;
-                  }
-                  return false;
-                })
-                .map((record) => (
+              {yearlyStatement.map((record) => (
                 <TableRow key={record.monthIndex}>
                   <TableCell className="font-medium">{record.month}</TableCell>
                   <TableCell className="text-right">
