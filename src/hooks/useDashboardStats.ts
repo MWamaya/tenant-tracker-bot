@@ -34,6 +34,8 @@ export const useDashboardStats = () => {
   const currentMonth = format(new Date(), 'yyyy-MM');
   const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+  const prevMonthStart = format(startOfMonth(subMonths(new Date(), 1)), 'yyyy-MM-dd');
+  const prevMonthEnd = format(endOfMonth(subMonths(new Date(), 1)), 'yyyy-MM-dd');
 
   return useQuery({
     queryKey: ['dashboard-stats', landlordId, currentMonth],
