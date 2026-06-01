@@ -75,7 +75,10 @@ export const useDashboardStats = () => {
 
       const houseBalances: HouseBalance[] = houses.map(house => {
         const housePayments = payments.filter(p => p.house_id === house.id);
-        const paidAmount = housePayments.reduce((sum, p) => sum + p.amount, 0);
+        const rawPaid = housePayments.reduce((sum, p) => sum + p.amount, 0);
+        // Cap at expected rent — excess rolls to next month and must not
+        // inflate the current month's collection total.
+        const paidAmount = Math.min(rawPaid, house.expected_rent);
         const balance = house.expected_rent - paidAmount;
         const tenant = tenants.find(t => t.house_id === house.id);
         
@@ -106,7 +109,7 @@ export const useDashboardStats = () => {
         occupiedHouses: houses.filter(h => h.status === 'occupied').length,
         vacantHouses: houses.filter(h => h.status === 'vacant').length,
         totalExpected: houses.reduce((sum, h) => sum + h.expected_rent, 0),
-        totalCollected: payments.reduce((sum, p) => sum + p.amount, 0),
+        totalCollected: houseBalances.reduce((sum, h) => sum + h.paidAmount, 0),
         totalOutstanding: houseBalances.reduce((sum, h) => sum + h.balance, 0),
         paidHouses: houseBalances.filter(h => h.status === 'paid').length,
         partialHouses: houseBalances.filter(h => h.status === 'partial').length,
