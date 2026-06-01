@@ -330,6 +330,8 @@ const Dashboard = () => {
           />
         </div>
 
+        <MonthlyReconciliation />
+
         <div className="stat-card animate-slide-up" ref={tabsRef}>
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold">House Payment Status</h3>
