@@ -409,7 +409,7 @@ export const TenantStatementDialog = ({
                       <div className="space-y-1">
                         {record.payments.map((p, idx) => (
                           <div key={idx} className="text-xs whitespace-nowrap">
-                            {format(new Date(p.date), 'd/M/yyyy')}
+                            {p.isRollover ? '—' : format(new Date(p.date), 'd/M/yyyy')}
                           </div>
                         ))}
                       </div>
