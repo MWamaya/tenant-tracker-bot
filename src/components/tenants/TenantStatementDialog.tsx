@@ -283,7 +283,13 @@ export const TenantStatementDialog = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {yearlyStatement.map((record) => (
+              {yearlyStatement
+                .filter((record) => {
+                  const pos = monthOrder.indexOf(record.monthIndex);
+                  const currentPos = monthOrder.indexOf(currentMonth);
+                  return pos <= currentPos;
+                })
+                .map((record) => (
                 <TableRow key={record.monthIndex}>
                   <TableCell className="font-medium">{record.month}</TableCell>
                   <TableCell className="text-right">
