@@ -16,7 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PaymentsContent } from '@/components/payments/PaymentsContent';
-import { MonthlyReconciliation } from '@/components/dashboard/MonthlyReconciliation';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('unpaid');
