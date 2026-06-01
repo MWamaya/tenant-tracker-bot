@@ -109,7 +109,7 @@ export const useDashboardStats = () => {
         occupiedHouses: houses.filter(h => h.status === 'occupied').length,
         vacantHouses: houses.filter(h => h.status === 'vacant').length,
         totalExpected: houses.reduce((sum, h) => sum + h.expected_rent, 0),
-        totalCollected: payments.reduce((sum, p) => sum + p.amount, 0),
+        totalCollected: houseBalances.reduce((sum, h) => sum + h.paidAmount, 0),
         totalOutstanding: houseBalances.reduce((sum, h) => sum + h.balance, 0),
         paidHouses: houseBalances.filter(h => h.status === 'paid').length,
         partialHouses: houseBalances.filter(h => h.status === 'partial').length,
