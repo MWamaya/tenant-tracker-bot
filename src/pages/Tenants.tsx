@@ -356,16 +356,10 @@ const Tenants = () => {
                 {tenant.balance && <StatusBadge status={tenant.balance.status} />}
               </div>
               
-              <div className="mt-4 pt-4 border-t grid grid-cols-3 gap-3">
+              <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-3">
                 <div>
                   <p className="text-xs text-muted-foreground">Expected Rent</p>
                   <p className="font-semibold">{formatCurrency(Number(tenant.houses?.expected_rent) || 0)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Monthly Balance</p>
-                  <p className={`font-semibold ${(tenant.balance?.monthly_balance ?? 0) > 0 ? 'text-destructive' : 'text-success'}`}>
-                    {formatCurrency(tenant.balance?.monthly_balance ?? 0)}
-                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">
