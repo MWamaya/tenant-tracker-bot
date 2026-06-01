@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
-import { format, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
 export interface DashboardStats {
   totalHouses: number;
@@ -34,6 +34,8 @@ export const useDashboardStats = () => {
   const currentMonth = format(new Date(), 'yyyy-MM');
   const monthStart = format(startOfMonth(new Date()), 'yyyy-MM-dd');
   const monthEnd = format(endOfMonth(new Date()), 'yyyy-MM-dd');
+  const prevMonthStart = format(startOfMonth(subMonths(new Date(), 1)), 'yyyy-MM-dd');
+  const prevMonthEnd = format(endOfMonth(subMonths(new Date(), 1)), 'yyyy-MM-dd');
 
   return useQuery({
     queryKey: ['dashboard-stats', landlordId, currentMonth],
@@ -73,12 +75,28 @@ export const useDashboardStats = () => {
 
       if (paymentsError) throw paymentsError;
 
+      const { data: prevPayments, error: prevPaymentsError } = await supabase
+        .from('payments')
+        .select('id, amount, house_id')
+        .eq('landlord_id', landlordId)
+        .gte('payment_date', prevMonthStart)
+        .lte('payment_date', prevMonthEnd);
+
+      if (prevPaymentsError) throw prevPaymentsError;
+
       const houseBalances: HouseBalance[] = houses.map(house => {
         const housePayments = payments.filter(p => p.house_id === house.id);
-        const paidAmount = housePayments.reduce((sum, p) => sum + p.amount, 0);
+        const currentPaid = housePayments.reduce((sum, p) => sum + p.amount, 0);
+
+        // Carry-forward: previous month's overpayment rolls into this month
+        const prevHousePayments = prevPayments.filter(p => p.house_id === house.id);
+        const prevPaid = prevHousePayments.reduce((sum, p) => sum + p.amount, 0);
+        const carryForward = Math.max(0, prevPaid - house.expected_rent);
+
+        const paidAmount = currentPaid + carryForward;
         const balance = house.expected_rent - paidAmount;
         const tenant = tenants.find(t => t.house_id === house.id);
-        
+
         let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
         if (paidAmount >= house.expected_rent) {
           status = 'paid';
