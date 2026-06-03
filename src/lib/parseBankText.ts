@@ -84,7 +84,7 @@ export function parseTransactionBlock(block: string): ParsedTextRow | null {
   if (!text) return null;
 
   const amountMatch = text.match(RX_AMOUNT);
-  const refMatch    = text.match(RX_REF);
+  const refMatch    = text.match(RX_REF_LABELED) || text.match(RX_REF_GENERIC);
   if (!amountMatch || !refMatch) return null;
 
   const amount = parseFloat(amountMatch[1].replace(/,/g, ''));
