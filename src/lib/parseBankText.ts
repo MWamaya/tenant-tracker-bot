@@ -42,7 +42,11 @@ const tryParseDate = (s: string): string | null => {
   return isValid(fallback) ? fallback.toISOString() : null;
 };
 
-const RX_REF       = /\b([A-Z0-9]{10})\b/;                                      // M-Pesa ref e.g. SG12ABCD34
+// M-Pesa refs are exactly 10 alphanumeric chars AND always contain at least
+// one letter and one digit. Requiring a digit prevents 10-letter names
+// (e.g. "SHITAMBASI") from being misread as the reference.
+const RX_REF_LABELED = /M-?PESA\s*Ref(?:erence)?\s*[:#-]?\s*([A-Z0-9]{10})\b/i;
+const RX_REF_GENERIC = /\b(?=[A-Z0-9]{10}\b)(?=[A-Z0-9]*\d)(?=[A-Z0-9]*[A-Z])([A-Z0-9]{10})\b/;
 const RX_AMOUNT    = /(?:Ksh|KES|KSH)\s*\.?\s*([\d,]+(?:\.\d{1,2})?)/i;         // Ksh1,500.00
 const RX_PHONE     = /(\+?254\d{9}|07\d{8}|01\d{8})/;                           // KE phone numbers
 const RX_DATE_TIME = /(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(?:at\s+)?(\d{1,2}:\d{2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)/;
