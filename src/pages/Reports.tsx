@@ -40,12 +40,12 @@ import {
 } from 'recharts';
 
 const Reports = () => {
-  const { data, isLoading } = useDashboardStats();
   const { payments } = usePayments();
   const { properties } = useProperties();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedProperty, setSelectedProperty] = useState<string>('all');
+  const { data, isLoading } = useDashboardStats(selectedMonth);
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-KE', {
