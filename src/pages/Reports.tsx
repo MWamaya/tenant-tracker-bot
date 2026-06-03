@@ -21,9 +21,23 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer } from 'lucide-react';
+import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import {
+  RadialBarChart,
+  RadialBar,
+  PolarAngleAxis,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 const Reports = () => {
   const { data, isLoading } = useDashboardStats();
@@ -145,55 +159,172 @@ const Reports = () => {
           Showing: <span className="font-medium text-foreground">{selectedPropertyName}</span>
         </p>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <TrendingUp className="h-5 w-5 text-primary" />
+        {hasData && (
+          <>
+            {/* Graphic Overview */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Collection Rate Gauge */}
+              <div className="stat-card relative overflow-hidden lg:col-span-1 bg-gradient-to-br from-primary/5 via-card to-card">
+                <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-primary/10 blur-3xl" />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium text-muted-foreground">Collection Rate</h3>
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="relative h-56">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadialBarChart
+                        innerRadius="75%"
+                        outerRadius="100%"
+                        data={[{ name: 'rate', value: collectionRate, fill: 'hsl(var(--primary))' }]}
+                        startAngle={90}
+                        endAngle={-270}
+                      >
+                        <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
+                        <RadialBar background={{ fill: 'hsl(var(--muted))' }} dataKey="value" cornerRadius={20} />
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <p className="text-5xl font-bold text-primary tabular-nums">{collectionRate}%</p>
+                      <p className="text-xs text-muted-foreground mt-1">of expected rent</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 mt-2 text-center">
+                    <div className="p-2 rounded-lg bg-success/10">
+                      <p className="text-xs text-muted-foreground">Collected</p>
+                      <p className="text-sm font-semibold text-success">{formatCurrency(stats.totalCollected)}</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-warning/10">
+                      <p className="text-xs text-muted-foreground">Outstanding</p>
+                      <p className="text-sm font-semibold text-warning">{formatCurrency(stats.totalOutstanding)}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Collection Rate</p>
-                <p className="text-xl font-bold">{collectionRate}%</p>
+
+              {/* House Status Donut */}
+              <div className="stat-card lg:col-span-1">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-muted-foreground">Houses Breakdown</h3>
+                  <Home className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="h-56">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Paid', value: stats.paidHouses, color: 'hsl(var(--success))' },
+                          { name: 'Partial', value: stats.partialHouses, color: 'hsl(var(--warning))' },
+                          { name: 'Unpaid', value: stats.unpaidHouses, color: 'hsl(var(--destructive))' },
+                        ].filter(d => d.value > 0)}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={2}
+                        strokeWidth={0}
+                      >
+                        {[
+                          'hsl(var(--success))',
+                          'hsl(var(--warning))',
+                          'hsl(var(--destructive))',
+                        ].map((c, i) => (
+                          <Cell key={i} fill={c} />
+                        ))}
+                      </Pie>
+                      <RTooltip
+                        contentStyle={{
+                          background: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: 8,
+                          fontSize: 12,
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mt-1 text-center">
+                  <div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-success" />
+                      <p className="text-xs text-muted-foreground">Paid</p>
+                    </div>
+                    <p className="text-lg font-bold text-success">{stats.paidHouses}</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-warning" />
+                      <p className="text-xs text-muted-foreground">Partial</p>
+                    </div>
+                    <p className="text-lg font-bold text-warning">{stats.partialHouses}</p>
+                  </div>
+                  <div>
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-destructive" />
+                      <p className="text-xs text-muted-foreground">Unpaid</p>
+                    </div>
+                    <p className="text-lg font-bold text-destructive">{stats.unpaidHouses}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Defaulters */}
+              <div className="stat-card lg:col-span-1">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-medium text-muted-foreground">Top Defaulters</h3>
+                  <TrendingDown className="h-4 w-4 text-destructive" />
+                </div>
+                {unpaidTenants.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={unpaidTenants
+                          .slice()
+                          .sort((a, b) => b.balance - a.balance)
+                          .slice(0, 5)
+                          .map(t => ({
+                            name: t.tenantName ? t.tenantName.split(' ')[0] : `H${t.houseNo}`,
+                            balance: t.balance,
+                          }))}
+                        layout="vertical"
+                        margin={{ top: 4, right: 12, left: 4, bottom: 4 }}
+                      >
+                        <XAxis type="number" hide />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          width={70}
+                          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <RTooltip
+                          cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                          contentStyle={{
+                            background: 'hsl(var(--background))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: 8,
+                            fontSize: 12,
+                          }}
+                          formatter={(v: number) => formatCurrency(v)}
+                        />
+                        <Bar dataKey="balance" fill="hsl(var(--destructive))" radius={[0, 6, 6, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex flex-col items-center justify-center text-center">
+                    <div className="h-12 w-12 rounded-full bg-success/10 flex items-center justify-center mb-2">
+                      <Users className="h-6 w-6 text-success" />
+                    </div>
+                    <p className="text-sm font-medium">All clear</p>
+                    <p className="text-xs text-muted-foreground">No defaulters this month</p>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <FileText className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Total Collected</p>
-                <p className="text-xl font-bold">{formatCurrency(stats.totalCollected)}</p>
-              </div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <AlertTriangle className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Outstanding</p>
-                <p className="text-xl font-bold">{formatCurrency(stats.totalOutstanding)}</p>
-              </div>
-            </div>
-          </div>
-          <div className="stat-card">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10">
-                <Users className="h-5 w-5 text-destructive" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Defaulters</p>
-                <p className="text-xl font-bold">
-                  {stats.unpaidHouses + stats.partialHouses}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Report Tabs */}
         <Tabs defaultValue="collection" className="space-y-6">
