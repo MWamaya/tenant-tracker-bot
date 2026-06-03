@@ -29,19 +29,20 @@ export interface HouseBalance {
   tenantPhone: string | null;
 }
 
-export const useDashboardStats = () => {
+export const useDashboardStats = (month?: string) => {
   const landlordId = useEffectiveLandlordId();
   const currentMonth = format(new Date(), 'yyyy-MM');
+  const targetMonth = month || currentMonth;
+  // Anchor to the first day of the selected month in local time
+  const monthAnchor = new Date(`${targetMonth}-01T00:00:00`);
   // Use full ISO timestamps so the month range respects the user's local timezone.
-  // Using only 'yyyy-MM-dd' makes Supabase interpret boundaries as UTC midnight,
-  // which misclassifies payments made near midnight local time (e.g. EAT).
-  const monthStart = startOfMonth(new Date()).toISOString();
-  const monthEnd = endOfMonth(new Date()).toISOString();
-  const prevMonthStart = startOfMonth(subMonths(new Date(), 1)).toISOString();
-  const prevMonthEnd = endOfMonth(subMonths(new Date(), 1)).toISOString();
+  const monthStart = startOfMonth(monthAnchor).toISOString();
+  const monthEnd = endOfMonth(monthAnchor).toISOString();
+  const prevMonthStart = startOfMonth(subMonths(monthAnchor, 1)).toISOString();
+  const prevMonthEnd = endOfMonth(subMonths(monthAnchor, 1)).toISOString();
 
   return useQuery({
-    queryKey: ['dashboard-stats', landlordId, currentMonth],
+    queryKey: ['dashboard-stats', landlordId, targetMonth],
     queryFn: async () => {
       if (!landlordId) return null;
 
