@@ -1,0 +1,10 @@
+# KODI PAP
+
+> Automated rent collection management for landlords in Kenya. Track M-Pesa and bank payments, manage tenants and properties, and send statements and reminders.
+
+KODI PAP helps Kenyan landlords collect rent the smart way: M-Pesa and bank payments are matched automatically to tenants, statements carry balances forward each month, and reminders go out via SMS.
+
+## Pages
+
+- [Home](/): Product overview, features, and pricing for KODI PAP rent collection.
+- [Sign in / Sign up](/auth): Create a landlord account or log in to manage your properties.
