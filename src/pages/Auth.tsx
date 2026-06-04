@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { Mail, Lock, User, Phone, Building, Shield, Eye, EyeOff } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
+import { PageSeo } from '@/components/seo/PageSeo';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -142,6 +143,12 @@ const Auth = () => {
   }
 
   return (
+    <>
+      <PageSeo
+        title="Sign in or sign up — KODI PAP"
+        description="Log in to KODI PAP or create a landlord account to start tracking rent collection."
+        path="/auth"
+      />
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
