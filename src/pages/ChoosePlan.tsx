@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, CreditCard, LogOut, Phone, Mail } from 'lucide-react';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
+import { PageSeo } from '@/components/seo/PageSeo';
 
 const plans = [
   {
