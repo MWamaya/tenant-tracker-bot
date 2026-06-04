@@ -103,7 +103,7 @@ const Reports = () => {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <MainLayout seo={{ title: "Reports \u2014 KODI PAP", description: "Collection rate, defaulters and monthly rent reports.", path: "/reports" }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -114,7 +114,7 @@ const Reports = () => {
   const hasData = houseBalances.length > 0;
 
   return (
-    <MainLayout>
+    <MainLayout seo={{ title: "Reports \u2014 KODI PAP", description: "Collection rate, defaulters and monthly rent reports.", path: "/reports" }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
 

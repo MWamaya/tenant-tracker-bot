@@ -253,7 +253,7 @@ const Tenants = () => {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <MainLayout seo={{ title: "Tenants \u2014 KODI PAP", description: "Manage tenants, expected rent and carry-forward balances.", path: "/tenants" }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -262,7 +262,7 @@ const Tenants = () => {
   }
 
   return (
-    <MainLayout>
+    <MainLayout seo={{ title: "Tenants \u2014 KODI PAP", description: "Manage tenants, expected rent and carry-forward balances.", path: "/tenants" }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         

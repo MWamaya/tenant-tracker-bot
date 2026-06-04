@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, CreditCard, LogOut, Phone, Mail } from 'lucide-react';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
+import { PageSeo } from '@/components/seo/PageSeo';
 
 const plans = [
   {
@@ -47,6 +48,13 @@ const ChoosePlan = () => {
   const { signOut } = useAuth();
 
   return (
+    <>
+      <PageSeo
+        title="Choose your plan — KODI PAP"
+        description="Pick a KODI PAP subscription plan to activate your landlord account."
+        path="/subscribe"
+        noindex
+      />
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-8">
@@ -157,6 +165,7 @@ const ChoosePlan = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Building2, ShieldCheck, Wallet, ArrowRight, Check } from 'lucide-react';
 import heroImage from '@/assets/landing-hero.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
+import { PageSeo } from '@/components/seo/PageSeo';
 
 const Landing = () => {
   const [showPricing, setShowPricing] = useState(false);
@@ -15,6 +16,12 @@ const Landing = () => {
     }
   }, [showPricing]);
   return (
+    <>
+      <PageSeo
+        title="KODI PAP — Smart Rent Collection for Kenyan Landlords"
+        description="Collect rent the smart way. KODI PAP automates M-Pesa and bank payment matching, tenant statements and reminders for landlords in Kenya."
+        path="/"
+      />
     <div className="min-h-screen relative">
       {/* Background image */}
       <div className="absolute inset-0 -z-10">
@@ -175,6 +182,7 @@ const Landing = () => {
         © {new Date().getFullYear()} KODI PAP. All rights reserved.
       </footer>
     </div>
+    </>
   );
 };
 
