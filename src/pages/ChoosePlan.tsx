@@ -165,6 +165,7 @@ const ChoosePlan = () => {
         </Card>
       </div>
     </div>
+    </>
   );
 };
 
