@@ -4,7 +4,7 @@ import { PaymentsContent } from '@/components/payments/PaymentsContent';
 
 const Payments = () => {
   return (
-    <MainLayout>
+    <MainLayout seo={{ title: "Payments \u2014 KODI PAP", description: "Recorded rent payments from M-Pesa and bank channels.", path: "/payments" }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         <PaymentsContent />

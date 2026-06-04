@@ -205,7 +205,7 @@ const Houses = () => {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <MainLayout seo={{ title: "Houses \u2014 KODI PAP", description: "Track every rental house, its tenant and payment status.", path: "/houses" }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -214,7 +214,7 @@ const Houses = () => {
   }
 
   return (
-    <MainLayout>
+    <MainLayout seo={{ title: "Houses \u2014 KODI PAP", description: "Track every rental house, its tenant and payment status.", path: "/houses" }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         

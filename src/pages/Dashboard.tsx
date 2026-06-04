@@ -181,7 +181,7 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: "/" }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -192,7 +192,7 @@ const Dashboard = () => {
   // Show empty state for new landlords
   if (properties.length === 0 || houses.length === 0) {
     return (
-      <MainLayout>
+      <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: "/" }}>
         <EmptyDashboard 
           hasProperties={properties.length > 0}
           hasHouses={houses.length > 0}
@@ -239,7 +239,7 @@ const Dashboard = () => {
   const paidHouses = filteredBalances.filter(h => h.status === 'paid');
 
   return (
-    <MainLayout>
+    <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: "/" }}>
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">

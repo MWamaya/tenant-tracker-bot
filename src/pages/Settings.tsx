@@ -20,7 +20,7 @@ import {
 
 const Settings = () => {
   return (
-    <MainLayout>
+    <MainLayout seo={{ title: "Settings \u2014 KODI PAP", description: "Configure your account, integrations and reminders.", path: "/settings" }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         
