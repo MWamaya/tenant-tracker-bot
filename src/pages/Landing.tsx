@@ -182,6 +182,7 @@ const Landing = () => {
         © {new Date().getFullYear()} KODI PAP. All rights reserved.
       </footer>
     </div>
+    </>
   );
 };
 
