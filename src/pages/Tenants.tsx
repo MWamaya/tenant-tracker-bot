@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users, Building2 } from 'lucide-react';
+import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users, Building2, LogOut, DoorOpen } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { BulkTenantFormDialog } from '@/components/tenants/BulkTenantFormDialog';
 import { TenantStatementDialog } from '@/components/tenants/TenantStatementDialog';
@@ -388,16 +388,44 @@ const Tenants = () => {
                 </Button>
                 <Button 
                   variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  size="sm" 
+                  className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => handleDeleteClick(tenant)}
+                  title="Mark as moved out and vacate house"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <LogOut className="h-3.5 w-3.5" />
+                  Moved Out
                 </Button>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Vacant Houses Notice */}
+        {(() => {
+          const vacantHouses = houses.filter(h => h.status === 'vacant');
+          if (vacantHouses.length === 0) return null;
+          return (
+            <div className="rounded-lg border border-dashed border-warning/40 bg-warning/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <DoorOpen className="h-4 w-4 text-warning" />
+                <h3 className="font-semibold text-sm">Vacant Houses ({vacantHouses.length})</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                These houses currently have no tenant assigned and are available for occupancy.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {vacantHouses.map(h => (
+                  <span key={h.id} className="inline-flex items-center gap-1.5 rounded-md bg-background border px-2.5 py-1 text-xs font-medium">
+                    <Home className="h-3 w-3 text-muted-foreground" />
+                    {h.house_no}
+                    {h.properties?.name && <span className="text-muted-foreground">· {h.properties.name}</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {tenantData.length === 0 && !isLoading && (
           <div className="text-center py-12">
@@ -445,10 +473,10 @@ const Tenants = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Tenant</AlertDialogTitle>
+            <AlertDialogTitle>Mark Tenant as Moved Out</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove <strong>{tenantToDelete?.name}</strong>? 
-              This will mark their house as vacant.
+              This will permanently remove <strong>{tenantToDelete?.name}</strong>'s details and mark house{' '}
+              <strong>{tenantToDelete?.houses?.house_no || 'N/A'}</strong> as vacant. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -457,7 +485,7 @@ const Tenants = () => {
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Remove Tenant
+              Mark as Moved Out
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
