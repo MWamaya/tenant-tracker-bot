@@ -388,16 +388,44 @@ const Tenants = () => {
                 </Button>
                 <Button 
                   variant="ghost" 
-                  size="icon" 
-                  className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  size="sm" 
+                  className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => handleDeleteClick(tenant)}
+                  title="Mark as moved out and vacate house"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <LogOut className="h-3.5 w-3.5" />
+                  Moved Out
                 </Button>
               </div>
             </div>
           ))}
         </div>
+
+        {/* Vacant Houses Notice */}
+        {(() => {
+          const vacantHouses = houses.filter(h => h.status === 'vacant');
+          if (vacantHouses.length === 0) return null;
+          return (
+            <div className="rounded-lg border border-dashed border-warning/40 bg-warning/5 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <DoorOpen className="h-4 w-4 text-warning" />
+                <h3 className="font-semibold text-sm">Vacant Houses ({vacantHouses.length})</h3>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                These houses currently have no tenant assigned and are available for occupancy.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {vacantHouses.map(h => (
+                  <span key={h.id} className="inline-flex items-center gap-1.5 rounded-md bg-background border px-2.5 py-1 text-xs font-medium">
+                    <Home className="h-3 w-3 text-muted-foreground" />
+                    {h.house_no}
+                    {h.properties?.name && <span className="text-muted-foreground">· {h.properties.name}</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {tenantData.length === 0 && !isLoading && (
           <div className="text-center py-12">
