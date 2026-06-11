@@ -203,7 +203,7 @@ const Settings = () => {
                   <div>
                     <Label>Duplicate Detection</Label>
                     <p className="text-sm text-muted-foreground">
-                      Prevent duplicate payments using M-Pesa reference
+                      Prevent duplicate payments using M-Pesa reference.
                     </p>
                   </div>
                   <Switch defaultChecked />
