@@ -383,19 +383,25 @@ const Tenants = () => {
                   <FileText className="h-3 w-3" />
                   View Statement
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleEditTenant(tenant)}>
-                  Edit
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={() => handleDeleteClick(tenant)}
-                  title="Mark as moved out and vacate house"
-                >
-                  <LogOut className="h-3.5 w-3.5" />
-                  Moved Out
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm">
+                      Edit <ChevronDown className="h-3 w-3 ml-1" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleEditTenant(tenant)}>
+                      Edit Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => handleDeleteClick(tenant)}
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                    >
+                      <LogOut className="h-3.5 w-3.5 mr-2" />
+                      Mark as Moved Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           ))}
