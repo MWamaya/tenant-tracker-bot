@@ -473,10 +473,10 @@ const Tenants = () => {
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Remove Tenant</AlertDialogTitle>
+            <AlertDialogTitle>Mark Tenant as Moved Out</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove <strong>{tenantToDelete?.name}</strong>? 
-              This will mark their house as vacant.
+              This will permanently remove <strong>{tenantToDelete?.name}</strong>'s details and mark house{' '}
+              <strong>{tenantToDelete?.houses?.house_no || 'N/A'}</strong> as vacant. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -485,7 +485,7 @@ const Tenants = () => {
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Remove Tenant
+              Mark as Moved Out
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
