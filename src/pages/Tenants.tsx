@@ -55,6 +55,8 @@ const Tenants = () => {
   const [tenantToDelete, setTenantToDelete] = useState<TenantWithHouse | null>(null);
   const [statementDialogOpen, setStatementDialogOpen] = useState(false);
   const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<TenantWithHouse | null>(null);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [tenantToMove, setTenantToMove] = useState<TenantWithHouse | null>(null);
 
   const isLoading = housesLoading || tenantsLoading || propertiesLoading;
 
