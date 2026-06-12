@@ -229,6 +229,27 @@ const Tenants = () => {
     setStatementDialogOpen(true);
   };
 
+  const handleMoveClick = (tenant: TenantWithHouse) => {
+    setTenantToMove(tenant);
+    setMoveDialogOpen(true);
+  };
+
+  const handleConfirmMove = async (newHouseId: string) => {
+    if (!tenantToMove) return;
+    await updateTenant.mutateAsync({
+      id: tenantToMove.id,
+      data: {
+        name: tenantToMove.name,
+        phone: tenantToMove.phone,
+        secondary_phone: tenantToMove.secondary_phone,
+        house_id: newHouseId,
+        move_in_date: new Date().toISOString().split('T')[0],
+      },
+      previousHouseId: tenantToMove.house_id,
+    });
+    setTenantToMove(null);
+  };
+
   const getSelectedTenantHouse = () => {
     if (!selectedTenantForStatement?.houses) return null;
     return {
