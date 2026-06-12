@@ -16,10 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users, Building2, LogOut, DoorOpen } from 'lucide-react';
+import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users, Building2, LogOut, DoorOpen, ArrowRightLeft } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { BulkTenantFormDialog } from '@/components/tenants/BulkTenantFormDialog';
 import { TenantStatementDialog } from '@/components/tenants/TenantStatementDialog';
+import { MoveTenantDialog } from '@/components/tenants/MoveTenantDialog';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
