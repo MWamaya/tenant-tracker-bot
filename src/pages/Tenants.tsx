@@ -541,6 +541,23 @@ const Tenants = () => {
         house={getSelectedTenantHouse()}
         payments={getSelectedTenantPayments()}
       />
+
+      {/* Move Tenant Dialog */}
+      <MoveTenantDialog
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        tenantName={tenantToMove?.name || ''}
+        currentHouseNo={tenantToMove?.houses?.house_no}
+        vacantHouses={houses
+          .filter(h => h.status === 'vacant' && h.id !== tenantToMove?.house_id)
+          .map(h => ({
+            id: h.id,
+            houseNo: h.house_no,
+            expectedRent: Number(h.expected_rent),
+            propertyName: h.properties?.name || null,
+          }))}
+        onConfirm={handleConfirmMove}
+      />
     </MainLayout>
   );
 };
