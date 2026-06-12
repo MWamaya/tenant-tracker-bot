@@ -16,10 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users, Building2, LogOut, DoorOpen } from 'lucide-react';
+import { Search, Plus, User, Phone, Home, Trash2, FileText, Loader2, ChevronDown, Users, Building2, LogOut, DoorOpen, ArrowRightLeft } from 'lucide-react';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { BulkTenantFormDialog } from '@/components/tenants/BulkTenantFormDialog';
 import { TenantStatementDialog } from '@/components/tenants/TenantStatementDialog';
+import { MoveTenantDialog } from '@/components/tenants/MoveTenantDialog';
 import { toast } from 'sonner';
 import {
   DropdownMenu,
@@ -54,6 +55,8 @@ const Tenants = () => {
   const [tenantToDelete, setTenantToDelete] = useState<TenantWithHouse | null>(null);
   const [statementDialogOpen, setStatementDialogOpen] = useState(false);
   const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<TenantWithHouse | null>(null);
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [tenantToMove, setTenantToMove] = useState<TenantWithHouse | null>(null);
 
   const isLoading = housesLoading || tenantsLoading || propertiesLoading;
 
@@ -226,6 +229,27 @@ const Tenants = () => {
     setStatementDialogOpen(true);
   };
 
+  const handleMoveClick = (tenant: TenantWithHouse) => {
+    setTenantToMove(tenant);
+    setMoveDialogOpen(true);
+  };
+
+  const handleConfirmMove = async (newHouseId: string) => {
+    if (!tenantToMove) return;
+    await updateTenant.mutateAsync({
+      id: tenantToMove.id,
+      data: {
+        name: tenantToMove.name,
+        phone: tenantToMove.phone,
+        secondary_phone: tenantToMove.secondary_phone,
+        house_id: newHouseId,
+        move_in_date: new Date().toISOString().split('T')[0],
+      },
+      previousHouseId: tenantToMove.house_id,
+    });
+    setTenantToMove(null);
+  };
+
   const getSelectedTenantHouse = () => {
     if (!selectedTenantForStatement?.houses) return null;
     return {
@@ -394,6 +418,13 @@ const Tenants = () => {
                       Edit Details
                     </DropdownMenuItem>
                     <DropdownMenuItem
+                      onClick={() => handleMoveClick(tenant)}
+                      disabled={houses.filter(h => h.status === 'vacant').length === 0}
+                    >
+                      <ArrowRightLeft className="h-3.5 w-3.5 mr-2" />
+                      Move to Vacant House
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
                       onClick={() => handleDeleteClick(tenant)}
                       className="text-destructive focus:text-destructive focus:bg-destructive/10"
                     >
@@ -509,6 +540,23 @@ const Tenants = () => {
         } : null}
         house={getSelectedTenantHouse()}
         payments={getSelectedTenantPayments()}
+      />
+
+      {/* Move Tenant Dialog */}
+      <MoveTenantDialog
+        open={moveDialogOpen}
+        onOpenChange={setMoveDialogOpen}
+        tenantName={tenantToMove?.name || ''}
+        currentHouseNo={tenantToMove?.houses?.house_no}
+        vacantHouses={houses
+          .filter(h => h.status === 'vacant' && h.id !== tenantToMove?.house_id)
+          .map(h => ({
+            id: h.id,
+            houseNo: h.house_no,
+            expectedRent: Number(h.expected_rent),
+            propertyName: h.properties?.name || null,
+          }))}
+        onConfirm={handleConfirmMove}
       />
     </MainLayout>
   );
