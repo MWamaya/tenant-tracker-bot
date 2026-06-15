@@ -8,7 +8,7 @@ import { useHouses } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
-import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare, Printer, Loader2 } from 'lucide-react';
+import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare, Printer, Loader2, DoorOpen } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
