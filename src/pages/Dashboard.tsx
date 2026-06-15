@@ -354,7 +354,7 @@ const Dashboard = () => {
             </Button>
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsList className="grid w-full grid-cols-4 h-auto">
               <TabsTrigger value="unpaid" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
                 <XCircle className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Unpaid</span> ({unpaidHouses.length})
@@ -366,6 +366,10 @@ const Dashboard = () => {
               <TabsTrigger value="paid" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
                 <CheckCircle className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Paid</span> ({paidHouses.length})
+              </TabsTrigger>
+              <TabsTrigger value="vacant" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
+                <DoorOpen className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Vacant</span> ({vacantHouses.length})
               </TabsTrigger>
             </TabsList>
             
