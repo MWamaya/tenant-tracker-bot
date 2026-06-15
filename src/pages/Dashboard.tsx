@@ -234,9 +234,10 @@ const Dashboard = () => {
     unpaidHouses: filteredBalances.filter(h => h.status === 'unpaid').length,
   };
 
-  const unpaidHouses = filteredBalances.filter(h => h.status === 'unpaid');
+  const unpaidHouses = filteredBalances.filter(h => h.status === 'unpaid' && h.tenantId);
   const partialHouses = filteredBalances.filter(h => h.status === 'partial');
   const paidHouses = filteredBalances.filter(h => h.status === 'paid');
+  const vacantHouses = filteredBalances.filter(h => !h.tenantId);
 
   return (
     <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: "/" }}>
