@@ -521,6 +521,25 @@ const Dashboard = () => {
                 )}
               </div>
             </TabsContent>
+            
+            <TabsContent value="vacant" className="mt-4">
+              {vacantHouses.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No vacant houses</p>
+              ) : (
+                <div className="flex flex-wrap gap-3">
+                  {vacantHouses.map((house) => (
+                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-muted bg-muted/30">
+                      <DoorOpen className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-sm">{house.houseNo}</p>
+                        <p className="text-xs text-muted-foreground">{house.propertyName || 'No property'}</p>
+                        <p className="text-xs text-muted-foreground font-medium">{formatCurrency(house.expectedRent)} expected</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
         </div>
           </TabsContent>
