@@ -273,14 +273,23 @@ const Dashboard = () => {
 
           <TabsContent value="overview" className="mt-6 space-y-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard
-            title="Total Houses"
-            value={stats.totalHouses}
-            subtitle="Active properties"
+            title="Occupied"
+            value={stats.occupiedHouses}
+            subtitle={`of ${stats.totalHouses} total`}
             icon={Home}
             variant="default"
           />
+          <div onClick={() => scrollToTabs('vacant')} className="cursor-pointer">
+            <StatCard
+              title="Vacant"
+              value={stats.vacantHouses}
+              subtitle="Available for rent"
+              icon={DoorOpen}
+              variant="default"
+            />
+          </div>
           <StatCard
             title="Fully Paid"
             value={stats.paidHouses}
