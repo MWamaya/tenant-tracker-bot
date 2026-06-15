@@ -8,7 +8,7 @@ import { useHouses } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
-import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare, Printer, Loader2 } from 'lucide-react';
+import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare, Printer, Loader2, DoorOpen } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -234,9 +234,10 @@ const Dashboard = () => {
     unpaidHouses: filteredBalances.filter(h => h.status === 'unpaid').length,
   };
 
-  const unpaidHouses = filteredBalances.filter(h => h.status === 'unpaid');
+  const unpaidHouses = filteredBalances.filter(h => h.status === 'unpaid' && h.tenantId);
   const partialHouses = filteredBalances.filter(h => h.status === 'partial');
   const paidHouses = filteredBalances.filter(h => h.status === 'paid');
+  const vacantHouses = filteredBalances.filter(h => !h.tenantId);
 
   return (
     <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: "/" }}>
@@ -272,14 +273,23 @@ const Dashboard = () => {
 
           <TabsContent value="overview" className="mt-6 space-y-8">
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard
-            title="Total Houses"
-            value={stats.totalHouses}
-            subtitle="Active properties"
+            title="Occupied"
+            value={stats.occupiedHouses}
+            subtitle={`of ${stats.totalHouses} total`}
             icon={Home}
             variant="default"
           />
+          <div onClick={() => scrollToTabs('vacant')} className="cursor-pointer">
+            <StatCard
+              title="Vacant"
+              value={stats.vacantHouses}
+              subtitle="Available for rent"
+              icon={DoorOpen}
+              variant="default"
+            />
+          </div>
           <StatCard
             title="Fully Paid"
             value={stats.paidHouses}
@@ -344,7 +354,7 @@ const Dashboard = () => {
             </Button>
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 h-auto">
+            <TabsList className="grid w-full grid-cols-4 h-auto">
               <TabsTrigger value="unpaid" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
                 <XCircle className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Unpaid</span> ({unpaidHouses.length})
@@ -356,6 +366,10 @@ const Dashboard = () => {
               <TabsTrigger value="paid" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
                 <CheckCircle className="h-3 w-3 md:h-4 md:w-4" />
                 <span className="hidden sm:inline">Paid</span> ({paidHouses.length})
+              </TabsTrigger>
+              <TabsTrigger value="vacant" className="flex items-center gap-1 md:gap-2 text-xs md:text-sm py-2 px-1 md:px-3">
+                <DoorOpen className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Vacant</span> ({vacantHouses.length})
               </TabsTrigger>
             </TabsList>
             
@@ -506,6 +520,25 @@ const Dashboard = () => {
                   ))
                 )}
               </div>
+            </TabsContent>
+            
+            <TabsContent value="vacant" className="mt-4">
+              {vacantHouses.length === 0 ? (
+                <p className="text-muted-foreground text-sm">No vacant houses</p>
+              ) : (
+                <div className="flex flex-wrap gap-3">
+                  {vacantHouses.map((house) => (
+                    <div key={house.houseId} className="flex items-center gap-2 p-3 rounded-lg border border-muted bg-muted/30">
+                      <DoorOpen className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium text-sm">{house.houseNo}</p>
+                        <p className="text-xs text-muted-foreground">{house.propertyName || 'No property'}</p>
+                        <p className="text-xs text-muted-foreground font-medium">{formatCurrency(house.expectedRent)} expected</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
