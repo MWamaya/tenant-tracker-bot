@@ -19,7 +19,7 @@ import { Input } from '@/components/ui/input';
 import { Tenant, House, Payment } from '@/lib/mockData';
 import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Pencil, Check, X, RotateCcw } from 'lucide-react';
+import { Pencil, Check, X, RotateCcw, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface TenantStatementDialogProps {
