@@ -226,8 +226,131 @@ export const TenantStatementDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
-        <DialogHeader>
+        <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="text-xl">Annual Statement - {currentYear}</DialogTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              const filteredRecords = yearlyStatement.filter((record) => {
+                const pos = monthOrder.indexOf(record.monthIndex);
+                const currentPos = monthOrder.indexOf(currentMonth);
+                return pos <= currentPos;
+              });
+              const rows = filteredRecords.map((record) => {
+                const paymentCells = record.payments.length > 0
+                  ? record.payments.map((p) => `
+                    <div>${formatCurrency(p.amount)}${p.isRollover ? ' <span class="rollover">(Carried)</span>' : ''}</div>
+                    <div class="mono">${p.mpesaRef}</div>
+                    <div class="date">${p.isRollover ? '—' : format(new Date(p.date), 'd/M/yyyy')}</div>
+                  `).join('')
+                  : '<div class="empty">-</div><div class="empty">-</div><div class="empty">-</div>';
+                const bfDisplay = record.balanceBroughtForward > 0
+                  ? formatCurrency(record.balanceBroughtForward)
+                  : record.balanceBroughtForward < 0
+                  ? '+' + formatCurrency(Math.abs(record.balanceBroughtForward))
+                  : record.isManualOverride ? formatCurrency(0) : '-';
+                const cfDisplay = record.balanceCarriedForward > 0
+                  ? formatCurrency(record.balanceCarriedForward)
+                  : record.balanceCarriedForward < 0
+                  ? '+' + formatCurrency(Math.abs(record.balanceCarriedForward))
+                  : '-';
+                const statusClass = record.status === 'paid' ? 'status-paid' : record.status === 'partial' ? 'status-partial' : 'status-unpaid';
+                const statusText = record.status === 'paid' ? 'Paid' : record.status === 'partial' ? 'Partial' : 'Unpaid';
+                return `
+                  <tr>
+                    <td class="month">${record.month}</td>
+                    <td class="num">${bfDisplay}</td>
+                    <td class="num">${formatCurrency(record.expectedRent)}</td>
+                    <td class="payments">${paymentCells}</td>
+                    <td class="num total">${record.totalPaid > 0 ? formatCurrency(record.totalPaid) : '-'}</td>
+                    <td class="num">${cfDisplay}</td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                  </tr>
+                `;
+              }).join('');
+              const win = window.open('', '_blank', 'width=900,height=700');
+              if (!win) return;
+              win.document.write(`
+                <html>
+                <head>
+                  <title>Annual Statement - ${tenant.name} - ${currentYear}</title>
+                  <style>
+                    @page { size: A4 landscape; margin: 12mm; }
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #0f172a; font-size: 12px; }
+                    h1 { font-size: 18px; margin: 0 0 4px; }
+                    h2 { font-size: 14px; margin: 0 0 16px; color: #64748b; font-weight: 400; }
+                    .meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 6px; }
+                    .meta-item p { margin: 0; font-size: 11px; color: #64748b; }
+                    .meta-item strong { font-size: 13px; color: #0f172a; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+                    th, td { border: 1px solid #e2e8f0; padding: 6px 8px; text-align: left; vertical-align: top; }
+                    th { background: #f1f5f9; font-weight: 600; font-size: 11px; }
+                    td.month { font-weight: 600; white-space: nowrap; }
+                    td.num { text-align: right; white-space: nowrap; }
+                    td.total { font-weight: 700; color: #16a34a; }
+                    td.payments { font-size: 11px; }
+                    td.payments div { margin-bottom: 2px; }
+                    td.payments .rollover { color: #2563eb; font-size: 10px; }
+                    td.payments .mono { font-family: monospace; font-size: 10px; color: #475569; }
+                    td.payments .date { color: #64748b; font-size: 10px; }
+                    td.payments .empty { color: #94a3b8; }
+                    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
+                    .status-paid { background: #dcfce7; color: #166534; }
+                    .status-partial { background: #fef9c3; color: #854d0e; }
+                    .status-unpaid { background: #fee2e2; color: #991b1b; }
+                    .totals-row { background: #f8fafc; font-weight: 700; }
+                    .totals-row td { border-top: 2px solid #0f172a; }
+                    .totals-label { text-align: right; padding-right: 8px; }
+                    .footer { margin-top: 12px; font-size: 10px; color: #64748b; }
+                    .footer strong { color: #0f172a; }
+                  </style>
+                </head>
+                <body>
+                  <h1>KODI PAP — Annual Statement</h1>
+                  <h2>${currentYear}</h2>
+                  <div class="meta">
+                    <div class="meta-item"><p>Tenant</p><strong>${tenant.name}</strong></div>
+                    <div class="meta-item"><p>Phone</p><strong>${tenant.phone}</strong></div>
+                    <div class="meta-item"><p>House No</p><strong>${house.houseNo}</strong></div>
+                    <div class="meta-item"><p>Monthly Rent</p><strong>${formatCurrency(expectedRent)}</strong></div>
+                  </div>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Month</th><th>B/F</th><th>Rent Due</th>
+                        <th style="width:160px">Paid / Ref / Date</th>
+                        <th>TMC</th><th>C/F</th><th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${rows}
+                      <tr class="totals-row">
+                        <td colspan="2" class="totals-label">TOTALS</td>
+                        <td class="num">${formatCurrency(totalExpected)}</td>
+                        <td></td>
+                        <td class="num total">${formatCurrency(totalPaid)}</td>
+                        <td class="num">${totalOutstanding > 0 ? formatCurrency(totalOutstanding) : '-'}</td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="footer">
+                    <span><strong>B/F</strong> = Balance Brought Forward</span> &nbsp;|&nbsp;
+                    <span><strong>TMC</strong> = Total Monthly Collection</span> &nbsp;|&nbsp;
+                    <span><strong>C/F</strong> = Balance Carried Forward</span> &nbsp;|&nbsp;
+                    <span>Printed ${format(new Date(), 'dd/MM/yyyy')}</span>
+                  </div>
+                </body>
+                </html>
+              `);
+              win.document.close();
+              win.focus();
+              setTimeout(() => win.print(), 300);
+            }}
+          >
+            <Printer className="h-4 w-4 mr-1.5" /> Print
+          </Button>
         </DialogHeader>
 
         {/* Tenant & House Info */}
