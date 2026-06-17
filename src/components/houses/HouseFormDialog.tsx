@@ -35,6 +35,7 @@ interface HouseFormDialogProps {
     id: string;
     houseNo: string;
     expectedRent: number;
+    deposit?: number;
     propertyId?: string | null;
     status?: 'vacant' | 'occupied';
     occupancyDate?: string | null;
@@ -42,6 +43,7 @@ interface HouseFormDialogProps {
   onSave: (houseData: {
     houseNo: string;
     expectedRent: number;
+    deposit: number;
     isOccupied: boolean;
     propertyId?: string;
     tenantId?: string;
@@ -60,6 +62,8 @@ export const HouseFormDialog = ({
 }: HouseFormDialogProps) => {
   const [houseNo, setHouseNo] = useState('');
   const [expectedRent, setExpectedRent] = useState('');
+  const [deposit, setDeposit] = useState('');
+  const [depositTouched, setDepositTouched] = useState(false);
   const [propertyId, setPropertyId] = useState('');
   const [isOccupied, setIsOccupied] = useState(false);
   const [tenantId, setTenantId] = useState('');
@@ -72,6 +76,8 @@ export const HouseFormDialog = ({
       if (house) {
         setHouseNo(house.houseNo);
         setExpectedRent(String(house.expectedRent));
+        setDeposit(String(house.deposit ?? house.expectedRent));
+        setDepositTouched(true);
         setPropertyId(house.propertyId || '');
         setIsOccupied(house.status === 'occupied');
         setTenantId('');
@@ -79,6 +85,8 @@ export const HouseFormDialog = ({
       } else {
         setHouseNo('');
         setExpectedRent('');
+        setDeposit('');
+        setDepositTouched(false);
         setPropertyId(defaultPropertyId || '');
         setIsOccupied(false);
         setTenantId('');
@@ -87,13 +95,20 @@ export const HouseFormDialog = ({
     }
   }, [open, defaultPropertyId, house]);
 
+  const handleRentChange = (val: string) => {
+    setExpectedRent(val);
+    if (!depositTouched) setDeposit(val);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!houseNo.trim() || !expectedRent) return;
 
+    const rent = parseFloat(expectedRent);
     onSave({
       houseNo: houseNo.trim(),
-      expectedRent: parseFloat(expectedRent),
+      expectedRent: rent,
+      deposit: deposit ? parseFloat(deposit) : rent,
       isOccupied,
       propertyId: propertyId && propertyId !== 'none' ? propertyId : undefined,
       tenantId: isOccupied ? tenantId : undefined,
@@ -149,10 +164,28 @@ export const HouseFormDialog = ({
               type="number"
               placeholder="e.g., 10000"
               value={expectedRent}
-              onChange={(e) => setExpectedRent(e.target.value)}
+              onChange={(e) => handleRentChange(e.target.value)}
               required
               min="0"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="deposit">Deposit (KES)</Label>
+            <Input
+              id="deposit"
+              type="number"
+              placeholder="Equivalent to monthly rent"
+              value={deposit}
+              onChange={(e) => {
+                setDeposit(e.target.value);
+                setDepositTouched(true);
+              }}
+              min="0"
+            />
+            <p className="text-xs text-muted-foreground">
+              Defaults to the monthly rent. Adjust if the deposit differs.
+            </p>
           </div>
 
           <div className="space-y-2">

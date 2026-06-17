@@ -9,6 +9,7 @@ export interface House {
   property_id: string | null;
   house_no: string;
   expected_rent: number;
+  deposit: number;
   status: 'vacant' | 'occupied';
   occupancy_date: string | null;
   created_at: string;
@@ -26,6 +27,7 @@ export interface HouseInsert {
   property_id?: string | null;
   house_no: string;
   expected_rent: number;
+  deposit?: number;
   status?: 'vacant' | 'occupied';
   occupancy_date?: string | null;
 }
@@ -34,6 +36,7 @@ export interface HouseUpdate {
   property_id?: string | null;
   house_no?: string;
   expected_rent?: number;
+  deposit?: number;
   status?: 'vacant' | 'occupied';
   occupancy_date?: string | null;
 }
@@ -82,6 +85,7 @@ export const useHouses = (propertyId?: string | null) => {
           property_id: house.property_id || null,
           house_no: house.house_no,
           expected_rent: house.expected_rent,
+          deposit: house.deposit ?? house.expected_rent,
           status: house.status || 'vacant',
           occupancy_date: house.occupancy_date || null,
         })

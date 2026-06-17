@@ -30,6 +30,7 @@ interface House {
   id: string;
   houseNo: string;
   expectedRent: number;
+  deposit?: number;
 }
 
 interface TenantFormDialogProps {
@@ -150,11 +151,14 @@ export const TenantFormDialog = ({
               </SelectTrigger>
               <SelectContent className="bg-popover">
                 <SelectItem value="none">No house assigned</SelectItem>
-                {availableHouses.map((house) => (
-                  <SelectItem key={house.id} value={house.id}>
-                    {house.houseNo} - KES {house.expectedRent.toLocaleString()}/month
-                  </SelectItem>
-                ))}
+                {availableHouses.map((house) => {
+                  const dep = house.deposit ?? house.expectedRent;
+                  return (
+                    <SelectItem key={house.id} value={house.id}>
+                      {house.houseNo} — KES {house.expectedRent.toLocaleString()}/mo · Deposit KES {dep.toLocaleString()}
+                    </SelectItem>
+                  );
+                })}
                 {availableHouses.length === 0 && (
                   <div className="px-2 py-4 text-sm text-muted-foreground text-center">
                     No vacant houses available
