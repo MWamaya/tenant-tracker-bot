@@ -146,12 +146,12 @@ export const TenantStatementDialog = ({
     toast.success(`Reverted to auto-calculated C/F for ${months[monthIndex]}`);
   };
 
-  // Statement starts from the tenant's move-in month if they moved in this year,
-  // otherwise from January. This avoids charging rent before the lease started.
-  const moveInDateObj = tenant.moveInDate ? new Date(tenant.moveInDate) : null;
+  // Statement starts from the landlord's app registration month if they registered this year,
+  // otherwise from January. This avoids charging rent before the landlord started using the app.
+  const registrationDateObj = landlordCreatedAt ? new Date(landlordCreatedAt) : null;
   const STATEMENT_START_MONTH =
-    moveInDateObj && moveInDateObj.getFullYear() === currentYear
-      ? moveInDateObj.getMonth()
+    registrationDateObj && registrationDateObj.getFullYear() === currentYear
+      ? registrationDateObj.getMonth()
       : 0;
   const monthsFromStart = 12 - STATEMENT_START_MONTH;
   const monthOrder = Array.from({ length: monthsFromStart }, (_, k) => STATEMENT_START_MONTH + k);
