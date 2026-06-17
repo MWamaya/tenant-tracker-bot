@@ -588,6 +588,7 @@ const Houses = () => {
           id: h.id,
           houseNo: h.house_no,
           expectedRent: Number(h.expected_rent),
+          deposit: Number((h as any).deposit ?? h.expected_rent),
         }))}
         assignedHouseIds={tenants.map(t => t.house_id).filter(Boolean) as string[]}
         onSave={async (data) => {
@@ -650,6 +651,7 @@ const Houses = () => {
           id: h.id,
           houseNo: h.house_no,
           expectedRent: Number(h.expected_rent),
+          deposit: Number((h as any).deposit ?? h.expected_rent),
         }))}
         assignedHouseIds={tenants.map(t => t.house_id).filter(Boolean) as string[]}
         onSave={async (data) => {

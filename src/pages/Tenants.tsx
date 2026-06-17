@@ -488,6 +488,7 @@ const Tenants = () => {
           id: h.id,
           houseNo: h.house_no,
           expectedRent: Number(h.expected_rent),
+          deposit: Number((h as any).deposit ?? h.expected_rent),
         }))}
         assignedHouseIds={assignedHouseIds}
         onSave={handleSaveTenant}
@@ -501,6 +502,7 @@ const Tenants = () => {
           id: h.id,
           houseNo: h.house_no,
           expectedRent: Number(h.expected_rent),
+          deposit: Number((h as any).deposit ?? h.expected_rent),
         }))}
         assignedHouseIds={assignedHouseIds}
         onSave={handleBulkSaveTenants}
@@ -554,6 +556,7 @@ const Tenants = () => {
             id: h.id,
             houseNo: h.house_no,
             expectedRent: Number(h.expected_rent),
+          deposit: Number((h as any).deposit ?? h.expected_rent),
             propertyName: h.properties?.name || null,
           }))}
         onConfirm={handleConfirmMove}
