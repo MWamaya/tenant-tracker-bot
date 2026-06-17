@@ -539,7 +539,6 @@ const Tenants = () => {
           name: selectedTenantForStatement.name,
           phone: selectedTenantForStatement.phone,
           houseId: selectedTenantForStatement.house_id || '',
-          moveInDate: selectedTenantForStatement.move_in_date || null,
         } : null}
         house={getSelectedTenantHouse()}
         payments={getSelectedTenantPayments()}
