@@ -74,6 +74,9 @@ export const TenantStatementDialog = ({
   const [bfOverrides, setBfOverrides] = useState<Record<number, number>>({});
   const [editingMonth, setEditingMonth] = useState<number | null>(null);
   const [editValue, setEditValue] = useState<string>('');
+  const [landlordCreatedAt, setLandlordCreatedAt] = useState<string | null>(null);
+
+  const landlordId = useEffectiveLandlordId();
 
   // Load overrides whenever the tenant/dialog changes
   useEffect(() => {
@@ -86,6 +89,22 @@ export const TenantStatementDialog = ({
     }
     setEditingMonth(null);
   }, [tenant, open, currentYear]);
+
+  // Fetch the landlord's app registration date so the statement starts from that month
+  useEffect(() => {
+    if (!landlordId || !open) return;
+    const fetchLandlordCreatedAt = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .eq('id', landlordId)
+        .single();
+      if (!error && data) {
+        setLandlordCreatedAt(data.created_at);
+      }
+    };
+    fetchLandlordCreatedAt();
+  }, [landlordId, open]);
 
   if (!tenant || !house) return null;
 
