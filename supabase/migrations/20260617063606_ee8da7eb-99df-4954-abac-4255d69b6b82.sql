@@ -1,0 +1,1 @@
+ALTER TABLE public.houses ADD COLUMN IF NOT EXISTS deposit numeric NOT NULL DEFAULT 0;

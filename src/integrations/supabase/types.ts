@@ -280,6 +280,7 @@ export type Database = {
       houses: {
         Row: {
           created_at: string
+          deposit: number
           expected_rent: number
           house_no: string
           id: string
@@ -291,6 +292,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          deposit?: number
           expected_rent?: number
           house_no: string
           id?: string
@@ -302,6 +304,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          deposit?: number
           expected_rent?: number
           house_no?: string
           id?: string
