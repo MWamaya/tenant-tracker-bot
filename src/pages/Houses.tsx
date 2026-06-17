@@ -155,6 +155,7 @@ const Houses = () => {
   const handleAddHouse = async (houseData: {
     houseNo: string;
     expectedRent: number;
+    deposit: number;
     isOccupied: boolean;
     propertyId?: string;
     tenantId?: string;
@@ -163,6 +164,7 @@ const Houses = () => {
     const result = await addHouse.mutateAsync({
       house_no: houseData.houseNo,
       expected_rent: houseData.expectedRent,
+      deposit: houseData.deposit,
       status: houseData.isOccupied ? 'occupied' : 'vacant',
       property_id: houseData.propertyId || null,
       occupancy_date: houseData.occupancyDate || null,
@@ -611,6 +613,7 @@ const Houses = () => {
           id: houseToEdit.id,
           houseNo: houseToEdit.house_no,
           expectedRent: houseToEdit.expected_rent,
+          deposit: Number((houseToEdit as any).deposit ?? houseToEdit.expected_rent),
           propertyId: houseToEdit.property_id,
           status: houseToEdit.status,
         } : null}
@@ -621,6 +624,7 @@ const Houses = () => {
             data: {
               house_no: data.houseNo,
               expected_rent: data.expectedRent,
+              deposit: data.deposit,
               property_id: data.propertyId || null,
               status: data.isOccupied ? 'occupied' : 'vacant',
             },
