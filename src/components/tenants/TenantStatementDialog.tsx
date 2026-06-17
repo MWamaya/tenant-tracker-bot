@@ -21,6 +21,8 @@ import { format } from 'date-fns';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Pencil, Check, X, RotateCcw, Printer } from 'lucide-react';
 import { toast } from 'sonner';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TenantStatementDialogProps {
   open: boolean;
