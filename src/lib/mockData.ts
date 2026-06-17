@@ -13,6 +13,7 @@ export interface Tenant {
   phone: string;
   secondaryPhone?: string;
   houseId: string;
+  moveInDate?: string | null;
 }
 
 export interface Payment {
