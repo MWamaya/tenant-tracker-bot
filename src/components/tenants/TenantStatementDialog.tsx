@@ -125,9 +125,15 @@ export const TenantStatementDialog = ({
     toast.success(`Reverted to auto-calculated C/F for ${months[monthIndex]}`);
   };
 
-  // Statement year starts in May (month index 4)
-  const STATEMENT_START_MONTH = 4;
-  const monthOrder = Array.from({ length: 12 }, (_, k) => (STATEMENT_START_MONTH + k) % 12);
+  // Statement starts from the tenant's move-in month if they moved in this year,
+  // otherwise from January. This avoids charging rent before the lease started.
+  const moveInDateObj = tenant.moveInDate ? new Date(tenant.moveInDate) : null;
+  const STATEMENT_START_MONTH =
+    moveInDateObj && moveInDateObj.getFullYear() === currentYear
+      ? moveInDateObj.getMonth()
+      : 0;
+  const monthsFromStart = 12 - STATEMENT_START_MONTH;
+  const monthOrder = Array.from({ length: monthsFromStart }, (_, k) => STATEMENT_START_MONTH + k);
 
   // Generate yearly statement with balance carry forward + manual overrides
   const generateYearlyStatement = (): MonthlyRecord[] => {
