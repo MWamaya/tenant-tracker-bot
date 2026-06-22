@@ -823,7 +823,7 @@ const Reports = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </Tabs>
+      
       </div>
     </MainLayout>
   );
