@@ -229,9 +229,17 @@ export const TenantStatementDialog = ({
   };
 
   const yearlyStatement = generateYearlyStatement();
-  const totalExpected = yearlyStatement.reduce((sum, r) => sum + r.expectedRent, 0);
-  const totalPaid = yearlyStatement.reduce((sum, r) => sum + r.totalPaid, 0);
-  const totalOutstanding = Math.max(0, yearlyStatement[yearlyStatement.length - 1]?.balanceCarriedForward || 0);
+  const visibleStatement = yearlyStatement.filter((record) => {
+    const pos = monthOrder.indexOf(record.monthIndex);
+    const currentPos = monthOrder.indexOf(currentMonth);
+    return pos <= currentPos;
+  });
+  const totalExpected = visibleStatement.reduce((sum, r) => sum + r.expectedRent, 0);
+  const totalPaid = visibleStatement.reduce((sum, r) => sum + r.totalPaid, 0);
+  // C/F total reflects the actual outstanding balance at the last visible month
+  // (B/F + Rent Due − Paid carried through), not the cumulative annual expected.
+  const lastVisible = visibleStatement[visibleStatement.length - 1];
+  const totalOutstanding = lastVisible ? lastVisible.balanceCarriedForward : 0;
 
   const getStatusBadge = (status: 'paid' | 'partial' | 'unpaid') => {
     switch (status) {
