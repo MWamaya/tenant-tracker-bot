@@ -99,29 +99,8 @@ const Tenants = () => {
 
     return tenants.map(tenant => {
       const expectedRent = Number(tenant.houses?.expected_rent || 0);
-      const currentMonthKey = `${currentYear}-${String(currentMonthIdx + 1).padStart(2, '0')}`;
-      const savedCurrentBalance = balances.find(
-        (balance) => balance.house_id === tenant.house_id && balance.month.startsWith(currentMonthKey)
-      );
 
-      if (savedCurrentBalance) {
-        const savedBalance = Number(savedCurrentBalance.balance || 0);
-        const savedPaid = Number(savedCurrentBalance.paid_amount || 0);
-        const savedExpectedRent = Number(savedCurrentBalance.expected_rent || expectedRent);
-        const savedTotalDue = savedExpectedRent + Math.max(0, Number(savedCurrentBalance.carry_forward || 0));
 
-        return {
-          ...tenant,
-          balance: {
-            status: savedBalance <= 0 ? 'paid' as const : savedPaid > 0 ? 'partial' as const : 'unpaid' as const,
-            paid_amount: savedPaid,
-            balance: Math.max(0, savedBalance),
-            carry_forward: savedBalance,
-            monthly_balance: Math.max(0, savedTotalDue - savedPaid),
-            expected_rent: savedExpectedRent,
-          },
-        };
-      }
 
       let overrideMonth: number | null = null;
       let overrideYear: number | null = null;
