@@ -21,8 +21,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown } from 'lucide-react';
+import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown, Plus, Trash2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import {
   RadialBarChart,
@@ -38,14 +48,117 @@ import {
   Tooltip as RTooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { toast } from 'sonner';
 
 const Reports = () => {
   const { payments } = usePayments();
   const { properties } = useProperties();
+  const landlordId = useEffectiveLandlordId();
+  const queryClient = useQueryClient();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedProperty, setSelectedProperty] = useState<string>('all');
   const { data, isLoading } = useDashboardStats(selectedMonth);
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({
+    category: '',
+    description: '',
+    amount: '',
+    expense_date: format(new Date(), 'yyyy-MM-dd'),
+    property_id: 'none',
+  });
+
+  // Expenses for the selected month
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses', landlordId, selectedMonth],
+    enabled: !!landlordId,
+    queryFn: async () => {
+      const anchor = new Date(`${selectedMonth}-01T00:00:00`);
+      const from = format(new Date(anchor.getFullYear(), anchor.getMonth(), 1), 'yyyy-MM-dd');
+      const to = format(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*, properties(name)')
+        .eq('landlord_id', landlordId!)
+        .gte('expense_date', from)
+        .lte('expense_date', to)
+        .order('expense_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const addExpense = useMutation({
+    mutationFn: async () => {
+      if (!landlordId) throw new Error('Not signed in');
+      const amt = Number(expenseForm.amount);
+      if (!expenseForm.category.trim()) throw new Error('Category is required');
+      if (!amt || amt <= 0) throw new Error('Enter a valid amount');
+      const { error } = await supabase.from('expenses').insert({
+        landlord_id: landlordId,
+        category: expenseForm.category.trim(),
+        description: expenseForm.description.trim() || null,
+        amount: amt,
+        expense_date: expenseForm.expense_date,
+        property_id: expenseForm.property_id === 'none' ? null : expenseForm.property_id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Expense added');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      setExpenseDialogOpen(false);
+      setExpenseForm({
+        category: '',
+        description: '',
+        amount: '',
+        expense_date: format(new Date(), 'yyyy-MM-dd'),
+        property_id: 'none',
+      });
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to add expense'),
+  });
+
+  const deleteExpense = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('expenses').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Expense deleted');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to delete'),
+  });
+
+  const totalExpenses = useMemo(
+    () => expenses.reduce((s: number, e: any) => s + Number(e.amount), 0),
+    [expenses]
+  );
+
+  // Monthly collection totals across all months (general overview)
+  const monthlyCollections = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of payments) {
+      const key = format(new Date(p.payment_date), 'yyyy-MM');
+      map.set(key, (map.get(key) || 0) + Number(p.amount));
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, value]) => ({
+        month: key,
+        label: format(new Date(key + '-01'), 'MMM yyyy'),
+        total: value,
+      }));
+  }, [payments]);
+
+  const grandTotalCollection = useMemo(
+    () => monthlyCollections.reduce((s, m) => s + m.total, 0),
+    [monthlyCollections]
+  );
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-KE', {
@@ -328,9 +441,11 @@ const Reports = () => {
 
         {/* Report Tabs */}
         <Tabs defaultValue="collection" className="space-y-6">
-          <TabsList className="bg-muted/50">
+          <TabsList className="bg-muted/50 flex-wrap h-auto">
             <TabsTrigger value="collection">Monthly Collection</TabsTrigger>
             <TabsTrigger value="defaulters">Defaulters List</TabsTrigger>
+            <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            <TabsTrigger value="overview">All-Months Overview</TabsTrigger>
           </TabsList>
 
           <TabsContent value="collection" className="space-y-4">
@@ -513,7 +628,202 @@ const Reports = () => {
               </div>
             )}
           </TabsContent>
+
+          <TabsContent value="expenses" className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+              <div>
+                <h2 className="text-lg md:text-xl font-semibold">
+                  Expenses — {format(new Date(selectedMonth + '-01'), 'MMMM yyyy')}
+                </h2>
+                <p className="text-sm text-muted-foreground">Track repairs, utilities and other monthly costs.</p>
+              </div>
+              <Button onClick={() => setExpenseDialogOpen(true)}>
+                <Plus className="h-4 w-4" /> Add Expense
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground">Total Expenses</p>
+                <p className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</p>
+              </div>
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground">Collected (this month)</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(stats.totalCollected)}</p>
+              </div>
+              <div className="stat-card">
+                <p className="text-sm text-muted-foreground">Net Income</p>
+                <p className={`text-2xl font-bold ${stats.totalCollected - totalExpenses >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {formatCurrency(stats.totalCollected - totalExpenses)}
+                </p>
+              </div>
+            </div>
+
+            {expensesLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+            ) : expenses.length > 0 ? (
+              <div className="stat-card p-0 overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="table-header">
+                      <TableHead>Date</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Property</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {expenses.map((e: any) => (
+                      <TableRow key={e.id} className="hover:bg-muted/30">
+                        <TableCell>{format(new Date(e.expense_date), 'dd MMM yyyy')}</TableCell>
+                        <TableCell className="font-medium">{e.category}</TableCell>
+                        <TableCell className="text-muted-foreground">{e.description || '-'}</TableCell>
+                        <TableCell className="text-muted-foreground">{e.properties?.name || '-'}</TableCell>
+                        <TableCell className="text-right font-medium text-destructive">
+                          {formatCurrency(Number(e.amount))}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm('Delete this expense?')) deleteExpense.mutate(e.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="stat-card text-center py-12">
+                <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-medium">No expenses recorded</h3>
+                <p className="text-muted-foreground">Click "Add Expense" to log a cost for this month.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="overview" className="space-y-4">
+            <h2 className="text-lg md:text-xl font-semibold">All-Months Collection Overview</h2>
+            <div className="stat-card">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-sm text-muted-foreground">Grand Total Collected (all time)</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(grandTotalCollection)}</p>
+              </div>
+              {monthlyCollections.length > 0 ? (
+                <>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={monthlyCollections} margin={{ top: 8, right: 12, left: 4, bottom: 4 }}>
+                        <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                        <YAxis tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} axisLine={false} tickLine={false} />
+                        <RTooltip
+                          cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
+                          contentStyle={{ background: 'hsl(var(--background))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 12 }}
+                          formatter={(v: number) => formatCurrency(v)}
+                        />
+                        <Bar dataKey="total" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="mt-4 overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="table-header">
+                          <TableHead>Month</TableHead>
+                          <TableHead className="text-right">Total Collected</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {monthlyCollections.slice().reverse().map((m) => (
+                          <TableRow key={m.month}>
+                            <TableCell className="font-medium">{m.label}</TableCell>
+                            <TableCell className="text-right text-success font-medium">{formatCurrency(m.total)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground py-6 text-center">No payments recorded yet.</p>
+              )}
+            </div>
+          </TabsContent>
         </Tabs>
+
+        <Dialog open={expenseDialogOpen} onOpenChange={setExpenseDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Expense</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Category *</Label>
+                <Input
+                  placeholder="e.g. Repairs, Utilities, Cleaning"
+                  value={expenseForm.category}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Amount (KES) *</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={expenseForm.amount}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Date</Label>
+                <Input
+                  type="date"
+                  value={expenseForm.expense_date}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, expense_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Property (optional)</Label>
+                <Select
+                  value={expenseForm.property_id}
+                  onValueChange={(v) => setExpenseForm({ ...expenseForm, property_id: v })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {properties.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Description (optional)</Label>
+                <Textarea
+                  placeholder="Notes about this expense"
+                  value={expenseForm.description}
+                  onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setExpenseDialogOpen(false)}>Cancel</Button>
+              <Button onClick={() => addExpense.mutate()} disabled={addExpense.isPending}>
+                {addExpense.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Save Expense
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      
       </div>
     </MainLayout>
   );
