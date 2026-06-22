@@ -164,13 +164,22 @@ export const TenantStatementDialog = ({
     }
   }
   const registrationDateObj = landlordCreatedAt ? new Date(landlordCreatedAt) : null;
-  const STATEMENT_START_MONTH =
+  const baseStartMonth =
     overrideMonth !== null && overrideYear === currentYear
       ? overrideMonth
       : registrationDateObj && registrationDateObj.getFullYear() === currentYear
       ? registrationDateObj.getMonth()
       : 0;
-  const monthsFromStart = 12 - STATEMENT_START_MONTH;
+  // Don't start accruing rent before the tenant actually moved in.
+  const moveInDateObj = tenant.moveInDate ? new Date(tenant.moveInDate) : null;
+  const tenantStartMonth =
+    moveInDateObj && moveInDateObj.getFullYear() === currentYear
+      ? moveInDateObj.getMonth()
+      : moveInDateObj && moveInDateObj.getFullYear() > currentYear
+      ? 12 // tenant moves in next year — nothing to show this year
+      : baseStartMonth;
+  const STATEMENT_START_MONTH = Math.max(baseStartMonth, tenantStartMonth);
+  const monthsFromStart = Math.max(0, 12 - STATEMENT_START_MONTH);
   const monthOrder = Array.from({ length: monthsFromStart }, (_, k) => STATEMENT_START_MONTH + k);
 
 
