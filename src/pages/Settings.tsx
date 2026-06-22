@@ -142,6 +142,57 @@ const Settings = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <CalendarRange className="h-5 w-5" />
+                  Statement Collection Start
+                </CardTitle>
+                <CardDescription>
+                  Choose the month and year from which tenant statements should begin counting rent. Defaults to your registration date.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Start Month</Label>
+                    <Select value={startMonth} onValueChange={setStartMonth}>
+                      <SelectTrigger><SelectValue placeholder="Select month" /></SelectTrigger>
+                      <SelectContent>
+                        {MONTH_NAMES.map((m, idx) => (
+                          <SelectItem key={m} value={String(idx)}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Start Year</Label>
+                    <Select value={startYear} onValueChange={setStartYear}>
+                      <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map((y) => (
+                          <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={saveStatementStart} className="gap-2">
+                    <Save className="h-4 w-4" /> Save
+                  </Button>
+                  <Button variant="outline" onClick={resetStatementStart}>
+                    Reset to default
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Statements for the selected year will skip months before this date.
+                </p>
+              </CardContent>
+            </Card>
+
+
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <Shield className="h-5 w-5" />
                   Account Settings
                 </CardTitle>
