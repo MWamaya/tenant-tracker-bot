@@ -96,9 +96,33 @@ const Tenants = () => {
         paidByMonth[d.getMonth()] = (paidByMonth[d.getMonth()] || 0) + Number(p.amount);
       });
 
-      // Walk months Jan..prev to derive C/F INTO the current month (allow negative = credit)
+      // Don't accrue rent before the tenant moved in (this year)
+      const moveInDateObj = tenant.move_in_date ? new Date(tenant.move_in_date) : null;
+      const tenantStartMonth =
+        moveInDateObj && moveInDateObj.getFullYear() === currentYear
+          ? moveInDateObj.getMonth()
+          : moveInDateObj && moveInDateObj.getFullYear() > currentYear
+          ? 12 // moves in next year — nothing to accrue this year
+          : 0;
+
+      // If tenant hasn't moved in yet this month, skip C/F calculation entirely
+      if (tenantStartMonth > currentMonthIdx) {
+        return {
+          ...tenant,
+          balance: {
+            status: 'unpaid' as const,
+            paid_amount: 0,
+            balance: 0,
+            carry_forward: 0,
+            monthly_balance: 0,
+            expected_rent: expectedRent,
+          },
+        };
+      }
+
+      // Walk months from tenant start..prev to derive C/F INTO the current month (allow negative = credit)
       let bfIntoCurrent = 0;
-      for (let i = 0; i < currentMonthIdx; i++) {
+      for (let i = tenantStartMonth; i < currentMonthIdx; i++) {
         const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
         const bf = hasOverride ? Number(bfOverrides[i]) || 0 : bfIntoCurrent;
         const paid = paidByMonth[i] || 0;
