@@ -72,6 +72,14 @@ const Reports = () => {
     expense_date: format(new Date(), 'yyyy-MM-dd'),
     property_id: 'none',
   });
+  const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
+  const [recurringForm, setRecurringForm] = useState({
+    category: '',
+    description: '',
+    amount: '',
+    day_of_month: '1',
+    property_id: 'none',
+  });
 
   // Expenses for the selected month
   const { data: expenses = [], isLoading: expensesLoading } = useQuery({
@@ -90,6 +98,21 @@ const Reports = () => {
         .order('expense_date', { ascending: false });
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  // Recurring expense templates (auto-applied to every month)
+  const { data: recurringExpenses = [] } = useQuery({
+    queryKey: ['recurring_expenses', landlordId],
+    enabled: !!landlordId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recurring_expenses' as any)
+        .select('*, properties(name)')
+        .eq('landlord_id', landlordId!)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data as any[]) || [];
     },
   });
 
@@ -136,9 +159,92 @@ const Reports = () => {
     onError: (e: any) => toast.error(e.message || 'Failed to delete'),
   });
 
+  const addRecurring = useMutation({
+    mutationFn: async () => {
+      if (!landlordId) throw new Error('Not signed in');
+      const amt = Number(recurringForm.amount);
+      const day = Number(recurringForm.day_of_month);
+      if (!recurringForm.category.trim()) throw new Error('Category is required');
+      if (!amt || amt <= 0) throw new Error('Enter a valid amount');
+      if (!day || day < 1 || day > 28) throw new Error('Day must be between 1 and 28');
+      const { error } = await supabase.from('recurring_expenses' as any).insert({
+        landlord_id: landlordId,
+        category: recurringForm.category.trim(),
+        description: recurringForm.description.trim() || null,
+        amount: amt,
+        day_of_month: day,
+        property_id: recurringForm.property_id === 'none' ? null : recurringForm.property_id,
+        active: true,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Recurring expense added');
+      queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
+      setRecurringForm({ category: '', description: '', amount: '', day_of_month: '1', property_id: 'none' });
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to add'),
+  });
+
+  const toggleRecurring = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from('recurring_expenses' as any).update({ active }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] }),
+    onError: (e: any) => toast.error(e.message || 'Failed to update'),
+  });
+
+  const deleteRecurring = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('recurring_expenses' as any).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Recurring expense removed');
+      queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to delete'),
+  });
+
+  // Virtual expense rows generated from active recurring templates for the selected month
+  const recurringVirtualForMonth = useMemo(() => {
+    const anchor = new Date(`${selectedMonth}-01T00:00:00`);
+    const year = anchor.getFullYear();
+    const month = anchor.getMonth();
+    return recurringExpenses
+      .filter((r: any) => r.active)
+      .filter((r: any) => {
+        if (!r.start_month) return true;
+        const start = new Date(r.start_month);
+        return start <= new Date(year, month + 1, 0);
+      })
+      .map((r: any) => {
+        const day = Math.min(Number(r.day_of_month) || 1, 28);
+        return {
+          id: `recurring-${r.id}-${selectedMonth}`,
+          recurring_id: r.id,
+          category: r.category,
+          description: r.description,
+          amount: Number(r.amount),
+          expense_date: format(new Date(year, month, day), 'yyyy-MM-dd'),
+          properties: r.properties,
+          isRecurring: true,
+        };
+      });
+  }, [recurringExpenses, selectedMonth]);
+
+  const combinedExpenses = useMemo(
+    () => [
+      ...recurringVirtualForMonth,
+      ...expenses.map((e: any) => ({ ...e, isRecurring: false })),
+    ],
+    [recurringVirtualForMonth, expenses]
+  );
+
   const totalExpenses = useMemo(
-    () => expenses.reduce((s: number, e: any) => s + Number(e.amount), 0),
-    [expenses]
+    () => combinedExpenses.reduce((s: number, e: any) => s + Number(e.amount), 0),
+    [combinedExpenses]
   );
 
   // Monthly collection totals across all months (general overview)
