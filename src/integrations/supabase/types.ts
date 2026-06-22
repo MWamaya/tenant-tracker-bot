@@ -1010,6 +1010,56 @@ export type Database = {
           },
         ]
       }
+      recurring_expenses: {
+        Row: {
+          active: boolean
+          amount: number
+          category: string
+          created_at: string
+          day_of_month: number
+          description: string | null
+          id: string
+          landlord_id: string
+          property_id: string | null
+          start_month: string | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          amount: number
+          category: string
+          created_at?: string
+          day_of_month?: number
+          description?: string | null
+          id?: string
+          landlord_id: string
+          property_id?: string | null
+          start_month?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          amount?: number
+          category?: string
+          created_at?: string
+          day_of_month?: number
+          description?: string | null
+          id?: string
+          landlord_id?: string
+          property_id?: string | null
+          start_month?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_expenses_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rent_schedules: {
         Row: {
           amount_due: number

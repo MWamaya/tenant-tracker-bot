@@ -21,7 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown, Plus, Trash2, Wallet } from 'lucide-react';
+import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown, Plus, Trash2, Wallet, Repeat, Power } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -70,6 +72,14 @@ const Reports = () => {
     expense_date: format(new Date(), 'yyyy-MM-dd'),
     property_id: 'none',
   });
+  const [recurringDialogOpen, setRecurringDialogOpen] = useState(false);
+  const [recurringForm, setRecurringForm] = useState({
+    category: '',
+    description: '',
+    amount: '',
+    day_of_month: '1',
+    property_id: 'none',
+  });
 
   // Expenses for the selected month
   const { data: expenses = [], isLoading: expensesLoading } = useQuery({
@@ -88,6 +98,21 @@ const Reports = () => {
         .order('expense_date', { ascending: false });
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  // Recurring expense templates (auto-applied to every month)
+  const { data: recurringExpenses = [] } = useQuery({
+    queryKey: ['recurring_expenses', landlordId],
+    enabled: !!landlordId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('recurring_expenses' as any)
+        .select('*, properties(name)')
+        .eq('landlord_id', landlordId!)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return (data as any[]) || [];
     },
   });
 
@@ -134,9 +159,92 @@ const Reports = () => {
     onError: (e: any) => toast.error(e.message || 'Failed to delete'),
   });
 
+  const addRecurring = useMutation({
+    mutationFn: async () => {
+      if (!landlordId) throw new Error('Not signed in');
+      const amt = Number(recurringForm.amount);
+      const day = Number(recurringForm.day_of_month);
+      if (!recurringForm.category.trim()) throw new Error('Category is required');
+      if (!amt || amt <= 0) throw new Error('Enter a valid amount');
+      if (!day || day < 1 || day > 28) throw new Error('Day must be between 1 and 28');
+      const { error } = await supabase.from('recurring_expenses' as any).insert({
+        landlord_id: landlordId,
+        category: recurringForm.category.trim(),
+        description: recurringForm.description.trim() || null,
+        amount: amt,
+        day_of_month: day,
+        property_id: recurringForm.property_id === 'none' ? null : recurringForm.property_id,
+        active: true,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Recurring expense added');
+      queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
+      setRecurringForm({ category: '', description: '', amount: '', day_of_month: '1', property_id: 'none' });
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to add'),
+  });
+
+  const toggleRecurring = useMutation({
+    mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      const { error } = await supabase.from('recurring_expenses' as any).update({ active }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] }),
+    onError: (e: any) => toast.error(e.message || 'Failed to update'),
+  });
+
+  const deleteRecurring = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('recurring_expenses' as any).delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Recurring expense removed');
+      queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to delete'),
+  });
+
+  // Virtual expense rows generated from active recurring templates for the selected month
+  const recurringVirtualForMonth = useMemo(() => {
+    const anchor = new Date(`${selectedMonth}-01T00:00:00`);
+    const year = anchor.getFullYear();
+    const month = anchor.getMonth();
+    return recurringExpenses
+      .filter((r: any) => r.active)
+      .filter((r: any) => {
+        if (!r.start_month) return true;
+        const start = new Date(r.start_month);
+        return start <= new Date(year, month + 1, 0);
+      })
+      .map((r: any) => {
+        const day = Math.min(Number(r.day_of_month) || 1, 28);
+        return {
+          id: `recurring-${r.id}-${selectedMonth}`,
+          recurring_id: r.id,
+          category: r.category,
+          description: r.description,
+          amount: Number(r.amount),
+          expense_date: format(new Date(year, month, day), 'yyyy-MM-dd'),
+          properties: r.properties,
+          isRecurring: true,
+        };
+      });
+  }, [recurringExpenses, selectedMonth]);
+
+  const combinedExpenses = useMemo(
+    () => [
+      ...recurringVirtualForMonth,
+      ...expenses.map((e: any) => ({ ...e, isRecurring: false })),
+    ],
+    [recurringVirtualForMonth, expenses]
+  );
+
   const totalExpenses = useMemo(
-    () => expenses.reduce((s: number, e: any) => s + Number(e.amount), 0),
-    [expenses]
+    () => combinedExpenses.reduce((s: number, e: any) => s + Number(e.amount), 0),
+    [combinedExpenses]
   );
 
   // Monthly collection totals across all months (general overview)
@@ -637,15 +745,25 @@ const Reports = () => {
                 </h2>
                 <p className="text-sm text-muted-foreground">Track repairs, utilities and other monthly costs.</p>
               </div>
-              <Button onClick={() => setExpenseDialogOpen(true)}>
-                <Plus className="h-4 w-4" /> Add Expense
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setRecurringDialogOpen(true)}>
+                  <Repeat className="h-4 w-4" /> Recurring
+                </Button>
+                <Button onClick={() => setExpenseDialogOpen(true)}>
+                  <Plus className="h-4 w-4" /> Add Expense
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="stat-card">
                 <p className="text-sm text-muted-foreground">Total Expenses</p>
                 <p className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</p>
+                {recurringVirtualForMonth.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Includes {recurringVirtualForMonth.length} recurring item{recurringVirtualForMonth.length > 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
               <div className="stat-card">
                 <p className="text-sm text-muted-foreground">Collected (this month)</p>
@@ -661,7 +779,7 @@ const Reports = () => {
 
             {expensesLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
-            ) : expenses.length > 0 ? (
+            ) : combinedExpenses.length > 0 ? (
               <div className="stat-card p-0 overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -675,25 +793,45 @@ const Reports = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {expenses.map((e: any) => (
+                    {combinedExpenses.map((e: any) => (
                       <TableRow key={e.id} className="hover:bg-muted/30">
                         <TableCell>{format(new Date(e.expense_date), 'dd MMM yyyy')}</TableCell>
-                        <TableCell className="font-medium">{e.category}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {e.category}
+                            {e.isRecurring && (
+                              <Badge variant="secondary" className="gap-1 text-[10px]">
+                                <Repeat className="h-3 w-3" /> Recurring
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-muted-foreground">{e.description || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">{e.properties?.name || '-'}</TableCell>
                         <TableCell className="text-right font-medium text-destructive">
                           {formatCurrency(Number(e.amount))}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              if (confirm('Delete this expense?')) deleteExpense.mutate(e.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          {e.isRecurring ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setRecurringDialogOpen(true)}
+                              title="Manage recurring expenses"
+                            >
+                              Manage
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (confirm('Delete this expense?')) deleteExpense.mutate(e.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -704,7 +842,7 @@ const Reports = () => {
               <div className="stat-card text-center py-12">
                 <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium">No expenses recorded</h3>
-                <p className="text-muted-foreground">Click "Add Expense" to log a cost for this month.</p>
+                <p className="text-muted-foreground">Click "Add Expense" to log a cost, or "Recurring" to set up monthly fixed costs like a caretaker salary.</p>
               </div>
             )}
           </TabsContent>
@@ -820,6 +958,133 @@ const Reports = () => {
                 {addExpense.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
                 Save Expense
               </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={recurringDialogOpen} onOpenChange={setRecurringDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Repeat className="h-5 w-5" /> Recurring Monthly Expenses
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Set fixed costs (e.g. caretaker salary) that should appear automatically in every month's report.
+            </p>
+
+            {/* Existing recurring list */}
+            {recurringExpenses.length > 0 && (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="table-header">
+                      <TableHead>Category</TableHead>
+                      <TableHead>Day</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Active</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recurringExpenses.map((r: any) => (
+                      <TableRow key={r.id}>
+                        <TableCell>
+                          <div className="font-medium">{r.category}</div>
+                          {r.description && <div className="text-xs text-muted-foreground">{r.description}</div>}
+                        </TableCell>
+                        <TableCell>{r.day_of_month}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(Number(r.amount))}</TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={!!r.active}
+                            onCheckedChange={(v) => toggleRecurring.mutate({ id: r.id, active: v })}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm('Remove this recurring expense?')) deleteRecurring.mutate(r.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Add new recurring */}
+            <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+              <h4 className="font-semibold text-sm">Add new recurring expense</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Category *</Label>
+                  <Input
+                    placeholder="e.g. Caretaker, Security, Garbage"
+                    value={recurringForm.category}
+                    onChange={(e) => setRecurringForm({ ...recurringForm, category: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Amount (KES) *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="5000"
+                    value={recurringForm.amount}
+                    onChange={(e) => setRecurringForm({ ...recurringForm, amount: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Day of month (1–28)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={recurringForm.day_of_month}
+                    onChange={(e) => setRecurringForm({ ...recurringForm, day_of_month: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Property (optional)</Label>
+                  <Select
+                    value={recurringForm.property_id}
+                    onValueChange={(v) => setRecurringForm({ ...recurringForm, property_id: v })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {properties.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Description (optional)</Label>
+                <Input
+                  placeholder="Notes"
+                  value={recurringForm.description}
+                  onChange={(e) => setRecurringForm({ ...recurringForm, description: e.target.value })}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => addRecurring.mutate()} disabled={addRecurring.isPending}>
+                  {addRecurring.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <Plus className="h-4 w-4" /> Add Recurring
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRecurringDialogOpen(false)}>Done</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
