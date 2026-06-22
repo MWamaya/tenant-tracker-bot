@@ -394,21 +394,6 @@ export const TenantStatementDialog = ({
           </div>
         </div>
 
-        {/* Summary */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-3 bg-primary/5 rounded-lg text-center">
-            <p className="text-xs text-muted-foreground">Total Expected</p>
-            <p className="font-bold text-lg">{formatCurrency(totalExpected)}</p>
-          </div>
-          <div className="p-3 bg-success/5 rounded-lg text-center">
-            <p className="text-xs text-muted-foreground">Total Paid</p>
-            <p className="font-bold text-lg text-success">{formatCurrency(totalPaid)}</p>
-          </div>
-          <div className="p-3 bg-destructive/5 rounded-lg text-center">
-            <p className="text-xs text-muted-foreground">Outstanding</p>
-            <p className="font-bold text-lg text-destructive">{formatCurrency(totalOutstanding)}</p>
-          </div>
-        </div>
 
         {/* Monthly Breakdown Table */}
         <ScrollArea className="h-[400px] rounded-md border">
