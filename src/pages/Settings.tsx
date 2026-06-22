@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { Button } from '@/components/ui/button';
@@ -6,19 +7,73 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Settings as SettingsIcon, 
-  Mail, 
-  Bell, 
-  Shield, 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import {
+  Settings as SettingsIcon,
+  Mail,
+  Bell,
+  Shield,
   Database,
   Clock,
+  CalendarRange,
   Save,
   MessageSquare,
   Smartphone
 } from 'lucide-react';
 
+const MONTH_NAMES = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+];
+
+export const getStatementStartStorageKey = (landlordId: string) =>
+  `statement_start_${landlordId}`;
+
+
 const Settings = () => {
+  const landlordId = useEffectiveLandlordId();
+  const currentYear = new Date().getFullYear();
+  const [startMonth, setStartMonth] = useState<string>('0');
+  const [startYear, setStartYear] = useState<string>(String(currentYear));
+
+  useEffect(() => {
+    if (!landlordId) return;
+    try {
+      const raw = localStorage.getItem(getStatementStartStorageKey(landlordId));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.month === 'number') setStartMonth(String(parsed.month));
+        if (typeof parsed.year === 'number') setStartYear(String(parsed.year));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [landlordId]);
+
+  const saveStatementStart = () => {
+    if (!landlordId) {
+      toast.error('Unable to save — no active landlord');
+      return;
+    }
+    const payload = { month: Number(startMonth), year: Number(startYear) };
+    localStorage.setItem(getStatementStartStorageKey(landlordId), JSON.stringify(payload));
+    window.dispatchEvent(new Event('statement-start-changed'));
+    toast.success(`Statement will start from ${MONTH_NAMES[payload.month]} ${payload.year}`);
+  };
+
+  const resetStatementStart = () => {
+    if (!landlordId) return;
+    localStorage.removeItem(getStatementStartStorageKey(landlordId));
+    window.dispatchEvent(new Event('statement-start-changed'));
+    setStartMonth('0');
+    setStartYear(String(currentYear));
+    toast.success('Reverted to default (registration date)');
+  };
+
+  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - 4 + i);
+
   return (
     <MainLayout seo={{ title: "Settings \u2014 KODI PAP", description: "Configure your account, integrations and reminders.", path: "/settings" }}>
       <div className="space-y-6">
@@ -83,6 +138,57 @@ const Settings = () => {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarRange className="h-5 w-5" />
+                  Statement Collection Start
+                </CardTitle>
+                <CardDescription>
+                  Choose the month and year from which tenant statements should begin counting rent. Defaults to your registration date.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Start Month</Label>
+                    <Select value={startMonth} onValueChange={setStartMonth}>
+                      <SelectTrigger><SelectValue placeholder="Select month" /></SelectTrigger>
+                      <SelectContent>
+                        {MONTH_NAMES.map((m, idx) => (
+                          <SelectItem key={m} value={String(idx)}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Start Year</Label>
+                    <Select value={startYear} onValueChange={setStartYear}>
+                      <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
+                      <SelectContent>
+                        {yearOptions.map((y) => (
+                          <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={saveStatementStart} className="gap-2">
+                    <Save className="h-4 w-4" /> Save
+                  </Button>
+                  <Button variant="outline" onClick={resetStatementStart}>
+                    Reset to default
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Statements for the selected year will skip months before this date.
+                </p>
+              </CardContent>
+            </Card>
+
+
 
             <Card>
               <CardHeader>

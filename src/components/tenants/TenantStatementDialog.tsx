@@ -146,15 +146,33 @@ export const TenantStatementDialog = ({
     toast.success(`Reverted to auto-calculated C/F for ${months[monthIndex]}`);
   };
 
-  // Statement starts from the landlord's app registration month if they registered this year,
-  // otherwise from January. This avoids charging rent before the landlord started using the app.
+  // Statement starts from: (1) landlord's saved override in Settings if set for this year,
+  // otherwise (2) landlord's app registration month if registered this year,
+  // otherwise (3) January.
+  let overrideMonth: number | null = null;
+  let overrideYear: number | null = null;
+  if (landlordId) {
+    try {
+      const raw = localStorage.getItem(`statement_start_${landlordId}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.month === 'number') overrideMonth = parsed.month;
+        if (typeof parsed.year === 'number') overrideYear = parsed.year;
+      }
+    } catch {
+      /* ignore */
+    }
+  }
   const registrationDateObj = landlordCreatedAt ? new Date(landlordCreatedAt) : null;
   const STATEMENT_START_MONTH =
-    registrationDateObj && registrationDateObj.getFullYear() === currentYear
+    overrideMonth !== null && overrideYear === currentYear
+      ? overrideMonth
+      : registrationDateObj && registrationDateObj.getFullYear() === currentYear
       ? registrationDateObj.getMonth()
       : 0;
   const monthsFromStart = 12 - STATEMENT_START_MONTH;
   const monthOrder = Array.from({ length: monthsFromStart }, (_, k) => STATEMENT_START_MONTH + k);
+
 
   // Generate yearly statement with balance carry forward + manual overrides
   const generateYearlyStatement = (): MonthlyRecord[] => {
