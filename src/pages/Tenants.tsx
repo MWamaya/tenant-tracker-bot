@@ -346,6 +346,37 @@ const Tenants = () => {
           )}
         </div>
 
+        {/* Total Carry-Forward Summary */}
+        {(() => {
+          const totalOwed = tenantData.reduce(
+            (sum, t) => sum + Math.max(0, t.balance?.carry_forward ?? 0),
+            0
+          );
+          const totalCredit = tenantData.reduce(
+            (sum, t) => sum + Math.max(0, -(t.balance?.carry_forward ?? 0)),
+            0
+          );
+          const netCF = totalOwed - totalCredit;
+          return (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="stat-card">
+                <p className="text-xs text-muted-foreground">Total C/F Owed</p>
+                <p className="text-xl font-bold text-destructive">{formatCurrency(totalOwed)}</p>
+              </div>
+              <div className="stat-card">
+                <p className="text-xs text-muted-foreground">Total C/F Credit</p>
+                <p className="text-xl font-bold text-success">{formatCurrency(totalCredit)}</p>
+              </div>
+              <div className="stat-card">
+                <p className="text-xs text-muted-foreground">Net C/F</p>
+                <p className={`text-xl font-bold ${netCF > 0 ? 'text-destructive' : netCF < 0 ? 'text-success' : ''}`}>
+                  {netCF < 0 ? '+' : ''}{formatCurrency(Math.abs(netCF))}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Tenant Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tenantData.map((tenant) => (
