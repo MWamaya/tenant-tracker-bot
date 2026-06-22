@@ -745,15 +745,25 @@ const Reports = () => {
                 </h2>
                 <p className="text-sm text-muted-foreground">Track repairs, utilities and other monthly costs.</p>
               </div>
-              <Button onClick={() => setExpenseDialogOpen(true)}>
-                <Plus className="h-4 w-4" /> Add Expense
-              </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setRecurringDialogOpen(true)}>
+                  <Repeat className="h-4 w-4" /> Recurring
+                </Button>
+                <Button onClick={() => setExpenseDialogOpen(true)}>
+                  <Plus className="h-4 w-4" /> Add Expense
+                </Button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="stat-card">
                 <p className="text-sm text-muted-foreground">Total Expenses</p>
                 <p className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</p>
+                {recurringVirtualForMonth.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Includes {recurringVirtualForMonth.length} recurring item{recurringVirtualForMonth.length > 1 ? 's' : ''}
+                  </p>
+                )}
               </div>
               <div className="stat-card">
                 <p className="text-sm text-muted-foreground">Collected (this month)</p>
@@ -769,7 +779,7 @@ const Reports = () => {
 
             {expensesLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
-            ) : expenses.length > 0 ? (
+            ) : combinedExpenses.length > 0 ? (
               <div className="stat-card p-0 overflow-hidden">
                 <Table>
                   <TableHeader>
@@ -783,25 +793,45 @@ const Reports = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {expenses.map((e: any) => (
+                    {combinedExpenses.map((e: any) => (
                       <TableRow key={e.id} className="hover:bg-muted/30">
                         <TableCell>{format(new Date(e.expense_date), 'dd MMM yyyy')}</TableCell>
-                        <TableCell className="font-medium">{e.category}</TableCell>
+                        <TableCell className="font-medium">
+                          <div className="flex items-center gap-2">
+                            {e.category}
+                            {e.isRecurring && (
+                              <Badge variant="secondary" className="gap-1 text-[10px]">
+                                <Repeat className="h-3 w-3" /> Recurring
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-muted-foreground">{e.description || '-'}</TableCell>
                         <TableCell className="text-muted-foreground">{e.properties?.name || '-'}</TableCell>
                         <TableCell className="text-right font-medium text-destructive">
                           {formatCurrency(Number(e.amount))}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              if (confirm('Delete this expense?')) deleteExpense.mutate(e.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          {e.isRecurring ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setRecurringDialogOpen(true)}
+                              title="Manage recurring expenses"
+                            >
+                              Manage
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => {
+                                if (confirm('Delete this expense?')) deleteExpense.mutate(e.id);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -812,7 +842,7 @@ const Reports = () => {
               <div className="stat-card text-center py-12">
                 <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium">No expenses recorded</h3>
-                <p className="text-muted-foreground">Click "Add Expense" to log a cost for this month.</p>
+                <p className="text-muted-foreground">Click "Add Expense" to log a cost, or "Recurring" to set up monthly fixed costs like a caretaker salary.</p>
               </div>
             )}
           </TabsContent>
