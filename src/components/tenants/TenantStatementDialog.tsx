@@ -359,7 +359,7 @@ export const TenantStatementDialog = ({
                         <td class="num">${formatCurrency(totalExpected)}</td>
                         <td></td>
                         <td class="num total">${formatCurrency(totalPaid)}</td>
-                        <td class="num">${totalOutstanding > 0 ? formatCurrency(totalOutstanding) : '-'}</td>
+                        <td class="num">${totalOutstanding > 0 ? formatCurrency(totalOutstanding) : totalOutstanding < 0 ? '+' + formatCurrency(Math.abs(totalOutstanding)) : '-'}</td>
                         <td></td>
                       </tr>
                     </tbody>
