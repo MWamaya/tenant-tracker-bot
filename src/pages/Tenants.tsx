@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useHouses } from '@/hooks/useHouses';
@@ -6,6 +6,8 @@ import { useTenants, TenantWithHouse } from '@/hooks/useTenants';
 import { useBalances } from '@/hooks/useBalances';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { supabase } from '@/integrations/supabase/client';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -45,6 +47,7 @@ const Tenants = () => {
   const { balances } = useBalances();
   const { payments } = usePayments();
   const { properties, isLoading: propertiesLoading } = useProperties();
+  const landlordId = useEffectiveLandlordId();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
@@ -57,8 +60,25 @@ const Tenants = () => {
   const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<TenantWithHouse | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [tenantToMove, setTenantToMove] = useState<TenantWithHouse | null>(null);
+  const [landlordCreatedAt, setLandlordCreatedAt] = useState<string | null>(null);
 
   const isLoading = housesLoading || tenantsLoading || propertiesLoading;
+
+  useEffect(() => {
+    if (!landlordId) return;
+    const fetchLandlordCreatedAt = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('created_at')
+        .eq('id', landlordId)
+        .single();
+
+      if (!error && data) {
+        setLandlordCreatedAt(data.created_at);
+      }
+    };
+    fetchLandlordCreatedAt();
+  }, [landlordId]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -79,6 +99,28 @@ const Tenants = () => {
 
     return tenants.map(tenant => {
       const expectedRent = Number(tenant.houses?.expected_rent || 0);
+
+      let overrideMonth: number | null = null;
+      let overrideYear: number | null = null;
+      if (landlordId) {
+        try {
+          const raw = localStorage.getItem(`statement_start_${landlordId}`);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (typeof parsed.month === 'number') overrideMonth = parsed.month;
+            if (typeof parsed.year === 'number') overrideYear = parsed.year;
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+      const registrationDateObj = landlordCreatedAt ? new Date(landlordCreatedAt) : null;
+      const baseStartMonth =
+        overrideMonth !== null && overrideYear === currentYear
+          ? overrideMonth
+          : registrationDateObj && registrationDateObj.getFullYear() === currentYear
+          ? registrationDateObj.getMonth()
+          : 0;
 
       // Load manual B/F overrides saved from the Statement dialog (per tenant/year)
       let bfOverrides: Record<number, number> = {};
@@ -103,10 +145,11 @@ const Tenants = () => {
           ? moveInDateObj.getMonth()
           : moveInDateObj && moveInDateObj.getFullYear() > currentYear
           ? 12 // moves in next year — nothing to accrue this year
-          : 0;
+          : baseStartMonth;
+      const rentStartMonth = Math.max(baseStartMonth, tenantStartMonth);
 
       // If tenant hasn't moved in yet this month, skip C/F calculation entirely
-      if (tenantStartMonth > currentMonthIdx) {
+      if (rentStartMonth > currentMonthIdx) {
         return {
           ...tenant,
           balance: {
@@ -122,7 +165,7 @@ const Tenants = () => {
 
       // Walk months from tenant start..prev to derive C/F INTO the current month (allow negative = credit)
       let bfIntoCurrent = 0;
-      for (let i = tenantStartMonth; i < currentMonthIdx; i++) {
+      for (let i = rentStartMonth; i < currentMonthIdx; i++) {
         const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
         const bf = hasOverride ? Number(bfOverrides[i]) || 0 : bfIntoCurrent;
         const paid = paidByMonth[i] || 0;
