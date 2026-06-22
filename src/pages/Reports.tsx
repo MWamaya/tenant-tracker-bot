@@ -21,7 +21,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown, Plus, Trash2, Wallet } from 'lucide-react';
+import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown, Plus, Trash2, Wallet, Repeat, Power } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
