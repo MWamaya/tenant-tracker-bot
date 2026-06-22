@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { Button } from '@/components/ui/button';
@@ -6,17 +7,29 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Settings as SettingsIcon, 
-  Mail, 
-  Bell, 
-  Shield, 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import {
+  Settings as SettingsIcon,
+  Mail,
+  Bell,
+  Shield,
   Database,
   Clock,
+  CalendarRange,
   Save,
   MessageSquare,
   Smartphone
 } from 'lucide-react';
+
+const MONTH_NAMES = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+];
+
+export const getStatementStartStorageKey = (landlordId: string) =>
+  `statement_start_${landlordId}`;
 
 const Settings = () => {
   return (
