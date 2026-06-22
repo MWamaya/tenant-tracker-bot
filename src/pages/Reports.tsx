@@ -441,9 +441,11 @@ const Reports = () => {
 
         {/* Report Tabs */}
         <Tabs defaultValue="collection" className="space-y-6">
-          <TabsList className="bg-muted/50">
+          <TabsList className="bg-muted/50 flex-wrap h-auto">
             <TabsTrigger value="collection">Monthly Collection</TabsTrigger>
             <TabsTrigger value="defaulters">Defaulters List</TabsTrigger>
+            <TabsTrigger value="expenses">Expenses</TabsTrigger>
+            <TabsTrigger value="overview">All-Months Overview</TabsTrigger>
           </TabsList>
 
           <TabsContent value="collection" className="space-y-4">
