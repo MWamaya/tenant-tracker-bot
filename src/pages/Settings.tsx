@@ -31,7 +31,49 @@ const MONTH_NAMES = [
 export const getStatementStartStorageKey = (landlordId: string) =>
   `statement_start_${landlordId}`;
 
+
 const Settings = () => {
+  const landlordId = useEffectiveLandlordId();
+  const currentYear = new Date().getFullYear();
+  const [startMonth, setStartMonth] = useState<string>('0');
+  const [startYear, setStartYear] = useState<string>(String(currentYear));
+
+  useEffect(() => {
+    if (!landlordId) return;
+    try {
+      const raw = localStorage.getItem(getStatementStartStorageKey(landlordId));
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (typeof parsed.month === 'number') setStartMonth(String(parsed.month));
+        if (typeof parsed.year === 'number') setStartYear(String(parsed.year));
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [landlordId]);
+
+  const saveStatementStart = () => {
+    if (!landlordId) {
+      toast.error('Unable to save — no active landlord');
+      return;
+    }
+    const payload = { month: Number(startMonth), year: Number(startYear) };
+    localStorage.setItem(getStatementStartStorageKey(landlordId), JSON.stringify(payload));
+    window.dispatchEvent(new Event('statement-start-changed'));
+    toast.success(`Statement will start from ${MONTH_NAMES[payload.month]} ${payload.year}`);
+  };
+
+  const resetStatementStart = () => {
+    if (!landlordId) return;
+    localStorage.removeItem(getStatementStartStorageKey(landlordId));
+    window.dispatchEvent(new Event('statement-start-changed'));
+    setStartMonth('0');
+    setStartYear(String(currentYear));
+    toast.success('Reverted to default (registration date)');
+  };
+
+  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - 4 + i);
+
   return (
     <MainLayout seo={{ title: "Settings \u2014 KODI PAP", description: "Configure your account, integrations and reminders.", path: "/settings" }}>
       <div className="space-y-6">
