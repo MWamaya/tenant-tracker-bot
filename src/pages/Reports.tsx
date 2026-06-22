@@ -961,6 +961,133 @@ const Reports = () => {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={recurringDialogOpen} onOpenChange={setRecurringDialogOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Repeat className="h-5 w-5" /> Recurring Monthly Expenses
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Set fixed costs (e.g. caretaker salary) that should appear automatically in every month's report.
+            </p>
+
+            {/* Existing recurring list */}
+            {recurringExpenses.length > 0 && (
+              <div className="border rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="table-header">
+                      <TableHead>Category</TableHead>
+                      <TableHead>Day</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Active</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recurringExpenses.map((r: any) => (
+                      <TableRow key={r.id}>
+                        <TableCell>
+                          <div className="font-medium">{r.category}</div>
+                          {r.description && <div className="text-xs text-muted-foreground">{r.description}</div>}
+                        </TableCell>
+                        <TableCell>{r.day_of_month}</TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(Number(r.amount))}</TableCell>
+                        <TableCell>
+                          <Switch
+                            checked={!!r.active}
+                            onCheckedChange={(v) => toggleRecurring.mutate({ id: r.id, active: v })}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              if (confirm('Remove this recurring expense?')) deleteRecurring.mutate(r.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            {/* Add new recurring */}
+            <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
+              <h4 className="font-semibold text-sm">Add new recurring expense</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>Category *</Label>
+                  <Input
+                    placeholder="e.g. Caretaker, Security, Garbage"
+                    value={recurringForm.category}
+                    onChange={(e) => setRecurringForm({ ...recurringForm, category: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Amount (KES) *</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="5000"
+                    value={recurringForm.amount}
+                    onChange={(e) => setRecurringForm({ ...recurringForm, amount: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Day of month (1–28)</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={recurringForm.day_of_month}
+                    onChange={(e) => setRecurringForm({ ...recurringForm, day_of_month: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Property (optional)</Label>
+                  <Select
+                    value={recurringForm.property_id}
+                    onValueChange={(v) => setRecurringForm({ ...recurringForm, property_id: v })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {properties.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>Description (optional)</Label>
+                <Input
+                  placeholder="Notes"
+                  value={recurringForm.description}
+                  onChange={(e) => setRecurringForm({ ...recurringForm, description: e.target.value })}
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button onClick={() => addRecurring.mutate()} disabled={addRecurring.isPending}>
+                  {addRecurring.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                  <Plus className="h-4 w-4" /> Add Recurring
+                </Button>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRecurringDialogOpen(false)}>Done</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       
       </div>
     </MainLayout>
