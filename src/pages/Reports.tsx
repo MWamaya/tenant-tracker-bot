@@ -21,8 +21,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown } from 'lucide-react';
+import { FileText, Users, TrendingUp, AlertTriangle, Loader2, Printer, Phone, Home, TrendingDown, Plus, Trash2, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import {
   RadialBarChart,
@@ -38,14 +48,117 @@ import {
   Tooltip as RTooltip,
   ResponsiveContainer,
 } from 'recharts';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { toast } from 'sonner';
 
 const Reports = () => {
   const { payments } = usePayments();
   const { properties } = useProperties();
+  const landlordId = useEffectiveLandlordId();
+  const queryClient = useQueryClient();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [selectedProperty, setSelectedProperty] = useState<string>('all');
   const { data, isLoading } = useDashboardStats(selectedMonth);
+  const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
+  const [expenseForm, setExpenseForm] = useState({
+    category: '',
+    description: '',
+    amount: '',
+    expense_date: format(new Date(), 'yyyy-MM-dd'),
+    property_id: 'none',
+  });
+
+  // Expenses for the selected month
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses', landlordId, selectedMonth],
+    enabled: !!landlordId,
+    queryFn: async () => {
+      const anchor = new Date(`${selectedMonth}-01T00:00:00`);
+      const from = format(new Date(anchor.getFullYear(), anchor.getMonth(), 1), 'yyyy-MM-dd');
+      const to = format(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0), 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*, properties(name)')
+        .eq('landlord_id', landlordId!)
+        .gte('expense_date', from)
+        .lte('expense_date', to)
+        .order('expense_date', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const addExpense = useMutation({
+    mutationFn: async () => {
+      if (!landlordId) throw new Error('Not signed in');
+      const amt = Number(expenseForm.amount);
+      if (!expenseForm.category.trim()) throw new Error('Category is required');
+      if (!amt || amt <= 0) throw new Error('Enter a valid amount');
+      const { error } = await supabase.from('expenses').insert({
+        landlord_id: landlordId,
+        category: expenseForm.category.trim(),
+        description: expenseForm.description.trim() || null,
+        amount: amt,
+        expense_date: expenseForm.expense_date,
+        property_id: expenseForm.property_id === 'none' ? null : expenseForm.property_id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Expense added');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      setExpenseDialogOpen(false);
+      setExpenseForm({
+        category: '',
+        description: '',
+        amount: '',
+        expense_date: format(new Date(), 'yyyy-MM-dd'),
+        property_id: 'none',
+      });
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to add expense'),
+  });
+
+  const deleteExpense = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('expenses').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Expense deleted');
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+    },
+    onError: (e: any) => toast.error(e.message || 'Failed to delete'),
+  });
+
+  const totalExpenses = useMemo(
+    () => expenses.reduce((s: number, e: any) => s + Number(e.amount), 0),
+    [expenses]
+  );
+
+  // Monthly collection totals across all months (general overview)
+  const monthlyCollections = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of payments) {
+      const key = format(new Date(p.payment_date), 'yyyy-MM');
+      map.set(key, (map.get(key) || 0) + Number(p.amount));
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, value]) => ({
+        month: key,
+        label: format(new Date(key + '-01'), 'MMM yyyy'),
+        total: value,
+      }));
+  }, [payments]);
+
+  const grandTotalCollection = useMemo(
+    () => monthlyCollections.reduce((s, m) => s + m.total, 0),
+    [monthlyCollections]
+  );
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-KE', {
