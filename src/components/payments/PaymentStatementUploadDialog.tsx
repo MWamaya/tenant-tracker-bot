@@ -612,6 +612,7 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
                       <TableHead>Name</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>House Code</TableHead>
+                      <TableHead>Split</TableHead>
                       <TableHead>M-Pesa Ref</TableHead>
                       <TableHead>Date &amp; Time</TableHead>
                     </TableRow>
@@ -637,6 +638,32 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
                           {r.amount ? `KES ${r.amount.toLocaleString()}` : '—'}
                         </TableCell>
                         <TableCell className="text-xs">{r.house_no || '—'}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.split_houses.length > 0 ? (
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={r.split}
+                                disabled={r.status !== 'new'}
+                                onChange={(e) => {
+                                  const checked = e.target.checked;
+                                  setRows((prev) =>
+                                    prev.map((row, idx) => (idx === i ? { ...row, split: checked } : row))
+                                  );
+                                }}
+                              />
+                              <span
+                                title={r.split_houses
+                                  .map((s) => s.house_no || s.house_id.slice(0, 6))
+                                  .join(', ')}
+                              >
+                                {r.split ? `÷ ${r.split_houses.length + 1}` : `+${r.split_houses.length}`}
+                              </span>
+                            </label>
+                          ) : (
+                            <span className="text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
                         <TableCell className="font-mono text-xs">{r.mpesa_ref || '—'}</TableCell>
                         <TableCell className="text-xs">
                           {r.payment_date ? format(new Date(r.payment_date), 'd/M/yyyy HH:mm') : '—'}
