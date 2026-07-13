@@ -334,62 +334,67 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
 
     setImporting(true);
     try {
-      // Re-fetch houses for matching
-      const { data: houses } = await supabase
-        .from('houses')
-        .select('id, house_no')
-        .eq('landlord_id', landlordId);
-      const houseMap = new Map((houses || []).map((h) => [h.house_no.toLowerCase().trim(), h.id]));
+      // Build inserts using match info captured during parse. Rows with
+      // split=true are expanded into one insert per house with an equal
+      // share and a suffixed M-Pesa reference (-S2, -S3…).
+      const inserts: Array<{
+        landlord_id: string;
+        payment_date: string;
+        amount: number;
+        mpesa_ref: string;
+        sender_name: string | null;
+        sender_phone: string | null;
+        house_id: string | null;
+        tenant_id: string | null;
+        payment_source: string;
+      }> = [];
 
-      const { data: tenants } = await supabase
-        .from('tenants')
-        .select('id, name, house_id')
-        .eq('landlord_id', landlordId);
-      const tenantByHouse = new Map(
-        (tenants || []).filter((t) => t.house_id).map((t) => [t.house_id, t.id])
-      );
+      for (const r of newRows) {
+        const primaryHouse = r.matched_house_id;
+        const primaryTenant = r.matched_tenant_id;
 
-      // Build name-token index for fuzzy tenant→house matching
-      const normName = (s: string) =>
-        s.toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
-      const tenantsWithHouse = (tenants || []).filter((t) => t.house_id);
-      const matchByName = (sender: string | null): { houseId: string | null; tenantId: string | null } => {
-        if (!sender) return { houseId: null, tenantId: null };
-        const senderTokens = new Set(normName(sender).split(' ').filter((w) => w.length >= 3));
-        if (senderTokens.size === 0) return { houseId: null, tenantId: null };
-        let best: { score: number; tenant: typeof tenantsWithHouse[number] | null } = { score: 0, tenant: null };
-        for (const t of tenantsWithHouse) {
-          const tTokens = new Set(normName(t.name).split(' ').filter((w) => w.length >= 3));
-          let overlap = 0;
-          tTokens.forEach((tok) => { if (senderTokens.has(tok)) overlap++; });
-          if (overlap > best.score) best = { score: overlap, tenant: t };
+        if (r.split && r.split_houses.length > 0 && primaryHouse) {
+          const parts = r.split_houses.length + 1;
+          const share = Math.round((r.amount / parts) * 100) / 100;
+          const originalShare = Math.round((r.amount - share * r.split_houses.length) * 100) / 100;
+          inserts.push({
+            landlord_id: landlordId,
+            payment_date: r.payment_date,
+            amount: originalShare,
+            mpesa_ref: r.mpesa_ref,
+            sender_name: r.sender_name,
+            sender_phone: r.sender_phone,
+            house_id: primaryHouse,
+            tenant_id: primaryTenant,
+            payment_source: 'statement_upload_split',
+          });
+          r.split_houses.forEach((sh, idx) => {
+            inserts.push({
+              landlord_id: landlordId,
+              payment_date: r.payment_date,
+              amount: share,
+              mpesa_ref: `${r.mpesa_ref}-S${idx + 2}`,
+              sender_name: r.sender_name,
+              sender_phone: r.sender_phone,
+              house_id: sh.house_id,
+              tenant_id: sh.tenant_id,
+              payment_source: 'statement_upload_split',
+            });
+          });
+        } else {
+          inserts.push({
+            landlord_id: landlordId,
+            payment_date: r.payment_date,
+            amount: r.amount,
+            mpesa_ref: r.mpesa_ref,
+            sender_name: r.sender_name,
+            sender_phone: r.sender_phone,
+            house_id: primaryHouse,
+            tenant_id: primaryTenant,
+            payment_source: 'statement_upload',
+          });
         }
-        if (best.score >= 2 || (best.score === 1 && best.tenant && normName(best.tenant.name).split(' ').length <= 2)) {
-          return { houseId: best.tenant!.house_id as string, tenantId: best.tenant!.id };
-        }
-        return { houseId: null, tenantId: null };
-      };
-
-      const inserts = newRows.map((r) => {
-        let houseId = r.house_no ? houseMap.get(r.house_no.toLowerCase().trim()) || null : null;
-        let tenantId = houseId ? tenantByHouse.get(houseId) || null : null;
-        if (!houseId) {
-          const fuzzy = matchByName(r.sender_name);
-          houseId = fuzzy.houseId;
-          tenantId = fuzzy.tenantId;
-        }
-        return {
-          landlord_id: landlordId,
-          payment_date: r.payment_date,
-          amount: r.amount,
-          mpesa_ref: r.mpesa_ref,
-          sender_name: r.sender_name,
-          sender_phone: r.sender_phone,
-          house_id: houseId,
-          tenant_id: tenantId,
-          payment_source: 'statement_upload',
-        };
-      });
+      }
 
       // Batch inserts to avoid timeouts / payload limits on large statements.
       // Continue on per-batch errors so a single bad row doesn't block the whole import.
