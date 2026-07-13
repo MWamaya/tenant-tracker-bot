@@ -148,7 +148,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
         payment_date: payment.payment_date,
         sender_name: payment.sender_name,
         sender_phone: payment.sender_phone,
-        payment_source: payment.payment_source || 'split_payment',
+        payment_source: 'split_payment',
       }));
       if (rows.length) {
         const { error: insErr } = await supabase.from('payments').insert(rows);
