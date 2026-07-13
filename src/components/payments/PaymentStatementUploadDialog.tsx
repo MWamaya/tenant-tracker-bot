@@ -193,6 +193,67 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
         .select('id, house_no')
         .eq('landlord_id', landlordId);
       const houseMap = new Map((houses || []).map((h) => [h.house_no.toLowerCase().trim(), h.id]));
+      const houseNoById = new Map((houses || []).map((h) => [h.id, h.house_no]));
+
+      // Get tenants for matching + sibling detection
+      const { data: tenants } = await supabase
+        .from('tenants')
+        .select('id, name, house_id')
+        .eq('landlord_id', landlordId);
+      const tenantsWithHouse = (tenants || []).filter((t) => t.house_id);
+      const tenantByHouse = new Map(tenantsWithHouse.map((t) => [t.house_id as string, t]));
+
+      const normName = (s: string) =>
+        s.toLowerCase().replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim();
+      const tokensOf = (s: string) =>
+        new Set(normName(s).split(' ').filter((w) => w.length >= 3));
+
+      const matchByName = (sender: string | null) => {
+        if (!sender) return null as { house_id: string; tenant_id: string } | null;
+        const senderTokens = tokensOf(sender);
+        if (senderTokens.size === 0) return null;
+        let best: { score: number; tenant: typeof tenantsWithHouse[number] | null } = { score: 0, tenant: null };
+        for (const t of tenantsWithHouse) {
+          const tTokens = tokensOf(t.name);
+          let overlap = 0;
+          tTokens.forEach((tok) => { if (senderTokens.has(tok)) overlap++; });
+          if (overlap > best.score) best = { score: overlap, tenant: t };
+        }
+        if (best.score >= 2 || (best.score === 1 && best.tenant && normName(best.tenant.name).split(' ').length <= 2)) {
+          return { house_id: best.tenant!.house_id as string, tenant_id: best.tenant!.id };
+        }
+        return null;
+      };
+
+      // Find sibling tenants that share the same normalized name / significant token overlap
+      const findSiblings = (
+        primaryTenantId: string | null,
+        primaryHouseId: string | null,
+        senderName: string | null,
+      ): SplitHouse[] => {
+        const primaryTenant = tenantsWithHouse.find((t) => t.id === primaryTenantId);
+        const primaryName = primaryTenant ? normName(primaryTenant.name) : '';
+        const senderTokens = tokensOf(senderName || '');
+        const results: SplitHouse[] = [];
+        for (const t of tenantsWithHouse) {
+          if (!t.house_id) continue;
+          if (primaryHouseId && t.house_id === primaryHouseId) continue;
+          const tName = normName(t.name);
+          const tTokens = tokensOf(t.name);
+          const sameName = primaryName && tName === primaryName;
+          const senderMatch =
+            senderTokens.size > 0 &&
+            Array.from(senderTokens).every((tok) => tTokens.has(tok));
+          if (sameName || senderMatch) {
+            results.push({
+              house_id: t.house_id,
+              house_no: houseNoById.get(t.house_id) ?? null,
+              tenant_id: t.id,
+            });
+          }
+        }
+        return results;
+      };
 
       const seenInFile = new Set<string>();
       const parsed: ParsedRow[] = json.map((r) => {
@@ -216,6 +277,24 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
           seenInFile.add(ref);
         }
 
+        // Attempt house/tenant match for sibling detection
+        let matched_house_id: string | null = house ? houseMap.get(house.toLowerCase().trim()) || null : null;
+        let matched_tenant_id: string | null = matched_house_id
+          ? tenantByHouse.get(matched_house_id)?.id || null
+          : null;
+        if (!matched_house_id) {
+          const fuzzy = matchByName(name);
+          if (fuzzy) {
+            matched_house_id = fuzzy.house_id;
+            matched_tenant_id = fuzzy.tenant_id;
+          }
+        }
+
+        const split_houses =
+          status === 'new'
+            ? findSiblings(matched_tenant_id, matched_house_id, name)
+            : [];
+
         return {
           payment_date: date || '',
           amount: amount || 0,
@@ -225,12 +304,19 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
           house_no: house,
           status,
           reason,
+          matched_house_id,
+          matched_tenant_id,
+          split_houses,
+          split: split_houses.length > 0, // default on when siblings detected
         };
       });
 
       setRows(parsed);
       const newCount = parsed.filter((r) => r.status === 'new').length;
-      toast.success(`Parsed ${json.length} rows • ${newCount} ready to import`);
+      const splittable = parsed.filter((r) => r.split_houses.length > 0).length;
+      toast.success(
+        `Parsed ${json.length} rows • ${newCount} ready to import${splittable ? ` • ${splittable} splittable` : ''}`
+      );
     } catch (err: any) {
       toast.error(`Failed to parse file: ${err.message}`);
     } finally {
