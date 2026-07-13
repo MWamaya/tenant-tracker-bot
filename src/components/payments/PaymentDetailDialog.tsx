@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Loader2 } from 'lucide-react';
+import { Trash2, Loader2, Split } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import type { PaymentWithDetails } from '@/hooks/usePayments';
@@ -32,9 +32,47 @@ interface Props {
   onOpenChange: (open: boolean) => void;
 }
 
+interface SiblingHouse {
+  tenant_id: string;
+  tenant_name: string;
+  house_id: string | null;
+  house_no: string | null;
+}
+
 export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [siblings, setSiblings] = useState<SiblingHouse[]>([]);
+  const [splitConfirmOpen, setSplitConfirmOpen] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadSiblings() {
+      if (!payment || !payment.tenants?.name || !payment.landlord_id) {
+        setSiblings([]);
+        return;
+      }
+      const { data } = await supabase
+        .from('tenants')
+        .select('id, name, house_id, houses(id, house_no)')
+        .eq('landlord_id', payment.landlord_id)
+        .ilike('name', payment.tenants.name)
+        .neq('id', payment.tenants.id);
+      if (cancelled) return;
+      setSiblings(
+        (data || []).map((t: any) => ({
+          tenant_id: t.id,
+          tenant_name: t.name,
+          house_id: t.house_id,
+          house_no: t.houses?.house_no ?? null,
+        }))
+      );
+    }
+    loadSiblings();
+    return () => {
+      cancelled = true;
+    };
+  }, [payment?.id]);
 
   const deletePayment = useMutation({
     mutationFn: async (id: string) => {
@@ -53,6 +91,47 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
       onOpenChange(false);
     },
     onError: (err: Error) => toast.error(`Failed to delete: ${err.message}`),
+  });
+
+  const splitPayment = useMutation({
+    mutationFn: async () => {
+      if (!payment) throw new Error('No payment');
+      const total = Number(payment.amount);
+      const parts = siblings.length + 1;
+      const share = Math.round((total / parts) * 100) / 100;
+      // First share stays on the original payment; give remainder to it to avoid rounding drift.
+      const originalShare = Math.round((total - share * siblings.length) * 100) / 100;
+
+      const { error: updErr } = await supabase
+        .from('payments')
+        .update({ amount: originalShare })
+        .eq('id', payment.id);
+      if (updErr) throw updErr;
+
+      const rows = siblings.map((s, idx) => ({
+        landlord_id: payment.landlord_id,
+        tenant_id: s.tenant_id,
+        house_id: s.house_id,
+        amount: share,
+        mpesa_ref: `${payment.mpesa_ref}-S${idx + 2}`,
+        payment_date: payment.payment_date,
+        sender_name: payment.sender_name,
+        sender_phone: payment.sender_phone,
+      }));
+      if (rows.length) {
+        const { error: insErr } = await supabase.from('payments').insert(rows);
+        if (insErr) throw insErr;
+      }
+    },
+    onSuccess: () => {
+      toast.success('Payment split equally across houses');
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['balances'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      setSplitConfirmOpen(false);
+      onOpenChange(false);
+    },
+    onError: (err: Error) => toast.error(`Failed to split: ${err.message}`),
   });
 
   if (!payment) return null;
@@ -129,7 +208,17 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 flex-wrap">
+            {siblings.length > 0 && (
+              <Button
+                variant="secondary"
+                onClick={() => setSplitConfirmOpen(true)}
+                className="gap-2"
+              >
+                <Split className="h-4 w-4" />
+                Split across {siblings.length + 1} houses
+              </Button>
+            )}
             <Button
               variant="destructive"
               onClick={() => setConfirmOpen(true)}
@@ -173,6 +262,60 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
               ) : (
                 'Delete'
               )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={splitConfirmOpen} onOpenChange={setSplitConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Split this payment equally?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  {formatCurrency(Number(payment.amount))} will be split equally across{' '}
+                  {siblings.length + 1} houses under{' '}
+                  <span className="font-medium">{payment.tenants?.name}</span>:
+                </p>
+                <ul className="list-disc pl-5 text-sm">
+                  <li>
+                    {payment.houses?.house_no || 'Unassigned'} —{' '}
+                    {formatCurrency(
+                      Math.round(
+                        (Number(payment.amount) -
+                          Math.round((Number(payment.amount) / (siblings.length + 1)) * 100) /
+                            100 *
+                            siblings.length) *
+                          100
+                      ) / 100
+                    )}
+                  </li>
+                  {siblings.map((s) => (
+                    <li key={s.tenant_id}>
+                      {s.house_no || 'Unassigned'} —{' '}
+                      {formatCurrency(
+                        Math.round((Number(payment.amount) / (siblings.length + 1)) * 100) / 100
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted-foreground">
+                  New payment rows will use the same M-Pesa reference with suffixes (-S2, -S3…).
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={splitPayment.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={splitPayment.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                splitPayment.mutate();
+              }}
+            >
+              {splitPayment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Split'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
