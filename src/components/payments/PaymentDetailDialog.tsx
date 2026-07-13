@@ -56,16 +56,19 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
         .from('tenants')
         .select('id, name, house_id, houses(id, house_no)')
         .eq('landlord_id', payment.landlord_id)
-        .ilike('name', payment.tenants.name)
         .neq('id', payment.tenants.id);
       if (cancelled) return;
+      const norm = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+      const target = norm(payment.tenants.name);
       setSiblings(
-        (data || []).map((t: any) => ({
-          tenant_id: t.id,
-          tenant_name: t.name,
-          house_id: t.house_id,
-          house_no: t.houses?.house_no ?? null,
-        }))
+        (data || [])
+          .filter((t: any) => norm(t.name) === target)
+          .map((t: any) => ({
+            tenant_id: t.id,
+            tenant_name: t.name,
+            house_id: t.house_id,
+            house_no: t.houses?.house_no ?? null,
+          }))
       );
     }
     loadSiblings();
