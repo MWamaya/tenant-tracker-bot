@@ -35,9 +35,21 @@ interface Props {
 interface SiblingHouse {
   tenant_id: string;
   tenant_name: string;
-  house_id: string | null;
+  house_id: string;
   house_no: string | null;
 }
+
+const normalizePersonName = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const nameTokens = (value: string) =>
+  normalizePersonName(value)
+    .split(' ')
+    .filter((token) => token.length >= 3);
 
 export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -48,7 +60,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
   useEffect(() => {
     let cancelled = false;
     async function loadSiblings() {
-      if (!payment || !payment.tenants?.name || !payment.landlord_id) {
+      if (!payment || !payment.landlord_id) {
         setSiblings([]);
         return;
       }
@@ -56,13 +68,29 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
         .from('tenants')
         .select('id, name, house_id, houses(id, house_no)')
         .eq('landlord_id', payment.landlord_id)
-        .neq('id', payment.tenants.id);
+        .not('house_id', 'is', null);
       if (cancelled) return;
-      const norm = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
-      const target = norm(payment.tenants.name);
+
+      const targetName = payment.tenants?.name ? normalizePersonName(payment.tenants.name) : '';
+      const senderTokens = nameTokens(payment.sender_name || '');
+
       setSiblings(
         (data || [])
-          .filter((t: any) => norm(t.name) === target)
+          .filter((t: any) => {
+            if (!t.house_id) return false;
+            if (payment.house_id && t.house_id === payment.house_id) return false;
+            if (!payment.house_id && payment.tenants?.id && t.id === payment.tenants.id) return false;
+
+            const tenantName = normalizePersonName(t.name || '');
+            if (targetName && tenantName === targetName) return true;
+
+            if (senderTokens.length > 0) {
+              const tenantTokens = new Set(nameTokens(t.name || ''));
+              return senderTokens.every((token) => tenantTokens.has(token));
+            }
+
+            return false;
+          })
           .map((t: any) => ({
             tenant_id: t.id,
             tenant_name: t.name,
@@ -120,6 +148,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
         payment_date: payment.payment_date,
         sender_name: payment.sender_name,
         sender_phone: payment.sender_phone,
+        payment_source: payment.payment_source || 'split_payment',
       }));
       if (rows.length) {
         const { error: insErr } = await supabase.from('payments').insert(rows);
@@ -131,6 +160,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['balances'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
       setSplitConfirmOpen(false);
       onOpenChange(false);
     },
@@ -279,7 +309,9 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
                 <p>
                   {formatCurrency(Number(payment.amount))} will be split equally across{' '}
                   {siblings.length + 1} houses under{' '}
-                  <span className="font-medium">{payment.tenants?.name}</span>:
+                  <span className="font-medium">
+                    {payment.tenants?.name || payment.sender_name || 'this tenant'}
+                  </span>:
                 </p>
                 <ul className="list-disc pl-5 text-sm">
                   <li>
