@@ -208,7 +208,17 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
+          <DialogFooter className="gap-2 flex-wrap">
+            {siblings.length > 0 && (
+              <Button
+                variant="secondary"
+                onClick={() => setSplitConfirmOpen(true)}
+                className="gap-2"
+              >
+                <Split className="h-4 w-4" />
+                Split across {siblings.length + 1} houses
+              </Button>
+            )}
             <Button
               variant="destructive"
               onClick={() => setConfirmOpen(true)}
