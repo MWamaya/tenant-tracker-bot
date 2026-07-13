@@ -266,6 +266,60 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={splitConfirmOpen} onOpenChange={setSplitConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Split this payment equally?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  {formatCurrency(Number(payment.amount))} will be split equally across{' '}
+                  {siblings.length + 1} houses under{' '}
+                  <span className="font-medium">{payment.tenants?.name}</span>:
+                </p>
+                <ul className="list-disc pl-5 text-sm">
+                  <li>
+                    {payment.houses?.house_no || 'Unassigned'} —{' '}
+                    {formatCurrency(
+                      Math.round(
+                        (Number(payment.amount) -
+                          Math.round((Number(payment.amount) / (siblings.length + 1)) * 100) /
+                            100 *
+                            siblings.length) *
+                          100
+                      ) / 100
+                    )}
+                  </li>
+                  {siblings.map((s) => (
+                    <li key={s.tenant_id}>
+                      {s.house_no || 'Unassigned'} —{' '}
+                      {formatCurrency(
+                        Math.round((Number(payment.amount) / (siblings.length + 1)) * 100) / 100
+                      )}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted-foreground">
+                  New payment rows will use the same M-Pesa reference with suffixes (-S2, -S3…).
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={splitPayment.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={splitPayment.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                splitPayment.mutate();
+              }}
+            >
+              {splitPayment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Split'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
