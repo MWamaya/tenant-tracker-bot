@@ -24,6 +24,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Upload, FileSpreadsheet, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
+interface SplitHouse {
+  house_id: string;
+  house_no: string | null;
+  tenant_id: string;
+}
+
 interface ParsedRow {
   payment_date: string;
   amount: number;
@@ -33,6 +39,10 @@ interface ParsedRow {
   house_no: string | null;
   status: 'new' | 'duplicate' | 'invalid';
   reason?: string;
+  matched_house_id: string | null;
+  matched_tenant_id: string | null;
+  split_houses: SplitHouse[]; // sibling houses (excludes matched)
+  split: boolean;
 }
 
 interface Props {
