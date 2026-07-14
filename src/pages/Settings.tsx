@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Settings as SettingsIcon,
   Mail,
@@ -40,6 +41,9 @@ const Settings = () => {
 
   useEffect(() => {
     if (!landlordId) return;
+    let cancelled = false;
+
+    // Hydrate immediately from localStorage (fast) then reconcile with DB (authoritative)
     try {
       const raw = localStorage.getItem(getStatementStartStorageKey(landlordId));
       if (raw) {
@@ -50,9 +54,31 @@ const Settings = () => {
     } catch {
       /* ignore */
     }
+
+    (async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('statement_start_month, statement_start_year')
+        .eq('id', landlordId)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      const m = (data as { statement_start_month: number | null }).statement_start_month;
+      const y = (data as { statement_start_year: number | null }).statement_start_year;
+      if (typeof m === 'number' && typeof y === 'number') {
+        setStartMonth(String(m));
+        setStartYear(String(y));
+        localStorage.setItem(
+          getStatementStartStorageKey(landlordId),
+          JSON.stringify({ month: m, year: y }),
+        );
+        window.dispatchEvent(new Event('statement-start-changed'));
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [landlordId]);
 
-  const saveStatementStart = () => {
+  const saveStatementStart = async () => {
     if (!landlordId) {
       toast.error('Unable to save — no active landlord');
       return;
@@ -60,17 +86,34 @@ const Settings = () => {
     const payload = { month: Number(startMonth), year: Number(startYear) };
     localStorage.setItem(getStatementStartStorageKey(landlordId), JSON.stringify(payload));
     window.dispatchEvent(new Event('statement-start-changed'));
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        statement_start_month: payload.month,
+        statement_start_year: payload.year,
+      })
+      .eq('id', landlordId);
+    if (error) {
+      toast.error('Saved locally, but failed to sync to your account');
+      return;
+    }
     toast.success(`Statement will start from ${MONTH_NAMES[payload.month]} ${payload.year}`);
   };
 
-  const resetStatementStart = () => {
+  const resetStatementStart = async () => {
     if (!landlordId) return;
     localStorage.removeItem(getStatementStartStorageKey(landlordId));
     window.dispatchEvent(new Event('statement-start-changed'));
     setStartMonth('0');
     setStartYear(String(currentYear));
+    await supabase
+      .from('profiles')
+      .update({ statement_start_month: null, statement_start_year: null })
+      .eq('id', landlordId);
     toast.success('Reverted to default (registration date)');
   };
+
 
   const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - 4 + i);
 
