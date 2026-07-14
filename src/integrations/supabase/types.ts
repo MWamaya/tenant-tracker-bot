@@ -937,6 +937,8 @@ export type Database = {
           last_login_at: string | null
           phone: string | null
           sms_token_balance: number
+          statement_start_month: number | null
+          statement_start_year: number | null
           updated_at: string
         }
         Insert: {
@@ -948,6 +950,8 @@ export type Database = {
           last_login_at?: string | null
           phone?: string | null
           sms_token_balance?: number
+          statement_start_month?: number | null
+          statement_start_year?: number | null
           updated_at?: string
         }
         Update: {
@@ -959,6 +963,8 @@ export type Database = {
           last_login_at?: string | null
           phone?: string | null
           sms_token_balance?: number
+          statement_start_month?: number | null
+          statement_start_year?: number | null
           updated_at?: string
         }
         Relationships: []
