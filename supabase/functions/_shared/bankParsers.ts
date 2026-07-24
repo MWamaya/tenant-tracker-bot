@@ -49,22 +49,30 @@ interface BankParser {
   parse: (text: string) => ParsedPayment | null;
 }
 
-// Only one bank today (NCBA). match() accepts either: the immediate
-// forwarded sender is on the real bank's domain (ncbagroup.com), OR the
-// domain appears anywhere in the body (catches multi-hop forwards, e.g.
-// bank -> person A -> person B -> landlord, where the outer forward header
-// belongs to an intermediate forwarder rather than the bank, but the bank's
-// own footer/branding text is still present). The body-substring path is
-// weaker (a forged email just needs that string somewhere), but real
-// forwarding chains are commonly more than one hop, so this is the
-// practical tradeoff. When a second bank is added, add a new entry for it
-// with its own domain check ahead of or after this one in this array.
+// Only one bank today (NCBA). match() accepts, in order of strength:
+// (1) the immediate forwarded sender is on the real bank's domain
+// (ncbagroup.com); (2) the domain appears anywhere in the body (catches
+// multi-hop forwards where the outer forward header belongs to an
+// intermediate forwarder, but the bank's footer/branding text survives);
+// (3) the bank name "NCBA" appears anywhere in the body. Some forward
+// paths (e.g. mobile Gmail forwards) don't preserve the "Forwarded
+// message" header block or the full footer at all, only the notification
+// body text itself, which still names the bank. Case (3) is the weakest
+// signal (any email just containing "NCBA" would pass), but it's what
+// survives every forward format seen in testing so far. When a second
+// bank is added, add a new entry for it with its own checks ahead of or
+// after this one in this array.
 const BANK_PARSERS: BankParser[] = [
   {
     name: 'ncba',
-    match: (originalFrom, text) =>
-      (originalFrom?.toLowerCase().endsWith('@ncbagroup.com') ?? false) ||
-      text.toLowerCase().includes('ncbagroup.com'),
+    match: (originalFrom, text) => {
+      const lowerText = text.toLowerCase();
+      return (
+        (originalFrom?.toLowerCase().endsWith('@ncbagroup.com') ?? false) ||
+        lowerText.includes('ncbagroup.com') ||
+        lowerText.includes('ncba')
+      );
+    },
     parse: parseDefaultBankNotification,
   },
 ];
