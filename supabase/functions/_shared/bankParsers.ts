@@ -23,9 +23,19 @@ function parseDefaultBankNotification(text: string): ParsedPayment | null {
   const dateMatch = text.match(/on\s+(\d{1,2}\/\d{1,2}\/\d{4}\s+\d{1,2}:\d{2}\s*(?:AM|PM)?)/i);
   let paymentDate: string | null = null;
   if (dateMatch) {
-    const [datePart, timePart] = dateMatch[1].split(/\s+/);
+    const [datePart, timePart, meridiem] = dateMatch[1].split(/\s+/);
     const [day, month, year] = datePart.split('/');
-    paymentDate = new Date(`${year}-${month}-${day} ${timePart}`).toISOString();
+    let [hours, minutes] = timePart.split(':').map((v) => parseInt(v, 10));
+    if (meridiem) {
+      const upperMeridiem = meridiem.toUpperCase();
+      if (upperMeridiem === 'PM' && hours !== 12) {
+        hours += 12;
+      } else if (upperMeridiem === 'AM' && hours === 12) {
+        hours = 0;
+      }
+    }
+    const normalizedTime = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+    paymentDate = new Date(`${year}-${month}-${day} ${normalizedTime}`).toISOString();
   }
 
   if (!amount || !reference) return null;
@@ -39,14 +49,15 @@ interface BankParser {
   parse: (text: string) => ParsedPayment | null;
 }
 
-// Only one bank today, so match() always returns true. When a second bank
-// is added, change this to a real domain check (e.g.
-// originalFrom?.endsWith('@ourbankdomain.co.ke')) and add a new entry for
-// the second bank ahead of or after it in this array.
+// Only one bank today (NCBA). match() checks that the original forwarded
+// sender is from the real bank's domain (ncbagroup.com), so a forged email
+// from any other sender is rejected before parsing. When a second bank is
+// added, add a new entry for it with its own domain check ahead of or after
+// this one in this array.
 const BANK_PARSERS: BankParser[] = [
   {
-    name: 'default-bank',
-    match: () => true,
+    name: 'ncba',
+    match: (originalFrom) => originalFrom?.toLowerCase().endsWith('@ncbagroup.com') ?? false,
     parse: parseDefaultBankNotification,
   },
 ];
