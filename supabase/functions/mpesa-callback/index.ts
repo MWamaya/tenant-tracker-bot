@@ -1,5 +1,6 @@
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/supabase.ts';
+import { matchHouseAndTenant, updateHouseBalance } from '../_shared/paymentMatching.ts';
 
 // M-Pesa C2B and STK Push callback handler
 // This endpoint receives payment notifications from Safaricom
@@ -353,177 +354,49 @@ async function processPayment(supabase: any, data: {
 }
 
 async function attemptAutoMatch(supabase: any, mpesaTx: any) {
-  let matchedHouse = null;
-  let matchedTenant = null;
-  let matchConfidence = 0;
+  const match = await matchHouseAndTenant(supabase, {
+    landlordId: mpesaTx.landlord_id,
+    houseNo: mpesaTx.bill_ref_number,
+    phone: mpesaTx.msisdn,
+  });
 
-  // Strategy 1: Match by bill reference number (house number)
-  if (mpesaTx.bill_ref_number) {
-    const { data: house } = await supabase
-      .from('houses')
-      .select('id, landlord_id, expected_rent')
-      .eq('landlord_id', mpesaTx.landlord_id)
-      .ilike('house_no', mpesaTx.bill_ref_number)
-      .single();
+  if (!match.house && !match.tenant) return;
 
-    if (house) {
-      matchedHouse = house;
-      matchConfidence = 90;
+  const senderName = [mpesaTx.first_name, mpesaTx.middle_name, mpesaTx.last_name]
+    .filter(Boolean)
+    .join(' ') || null;
 
-      // Find active tenant for this house
-      const { data: tenant } = await supabase
-        .from('tenants')
-        .select('id, name, phone')
-        .eq('house_id', house.id)
-        .single();
-
-      if (tenant) {
-        matchedTenant = tenant;
-        matchConfidence = 95;
-      }
-    }
-  }
-
-  // Strategy 2: Match by phone number
-  if (!matchedTenant && mpesaTx.msisdn) {
-    // Format phone for matching
-    let searchPhone = mpesaTx.msisdn;
-    if (searchPhone.startsWith('254')) {
-      searchPhone = '0' + searchPhone.substring(3);
-    }
-
-    const { data: tenant } = await supabase
-      .from('tenants')
-      .select('id, name, phone, house_id')
-      .eq('landlord_id', mpesaTx.landlord_id)
-      .or(`phone.eq.${searchPhone},phone.eq.${mpesaTx.msisdn},secondary_phone.eq.${searchPhone}`)
-      .single();
-
-    if (tenant) {
-      matchedTenant = tenant;
-      matchConfidence = Math.max(matchConfidence, 85);
-
-      if (tenant.house_id && !matchedHouse) {
-        const { data: house } = await supabase
-          .from('houses')
-          .select('id, expected_rent')
-          .eq('id', tenant.house_id)
-          .single();
-
-        if (house) {
-          matchedHouse = house;
-          matchConfidence = 90;
-        }
-      }
-    }
-  }
-
-  // If matched, create payment record and update transaction
-  if (matchedHouse || matchedTenant) {
-    // Create payment record
-    const senderName = [mpesaTx.first_name, mpesaTx.middle_name, mpesaTx.last_name]
-      .filter(Boolean)
-      .join(' ') || null;
-
-    const { data: payment, error: paymentError } = await supabase
-      .from('payments')
-      .insert({
-        landlord_id: mpesaTx.landlord_id,
-        house_id: matchedHouse?.id,
-        tenant_id: matchedTenant?.id,
-        amount: mpesaTx.trans_amount,
-        mpesa_ref: mpesaTx.transaction_id,
-        payment_date: mpesaTx.trans_time,
-        sender_name: senderName,
-        sender_phone: mpesaTx.msisdn,
-        payment_source: 'mpesa',
-        mpesa_transaction_id: mpesaTx.id,
-      })
-      .select()
-      .single();
-
-    if (!paymentError && payment) {
-      // Update mpesa transaction with match info
-      await supabase
-        .from('mpesa_transactions')
-        .update({
-          matched_payment_id: payment.id,
-          matched_tenant_id: matchedTenant?.id,
-          matched_house_id: matchedHouse?.id,
-          match_status: 'auto_matched',
-          match_confidence: matchConfidence,
-        })
-        .eq('id', mpesaTx.id);
-
-      // Update house balance if matched
-      if (matchedHouse) {
-        await updateHouseBalance(supabase, mpesaTx.landlord_id, matchedHouse.id, mpesaTx.trans_amount);
-      }
-    }
-  }
-}
-
-async function updateHouseBalance(supabase: any, landlordId: string, houseId: string, amount: number) {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const monthStr = monthStart.toISOString().split('T')[0];
-
-  // Get current balance record
-  const { data: balance } = await supabase
-    .from('balances')
-    .select('*')
-    .eq('landlord_id', landlordId)
-    .eq('house_id', houseId)
-    .eq('month', monthStr)
+  const { data: payment, error: paymentError } = await supabase
+    .from('payments')
+    .insert({
+      landlord_id: mpesaTx.landlord_id,
+      house_id: match.house?.id,
+      tenant_id: match.tenant?.id,
+      amount: mpesaTx.trans_amount,
+      mpesa_ref: mpesaTx.transaction_id,
+      payment_date: mpesaTx.trans_time,
+      sender_name: senderName,
+      sender_phone: mpesaTx.msisdn,
+      payment_source: 'mpesa',
+      mpesa_transaction_id: mpesaTx.id,
+    })
+    .select()
     .single();
 
-  if (balance) {
-    // Update existing balance
-    const newPaidAmount = (balance.paid_amount || 0) + amount;
-    const newBalance = balance.expected_rent - newPaidAmount + (balance.carry_forward || 0);
+  if (paymentError || !payment) return;
 
-    await supabase
-      .from('balances')
-      .update({
-        paid_amount: newPaidAmount,
-        balance: newBalance,
-      })
-      .eq('id', balance.id);
-  } else {
-    // Get house expected rent
-    const { data: house } = await supabase
-      .from('houses')
-      .select('expected_rent')
-      .eq('id', houseId)
-      .single();
+  await supabase
+    .from('mpesa_transactions')
+    .update({
+      matched_payment_id: payment.id,
+      matched_tenant_id: match.tenant?.id,
+      matched_house_id: match.house?.id,
+      match_status: 'auto_matched',
+      match_confidence: match.confidence,
+    })
+    .eq('id', mpesaTx.id);
 
-    if (house) {
-      // Get previous month's balance for carry forward
-      const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const prevMonthStr = prevMonth.toISOString().split('T')[0];
-
-      const { data: prevBalance } = await supabase
-        .from('balances')
-        .select('balance')
-        .eq('landlord_id', landlordId)
-        .eq('house_id', houseId)
-        .eq('month', prevMonthStr)
-        .single();
-
-      const carryForward = prevBalance?.balance || 0;
-      const newBalance = house.expected_rent - amount + carryForward;
-
-      await supabase
-        .from('balances')
-        .insert({
-          landlord_id: landlordId,
-          house_id: houseId,
-          month: monthStr,
-          expected_rent: house.expected_rent,
-          paid_amount: amount,
-          carry_forward: carryForward,
-          balance: newBalance,
-        });
-    }
+  if (match.house) {
+    await updateHouseBalance(supabase, mpesaTx.landlord_id, match.house.id, mpesaTx.trans_amount);
   }
 }
