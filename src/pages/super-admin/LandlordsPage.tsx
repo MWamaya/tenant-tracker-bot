@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { useLandlords, useUpdateLandlordStatus, useSubscriptionPlans, useAssignSubscription, useAllocateSmsTokens } from '@/hooks/useSuperAdminData';
+import { useLandlords, useUpdateLandlordStatus, useSubscriptionPlans, useAssignSubscription, useAllocateSmsTokens, useUpdateInboundEmail } from '@/hooks/useSuperAdminData';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
-import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare, LogIn, Building2, Users, Home } from 'lucide-react';
+import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare, LogIn, Building2, Users, Home, Mail } from 'lucide-react';
 import { format } from 'date-fns';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 
@@ -43,6 +43,7 @@ const LandlordsPage = () => {
   const updateStatus = useUpdateLandlordStatus();
   const assignSubscription = useAssignSubscription();
   const allocateTokens = useAllocateSmsTokens();
+  const updateInboundEmail = useUpdateInboundEmail();
 
   const handleLoginAs = async (landlord: LandlordProfile, destination = '/') => {
     await startImpersonation({
@@ -56,13 +57,14 @@ const LandlordsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedLandlord, setSelectedLandlord] = useState<LandlordProfile | null>(null);
-  const [dialogType, setDialogType] = useState<'view' | 'subscription' | 'sms' | null>(null);
+  const [dialogType, setDialogType] = useState<'view' | 'subscription' | 'sms' | 'inboundEmail' | null>(null);
   const [subscriptionData, setSubscriptionData] = useState({
     planId: '',
     paymentReference: '',
     amountPaid: '',
   });
   const [smsAmount, setSmsAmount] = useState('');
+  const [inboundEmailInput, setInboundEmailInput] = useState('');
 
   const filteredLandlords = landlords?.filter((landlord) => {
     const matchesSearch =
@@ -98,6 +100,16 @@ const LandlordsPage = () => {
     });
     setDialogType(null);
     setSmsAmount('');
+  };
+
+  const handleUpdateInboundEmail = async () => {
+    if (!selectedLandlord || !inboundEmailInput.trim()) return;
+    await updateInboundEmail.mutateAsync({
+      landlordId: selectedLandlord.id,
+      inboundEmail: inboundEmailInput.trim(),
+    });
+    setDialogType(null);
+    setInboundEmailInput('');
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -308,6 +320,17 @@ const LandlordsPage = () => {
                             <MessageSquare className="h-4 w-4 mr-2" />
                             Allocate SMS Tokens
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-slate-200"
+                            onClick={() => {
+                              setSelectedLandlord(landlord);
+                              setInboundEmailInput(landlord.inbound_email || '');
+                              setDialogType('inboundEmail');
+                            }}
+                          >
+                            <Mail className="h-4 w-4 mr-2" />
+                            Edit Inbound Email
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator className="bg-slate-700" />
                           {landlord.account_status !== 'active' && (
                             <DropdownMenuItem
@@ -361,6 +384,10 @@ const LandlordsPage = () => {
                 <div>
                   <Label className="text-slate-400">Phone</Label>
                   <p className="text-white">{selectedLandlord.phone || 'N/A'}</p>
+                </div>
+                <div>
+                  <Label className="text-slate-400">Inbound Email</Label>
+                  <p className="text-white">{selectedLandlord.inbound_email || 'Not yet generated'}</p>
                 </div>
                 <div>
                   <Label className="text-slate-400">Status</Label>
@@ -456,6 +483,40 @@ const LandlordsPage = () => {
             </Button>
             <Button onClick={handleAssignSubscription} disabled={!subscriptionData.planId}>
               Assign Subscription
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Inbound Email Dialog */}
+      <Dialog open={dialogType === 'inboundEmail'} onOpenChange={() => setDialogType(null)}>
+        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Edit Inbound Email</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              The address {selectedLandlord?.full_name} forwards bank notification emails to.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-slate-200">Inbound Email</Label>
+              <Input
+                className="bg-slate-900/50 border-slate-600"
+                value={inboundEmailInput}
+                onChange={(e) => setInboundEmailInput(e.target.value)}
+                placeholder="e.g., munene@kodipap.com"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogType(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUpdateInboundEmail}
+              disabled={updateInboundEmail.isPending || !inboundEmailInput.trim()}
+            >
+              Save
             </Button>
           </DialogFooter>
         </DialogContent>
