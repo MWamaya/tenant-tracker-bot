@@ -38,6 +38,7 @@ const Settings = () => {
   const currentYear = new Date().getFullYear();
   const [startMonth, setStartMonth] = useState<string>('0');
   const [startYear, setStartYear] = useState<string>(String(currentYear));
+  const [inboundEmail, setInboundEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (!landlordId) return;
@@ -58,12 +59,17 @@ const Settings = () => {
     (async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('statement_start_month, statement_start_year')
+        .select('statement_start_month, statement_start_year, inbound_email')
         .eq('id', landlordId)
         .maybeSingle();
       if (cancelled || error || !data) return;
-      const m = (data as { statement_start_month: number | null }).statement_start_month;
-      const y = (data as { statement_start_year: number | null }).statement_start_year;
+      const row = data as {
+        statement_start_month: number | null;
+        statement_start_year: number | null;
+        inbound_email: string | null;
+      };
+      const m = row.statement_start_month;
+      const y = row.statement_start_year;
       if (typeof m === 'number' && typeof y === 'number') {
         setStartMonth(String(m));
         setStartYear(String(y));
@@ -73,6 +79,7 @@ const Settings = () => {
         );
         window.dispatchEvent(new Event('statement-start-changed'));
       }
+      setInboundEmail(row.inbound_email);
     })();
 
     return () => { cancelled = true; };
@@ -263,6 +270,30 @@ const Settings = () => {
           </TabsContent>
 
           <TabsContent value="email" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mail className="h-5 w-5" />
+                  Bank Email Forwarding
+                </CardTitle>
+                <CardDescription>
+                  Forward your bank's transaction notification emails to this address to have payments recorded automatically.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {inboundEmail ? (
+                  <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-sm text-muted-foreground">Your forwarding email</p>
+                    <p className="font-mono text-base font-medium mt-1">{inboundEmail}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Your forwarding email will appear here once your account is activated by an admin.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
