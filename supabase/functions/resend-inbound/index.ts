@@ -56,13 +56,17 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Invalid JSON' }, 400);
   }
 
-  await supabase.from('webhooks_log').insert({
-    webhook_type: 'resend_inbound',
-    endpoint: req.url,
-    method: req.method,
-    payload,
-    processed: false,
-  });
+  const { data: webhookLog } = await supabase
+    .from('webhooks_log')
+    .insert({
+      webhook_type: 'resend_inbound',
+      endpoint: req.url,
+      method: req.method,
+      payload,
+      processed: false,
+    })
+    .select()
+    .single();
 
   if (payload.type !== 'email.received') {
     return jsonResponse({ received: true });
@@ -119,9 +123,14 @@ Deno.serve(async (req) => {
   }
 
   const email = await emailResponse.json();
-  const text = htmlToText(email.html || '');
+  const rawContent = email.html || email.text || '';
+  const text = htmlToText(rawContent);
   const originalFrom = extractForwardedFrom(text);
   const parsed = parseBankEmail(text, originalFrom);
+
+  if (webhookLog?.id) {
+    await supabase.from('webhooks_log').update({ processed: true }).eq('id', webhookLog.id);
+  }
 
   if (!parsed) {
     await supabase.from('email_logs').insert({
