@@ -139,8 +139,7 @@ var mcp_default = defineMcp({
     list_properties_default,
     list_houses_default,
     list_tenants_default,
-    list_payments_default,
-    dashboardSummaryTool
+    list_payments_default
   ]
 });
 

@@ -24,6 +24,5 @@ export default defineMcp({
     listHousesTool,
     listTenantsTool,
     listPaymentsTool,
-    dashboardSummaryTool,
   ],
 });
