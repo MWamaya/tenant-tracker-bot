@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+docs
+/.superpowers
+/.claude
+package-lock.json
+.env
+supabase/.temp

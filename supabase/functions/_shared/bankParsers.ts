@@ -45,25 +45,32 @@ function parseDefaultBankNotification(text: string): ParsedPayment | null {
 
 interface BankParser {
   name: string;
-  match: (originalFrom: string | null) => boolean;
+  match: (originalFrom: string | null, text: string) => boolean;
   parse: (text: string) => ParsedPayment | null;
 }
 
-// Only one bank today (NCBA). match() checks that the original forwarded
-// sender is from the real bank's domain (ncbagroup.com), so a forged email
-// from any other sender is rejected before parsing. When a second bank is
-// added, add a new entry for it with its own domain check ahead of or after
-// this one in this array.
+// Only one bank today (NCBA). match() accepts either: the immediate
+// forwarded sender is on the real bank's domain (ncbagroup.com), OR the
+// domain appears anywhere in the body (catches multi-hop forwards, e.g.
+// bank -> person A -> person B -> landlord, where the outer forward header
+// belongs to an intermediate forwarder rather than the bank, but the bank's
+// own footer/branding text is still present). The body-substring path is
+// weaker (a forged email just needs that string somewhere), but real
+// forwarding chains are commonly more than one hop, so this is the
+// practical tradeoff. When a second bank is added, add a new entry for it
+// with its own domain check ahead of or after this one in this array.
 const BANK_PARSERS: BankParser[] = [
   {
     name: 'ncba',
-    match: (originalFrom) => originalFrom?.toLowerCase().endsWith('@ncbagroup.com') ?? false,
+    match: (originalFrom, text) =>
+      (originalFrom?.toLowerCase().endsWith('@ncbagroup.com') ?? false) ||
+      text.toLowerCase().includes('ncbagroup.com'),
     parse: parseDefaultBankNotification,
   },
 ];
 
 export function parseBankEmail(text: string, originalFrom: string | null): ParsedPayment | null {
-  const parser = BANK_PARSERS.find((p) => p.match(originalFrom));
+  const parser = BANK_PARSERS.find((p) => p.match(originalFrom, text));
   if (!parser) return null;
   return parser.parse(text);
 }

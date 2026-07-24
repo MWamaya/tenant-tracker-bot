@@ -1,4 +1,7 @@
-project_id = "hnzvcvuaorupbvkaxzya"
+project_id = "nwhbkepmchszucccyjqy"
 
 [functions.mpesa-callback]
+verify_jwt = false
+
+[functions.resend-inbound]
 verify_jwt = false
