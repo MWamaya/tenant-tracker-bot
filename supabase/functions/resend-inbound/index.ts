@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
   const { data: landlord } = await supabase
     .from('profiles')
     .select('id')
-    .eq('email', toAddress)
+    .eq('inbound_email', toAddress)
     .maybeSingle();
 
   if (!landlord) {
