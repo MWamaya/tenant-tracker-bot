@@ -5,8 +5,8 @@ import type { ToolContext } from "@lovable.dev/mcp-js";
 // token so RLS runs as that landlord. Never use the service-role key here.
 export function supabaseForUser(ctx: ToolContext) {
   return createClient(
-    process.env.SUPABASE_URL!,
-    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY!,
+    import.meta.env.VITE_SUPABASE_URL as string,
+    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string,
     {
       global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
       auth: { persistSession: false, autoRefreshToken: false },

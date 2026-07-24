@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://hnzvcvuaorupbvkaxzya.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "kodi-pap-mcp",
+      "version": "0.1.0",
+      "title": "KODI PAP"
+    },
+    "tools": [
+      {
+        "name": "list_properties",
+        "title": "List properties",
+        "description": "List all properties owned by the signed-in landlord.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_houses",
+        "title": "List houses",
+        "description": "List houses (rental units) owned by the signed-in landlord, optionally filtered by property_id.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "property_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filter to a single property"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_tenants",
+        "title": "List tenants",
+        "description": "List tenants belonging to the signed-in landlord.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "search": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Filter by name substring"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_payments",
+        "title": "List recent payments",
+        "description": "List the most recent rent payments recorded for the signed-in landlord.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "Max rows (default 50)"
+            },
+            "tenant_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Filter to one tenant"
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}

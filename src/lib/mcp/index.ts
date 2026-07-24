@@ -3,7 +3,7 @@ import listPropertiesTool from "./tools/list-properties";
 import listHousesTool from "./tools/list-houses";
 import listTenantsTool from "./tools/list-tenants";
 import listPaymentsTool from "./tools/list-payments";
-import dashboardSummaryTool from "./tools/dashboard-summary";
+
 
 // Direct supabase.co issuer — never the .lovable.cloud proxy. Read the project
 // ref from Vite's inlined env so the entry stays import-safe.
@@ -24,6 +24,5 @@ export default defineMcp({
     listHousesTool,
     listTenantsTool,
     listPaymentsTool,
-    dashboardSummaryTool,
   ],
 });
