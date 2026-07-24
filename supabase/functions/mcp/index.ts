@@ -12,8 +12,8 @@ import { defineTool } from "npm:@lovable.dev/mcp-js@0.24.0";
 import { createClient } from "npm:@supabase/supabase-js@^2.89.0";
 function supabaseForUser(ctx) {
   return createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY,
+    "https://hnzvcvuaorupbvkaxzya.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhuenZjdnVhb3J1cGJ2a2F4enlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc3MDMxODYsImV4cCI6MjA4MzI3OTE4Nn0.h2r7jE22pMOUiG2Oux-_l0bJkmg5Q1KatUF7cyA3-cA",
     {
       global: { headers: { Authorization: `Bearer ${ctx.getToken()}` } },
       auth: { persistSession: false, autoRefreshToken: false }
