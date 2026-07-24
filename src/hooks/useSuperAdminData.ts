@@ -14,6 +14,7 @@ export interface LandlordProfile {
   created_at: string;
   updated_at: string;
   email?: string;
+  inbound_email: string | null;
   subscription?: {
     id: string;
     plan_name: string;
@@ -271,6 +272,37 @@ export const useUpdateLandlordStatus = () => {
     },
     onError: (error) => {
       toast.error(`Failed to update status: ${error.message}`);
+    },
+  });
+};
+
+// Mutation to update a landlord's inbound (kodipap) email
+export const useUpdateInboundEmail = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ landlordId, inboundEmail }: { landlordId: string; inboundEmail: string }) => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ inbound_email: inboundEmail })
+        .eq('id', landlordId);
+
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'UPDATE_INBOUND_EMAIL',
+        entity_type: 'profile',
+        entity_id: landlordId,
+        new_values: { inbound_email: inboundEmail },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['landlords'] });
+      toast.success('Inbound email updated');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update inbound email: ${error.message}`);
     },
   });
 };
