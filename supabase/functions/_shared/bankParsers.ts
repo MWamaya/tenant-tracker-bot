@@ -11,7 +11,11 @@ function parseDefaultBankNotification(text: string): ParsedPayment | null {
   const amountMatch = text.match(/KES\s*([\d,]+(?:\.\d{2})?)/i);
   const amount = amountMatch ? parseFloat(amountMatch[1].replace(/,/g, '')) : null;
 
-  const houseMatch = text.match(/for\s+(\d+\s*[A-Z0-9]+)/i);
+  // The bank's reference format is "<paybill> <unit>" (e.g. "212245 B13"),
+  // sometimes with no space (e.g. "212245A8"). House numbers in this app are
+  // stored as just the unit code, so the paybill prefix is intentionally
+  // dropped here rather than captured.
+  const houseMatch = text.match(/for\s+\d+\s*([A-Z]\d+)/i);
   const houseNo = houseMatch ? houseMatch[1].trim() : null;
 
   const nameMatch = text.match(/from\s+([A-Z\s]+?)\s+(?:for|on)/i);
