@@ -76,7 +76,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
 
       setSiblings(
         (data || [])
-          .filter((t: any) => {
+          .filter((t) => {
             if (!t.house_id) return false;
             if (payment.house_id && t.house_id === payment.house_id) return false;
             if (!payment.house_id && payment.tenants?.id && t.id === payment.tenants.id) return false;
@@ -91,7 +91,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
 
             return false;
           })
-          .map((t: any) => ({
+          .map((t) => ({
             tenant_id: t.id,
             tenant_name: t.name,
             house_id: t.house_id,

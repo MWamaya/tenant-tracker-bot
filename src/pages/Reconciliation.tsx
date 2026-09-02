@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
-import { useReconciliation, ReconciliationItem } from '@/hooks/useReconciliation';
+import { useReconciliation, ReconciliationItem, ReconciliationReason } from '@/hooks/useReconciliation';
 import { useHouses } from '@/hooks/useHouses';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +26,12 @@ import {
 import { CheckCircle2, ChevronsUpDown, Loader2, ListChecks } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+const REASON_LABELS: Record<ReconciliationReason, string> = {
+  no_house_match: 'No house match found',
+  missing_house: 'Missing house',
+  missing_tenant: 'Missing tenant',
+};
 
 const HousePicker = ({
   onAssign,
@@ -158,12 +164,12 @@ const Reconciliation = () => {
                         <span
                           className={cn(
                             'text-xs px-2 py-0.5 rounded-full border',
-                            item.source === 'email_log'
+                            item.reason === 'no_house_match'
                               ? 'bg-destructive/10 text-destructive border-destructive/20'
                               : 'bg-warning/10 text-warning border-warning/20',
                           )}
                         >
-                          {item.source === 'email_log' ? 'No house match found' : 'Missing tenant/house'}
+                          {REASON_LABELS[item.reason]}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">

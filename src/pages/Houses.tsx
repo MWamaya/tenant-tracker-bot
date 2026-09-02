@@ -588,7 +588,7 @@ const Houses = () => {
           id: h.id,
           houseNo: h.house_no,
           expectedRent: Number(h.expected_rent),
-          deposit: Number((h as any).deposit ?? h.expected_rent),
+          deposit: Number(h.deposit ?? h.expected_rent),
         }))}
         assignedHouseIds={tenants.map(t => t.house_id).filter(Boolean) as string[]}
         onSave={async (data) => {
@@ -614,7 +614,7 @@ const Houses = () => {
           id: houseToEdit.id,
           houseNo: houseToEdit.house_no,
           expectedRent: houseToEdit.expected_rent,
-          deposit: Number((houseToEdit as any).deposit ?? houseToEdit.expected_rent),
+          deposit: Number(houseToEdit.deposit ?? houseToEdit.expected_rent),
           propertyId: houseToEdit.property_id,
           status: houseToEdit.status,
         } : null}
@@ -651,7 +651,7 @@ const Houses = () => {
           id: h.id,
           houseNo: h.house_no,
           expectedRent: Number(h.expected_rent),
-          deposit: Number((h as any).deposit ?? h.expected_rent),
+          deposit: Number(h.deposit ?? h.expected_rent),
         }))}
         assignedHouseIds={tenants.map(t => t.house_id).filter(Boolean) as string[]}
         onSave={async (data) => {

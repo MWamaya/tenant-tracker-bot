@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 // a payment at all (resend-inbound found no match and had nothing to attach
 // a payment to). Both are surfaced the same way so the landlord can assign
 // a house to either from one screen.
+export type ReconciliationReason = 'no_house_match' | 'missing_house' | 'missing_tenant';
+
 export interface ReconciliationItem {
   source: 'payment' | 'email_log';
   id: string;
@@ -16,6 +18,7 @@ export interface ReconciliationItem {
   senderName: string | null;
   parsedHouseNo: string | null;
   date: string;
+  reason: ReconciliationReason;
 }
 
 export const useReconciliation = () => {
@@ -56,6 +59,7 @@ export const useReconciliation = () => {
         senderName: p.sender_name,
         parsedHouseNo: null,
         date: p.payment_date,
+        reason: p.house_id ? 'missing_tenant' : 'missing_house',
       }));
 
       const fromEmailLogs: ReconciliationItem[] = (emailLogsRes.data || []).map((l) => ({
@@ -66,6 +70,7 @@ export const useReconciliation = () => {
         senderName: l.parsed_tenant_name,
         parsedHouseNo: l.parsed_house_no,
         date: l.parsed_date || l.created_at,
+        reason: 'no_house_match',
       }));
 
       return [...fromPayments, ...fromEmailLogs].sort(

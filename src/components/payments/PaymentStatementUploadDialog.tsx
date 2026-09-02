@@ -60,7 +60,7 @@ const NAME_KEYS = ['name', 'sender', 'sender name', 'paid by', 'from', 'customer
 const PHONE_KEYS = ['phone', 'sender phone', 'msisdn', 'mobile', 'phone number'];
 const HOUSE_KEYS = ['house', 'house no', 'house_no', 'unit', 'unit no', 'account', 'account no', 'bill ref'];
 
-const findKey = (row: Record<string, any>, candidates: string[]): string | null => {
+const findKey = (row: Record<string, unknown>, candidates: string[]): string | null => {
   const normalized = Object.keys(row).reduce<Record<string, string>>((acc, k) => {
     acc[k.toLowerCase().trim().replace(/[._-]/g, ' ').replace(/\s+/g, ' ')] = k;
     return acc;
@@ -75,7 +75,7 @@ const findKey = (row: Record<string, any>, candidates: string[]): string | null 
   return null;
 };
 
-const parseDate = (val: any): string | null => {
+const parseDate = (val: unknown): string | null => {
   if (val == null || val === '') return null;
   // Native JS Date (when cellDates: true is used)
   if (val instanceof Date && isValid(val)) return val.toISOString();
@@ -112,7 +112,7 @@ const parseDate = (val: any): string | null => {
   return isValid(fallback) ? fallback.toISOString() : null;
 };
 
-const parseAmount = (val: any): number | null => {
+const parseAmount = (val: unknown): number | null => {
   if (val == null || val === '') return null;
   if (typeof val === 'number') return val;
   const cleaned = String(val).replace(/[^0-9.-]/g, '');
@@ -154,7 +154,7 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type: 'array', cellDates: true });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const rawJson = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+      const rawJson = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
       // Filter out completely blank rows
       const json = rawJson.filter((r) =>
         Object.values(r).some((v) => v !== '' && v != null)
@@ -317,8 +317,9 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
       toast.success(
         `Parsed ${json.length} rows • ${newCount} ready to import${splittable ? ` • ${splittable} splittable` : ''}`
       );
-    } catch (err: any) {
-      toast.error(`Failed to parse file: ${err.message}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Failed to parse file: ${message}`);
     } finally {
       setParsing(false);
     }
@@ -522,8 +523,9 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
       queryClient.invalidateQueries({ queryKey: ['houses'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       handleClose(false);
-    } catch (err: any) {
-      toast.error(`Import failed: ${err.message}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Import failed: ${message}`);
     } finally {
       setImporting(false);
     }
