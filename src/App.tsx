@@ -18,6 +18,7 @@ import Tenants from "./pages/Tenants";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import EmailLogs from "./pages/EmailLogs";
+import Reconciliation from "./pages/Reconciliation";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -103,6 +104,7 @@ const App = () => (
                 <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                 <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
+                <Route path="/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 
                 {/* Super Admin Routes */}

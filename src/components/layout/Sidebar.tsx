@@ -11,11 +11,13 @@ import {
   LogOut,
   Menu,
   X,
-  Building2
+  Building2,
+  ListChecks
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useReconciliation } from '@/hooks/useReconciliation';
 import { toast } from 'sonner';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 
@@ -25,6 +27,7 @@ const navigation = [
   { name: 'Houses', href: '/houses', icon: Home },
   { name: 'Tenants', href: '/tenants', icon: Users },
   { name: 'Payments', href: '/payments', icon: CreditCard },
+  { name: 'Needs Review', href: '/reconciliation', icon: ListChecks },
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Email Logs', href: '/email-logs', icon: Mail },
 ];
@@ -33,6 +36,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { items: reconciliationItems } = useReconciliation();
 
   const handleLogout = async () => {
     await signOut();
@@ -67,7 +71,12 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
               className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
             >
               <item.icon className="h-5 w-5" />
-              <span>{item.name}</span>
+              <span className="flex-1">{item.name}</span>
+              {item.href === '/reconciliation' && reconciliationItems.length > 0 && (
+                <span className="ml-auto inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full text-xs font-medium bg-destructive text-destructive-foreground">
+                  {reconciliationItems.length}
+                </span>
+              )}
             </NavLink>
           );
         })}
