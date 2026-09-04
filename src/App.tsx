@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +18,7 @@ import Tenants from "./pages/Tenants";
 import Payments from "./pages/Payments";
 import Reports from "./pages/Reports";
 import EmailLogs from "./pages/EmailLogs";
+import Reconciliation from "./pages/Reconciliation";
 import Settings from "./pages/Settings";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -26,15 +27,23 @@ import ChoosePlan from "./pages/ChoosePlan";
 import Landing from "./pages/Landing";
 import { useAuth } from "@/hooks/useAuth";
 
-// Super Admin Pages
-import SuperAdminLogin from "./pages/super-admin/SuperAdminLogin";
-import SuperAdminDashboard from "./pages/super-admin/SuperAdminDashboard";
-import LandlordsPage from "./pages/super-admin/LandlordsPage";
-import SubscriptionsPage from "./pages/super-admin/SubscriptionsPage";
-import AuditLogsPage from "./pages/super-admin/AuditLogsPage";
-import GlobalPaymentsPage from "./pages/super-admin/GlobalPaymentsPage";
-import SettingsPage from "./pages/super-admin/SettingsPage";
-import SuperAdminPropertiesPage from "./pages/super-admin/PropertiesPage";
+// Super Admin Pages — lazy-loaded: this is a separate part of the app most
+// landlords never visit, so it shouldn't inflate the bundle every landlord
+// downloads on login.
+const SuperAdminLogin = lazy(() => import("./pages/super-admin/SuperAdminLogin"));
+const SuperAdminDashboard = lazy(() => import("./pages/super-admin/SuperAdminDashboard"));
+const LandlordsPage = lazy(() => import("./pages/super-admin/LandlordsPage"));
+const SubscriptionsPage = lazy(() => import("./pages/super-admin/SubscriptionsPage"));
+const AuditLogsPage = lazy(() => import("./pages/super-admin/AuditLogsPage"));
+const GlobalPaymentsPage = lazy(() => import("./pages/super-admin/GlobalPaymentsPage"));
+const SettingsPage = lazy(() => import("./pages/super-admin/SettingsPage"));
+const SuperAdminPropertiesPage = lazy(() => import("./pages/super-admin/PropertiesPage"));
+
+const SuperAdminFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  </div>
+);
 
 const queryClient = new QueryClient();
 
@@ -103,18 +112,25 @@ const App = () => (
                 <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
                 <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
                 <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
+                <Route path="/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 
                 {/* Super Admin Routes */}
-                <Route path="/super-admin/login" element={<SuperAdminLogin />} />
-                <Route path="/super-admin" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />
-                <Route path="/super-admin/landlords" element={<SuperAdminRoute><LandlordsPage /></SuperAdminRoute>} />
-                <Route path="/super-admin/subscriptions" element={<SuperAdminRoute><SubscriptionsPage /></SuperAdminRoute>} />
-                <Route path="/super-admin/payments" element={<SuperAdminRoute><GlobalPaymentsPage /></SuperAdminRoute>} />
-                <Route path="/super-admin/audit-logs" element={<SuperAdminRoute><AuditLogsPage /></SuperAdminRoute>} />
-                <Route path="/super-admin/settings" element={<SuperAdminRoute><SettingsPage /></SuperAdminRoute>} />
-                <Route path="/super-admin/properties" element={<SuperAdminRoute><SuperAdminPropertiesPage /></SuperAdminRoute>} />
-                
+                <Route path="/super-admin/*" element={
+                  <Suspense fallback={<SuperAdminFallback />}>
+                    <Routes>
+                      <Route path="login" element={<SuperAdminLogin />} />
+                      <Route path="" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />
+                      <Route path="landlords" element={<SuperAdminRoute><LandlordsPage /></SuperAdminRoute>} />
+                      <Route path="subscriptions" element={<SuperAdminRoute><SubscriptionsPage /></SuperAdminRoute>} />
+                      <Route path="payments" element={<SuperAdminRoute><GlobalPaymentsPage /></SuperAdminRoute>} />
+                      <Route path="audit-logs" element={<SuperAdminRoute><AuditLogsPage /></SuperAdminRoute>} />
+                      <Route path="settings" element={<SuperAdminRoute><SettingsPage /></SuperAdminRoute>} />
+                      <Route path="properties" element={<SuperAdminRoute><SuperAdminPropertiesPage /></SuperAdminRoute>} />
+                    </Routes>
+                  </Suspense>
+                } />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

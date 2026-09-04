@@ -107,12 +107,12 @@ const Reports = () => {
     enabled: !!landlordId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('recurring_expenses' as any)
+        .from('recurring_expenses')
         .select('*, properties(name)')
         .eq('landlord_id', landlordId!)
         .order('created_at', { ascending: true });
       if (error) throw error;
-      return (data as any[]) || [];
+      return data || [];
     },
   });
 
@@ -144,7 +144,7 @@ const Reports = () => {
         property_id: 'none',
       });
     },
-    onError: (e: any) => toast.error(e.message || 'Failed to add expense'),
+    onError: (e: Error) => toast.error(e.message || 'Failed to add expense'),
   });
 
   const deleteExpense = useMutation({
@@ -156,7 +156,7 @@ const Reports = () => {
       toast.success('Expense deleted');
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
     },
-    onError: (e: any) => toast.error(e.message || 'Failed to delete'),
+    onError: (e: Error) => toast.error(e.message || 'Failed to delete'),
   });
 
   const addRecurring = useMutation({
@@ -167,7 +167,7 @@ const Reports = () => {
       if (!recurringForm.category.trim()) throw new Error('Category is required');
       if (!amt || amt <= 0) throw new Error('Enter a valid amount');
       if (!day || day < 1 || day > 28) throw new Error('Day must be between 1 and 28');
-      const { error } = await supabase.from('recurring_expenses' as any).insert({
+      const { error } = await supabase.from('recurring_expenses').insert({
         landlord_id: landlordId,
         category: recurringForm.category.trim(),
         description: recurringForm.description.trim() || null,
@@ -183,28 +183,28 @@ const Reports = () => {
       queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
       setRecurringForm({ category: '', description: '', amount: '', day_of_month: '1', property_id: 'none' });
     },
-    onError: (e: any) => toast.error(e.message || 'Failed to add'),
+    onError: (e: Error) => toast.error(e.message || 'Failed to add'),
   });
 
   const toggleRecurring = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
-      const { error } = await supabase.from('recurring_expenses' as any).update({ active }).eq('id', id);
+      const { error } = await supabase.from('recurring_expenses').update({ active }).eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] }),
-    onError: (e: any) => toast.error(e.message || 'Failed to update'),
+    onError: (e: Error) => toast.error(e.message || 'Failed to update'),
   });
 
   const deleteRecurring = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('recurring_expenses' as any).delete().eq('id', id);
+      const { error } = await supabase.from('recurring_expenses').delete().eq('id', id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success('Recurring expense removed');
       queryClient.invalidateQueries({ queryKey: ['recurring_expenses'] });
     },
-    onError: (e: any) => toast.error(e.message || 'Failed to delete'),
+    onError: (e: Error) => toast.error(e.message || 'Failed to delete'),
   });
 
   // Virtual expense rows generated from active recurring templates for the selected month
@@ -213,13 +213,13 @@ const Reports = () => {
     const year = anchor.getFullYear();
     const month = anchor.getMonth();
     return recurringExpenses
-      .filter((r: any) => r.active)
-      .filter((r: any) => {
+      .filter((r) => r.active)
+      .filter((r) => {
         if (!r.start_month) return true;
         const start = new Date(r.start_month);
         return start <= new Date(year, month + 1, 0);
       })
-      .map((r: any) => {
+      .map((r) => {
         const day = Math.min(Number(r.day_of_month) || 1, 28);
         return {
           id: `recurring-${r.id}-${selectedMonth}`,
@@ -237,13 +237,13 @@ const Reports = () => {
   const combinedExpenses = useMemo(
     () => [
       ...recurringVirtualForMonth,
-      ...expenses.map((e: any) => ({ ...e, isRecurring: false })),
+      ...expenses.map((e) => ({ ...e, isRecurring: false })),
     ],
     [recurringVirtualForMonth, expenses]
   );
 
   const totalExpenses = useMemo(
-    () => combinedExpenses.reduce((s: number, e: any) => s + Number(e.amount), 0),
+    () => combinedExpenses.reduce((s, e) => s + Number(e.amount), 0),
     [combinedExpenses]
   );
 
@@ -793,7 +793,7 @@ const Reports = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {combinedExpenses.map((e: any) => (
+                    {combinedExpenses.map((e) => (
                       <TableRow key={e.id} className="hover:bg-muted/30">
                         <TableCell>{format(new Date(e.expense_date), 'dd MMM yyyy')}</TableCell>
                         <TableCell className="font-medium">
@@ -987,7 +987,7 @@ const Reports = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {recurringExpenses.map((r: any) => (
+                    {recurringExpenses.map((r) => (
                       <TableRow key={r.id}>
                         <TableCell>
                           <div className="font-medium">{r.category}</div>

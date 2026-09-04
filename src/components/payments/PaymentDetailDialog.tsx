@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { recomputeHouseBalanceForPaymentDate } from '@/lib/syncPayments';
 import {
   Dialog,
   DialogContent,
@@ -76,7 +77,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
 
       setSiblings(
         (data || [])
-          .filter((t: any) => {
+          .filter((t) => {
             if (!t.house_id) return false;
             if (payment.house_id && t.house_id === payment.house_id) return false;
             if (!payment.house_id && payment.tenants?.id && t.id === payment.tenants.id) return false;
@@ -91,7 +92,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
 
             return false;
           })
-          .map((t: any) => ({
+          .map((t) => ({
             tenant_id: t.id,
             tenant_name: t.name,
             house_id: t.house_id,
@@ -107,10 +108,15 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
 
   const deletePayment = useMutation({
     mutationFn: async (id: string) => {
+      if (!payment) throw new Error('No payment');
       // Remove dependent email_logs first (FK-less but referenced by payment_id)
       await supabase.from('email_logs').delete().eq('payment_id', id);
       const { error } = await supabase.from('payments').delete().eq('id', id);
       if (error) throw error;
+
+      if (payment.house_id) {
+        await recomputeHouseBalanceForPaymentDate(payment.landlord_id, payment.house_id, payment.payment_date);
+      }
     },
     onSuccess: () => {
       toast.success('Payment deleted');
@@ -154,6 +160,15 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
         const { error: insErr } = await supabase.from('payments').insert(rows);
         if (insErr) throw insErr;
       }
+
+      const affectedHouseIds = new Set(
+        [payment.house_id, ...siblings.map((s) => s.house_id)].filter((id): id is string => !!id),
+      );
+      await Promise.all(
+        Array.from(affectedHouseIds).map((houseId) =>
+          recomputeHouseBalanceForPaymentDate(payment.landlord_id, houseId, payment.payment_date),
+        ),
+      );
     },
     onSuccess: () => {
       toast.success('Payment split equally across houses');

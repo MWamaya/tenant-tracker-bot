@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useProperties } from '@/hooks/useProperties';
 import {
@@ -92,19 +93,21 @@ export const AppBreadcrumbs = () => {
           const isFirst = index === 0;
 
           return (
-            <BreadcrumbItem key={index}>
+            <React.Fragment key={index}>
               {index > 0 && <BreadcrumbSeparator />}
-              {isLast ? (
-                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-              ) : (
-                <BreadcrumbLink asChild>
-                  <Link to={crumb.href || '/'} className="flex items-center gap-1.5">
-                    {isFirst && <Home className="h-3.5 w-3.5" />}
-                    {crumb.label}
-                  </Link>
-                </BreadcrumbLink>
-              )}
-            </BreadcrumbItem>
+              <BreadcrumbItem>
+                {isLast ? (
+                  <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                ) : (
+                  <BreadcrumbLink asChild>
+                    <Link to={crumb.href || '/'} className="flex items-center gap-1.5">
+                      {isFirst && <Home className="h-3.5 w-3.5" />}
+                      {crumb.label}
+                    </Link>
+                  </BreadcrumbLink>
+                )}
+              </BreadcrumbItem>
+            </React.Fragment>
           );
         })}
       </BreadcrumbList>

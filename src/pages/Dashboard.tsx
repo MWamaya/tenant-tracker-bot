@@ -17,6 +17,11 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PaymentsContent } from '@/components/payments/PaymentsContent';
 
+// jspdf-autotable mutates the doc instance with this field at runtime but
+// doesn't type it — https://github.com/simonbengtsson/jsPDF-AutoTable has no
+// typed accessor for the last table's finalY.
+type JsPDFWithAutoTable = jsPDF & { lastAutoTable: { finalY: number } };
+
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('unpaid');
   const [addPropertyOpen, setAddPropertyOpen] = useState(false);
@@ -123,7 +128,7 @@ const Dashboard = () => {
         headStyles: { fillColor: [220, 53, 69] },
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 15;
+      yPosition = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 15;
     }
 
     // Partially Paid Houses Section
@@ -155,7 +160,7 @@ const Dashboard = () => {
         headStyles: { fillColor: [255, 193, 7], textColor: [0, 0, 0] },
       });
 
-      yPosition = (doc as any).lastAutoTable.finalY + 15;
+      yPosition = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 15;
     }
 
     // Summary

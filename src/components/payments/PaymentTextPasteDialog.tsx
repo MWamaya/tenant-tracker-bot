@@ -101,8 +101,9 @@ export const PaymentTextPasteDialog = ({ open, onOpenChange, landlordId }: Props
       setRows(previews);
       const newCount = previews.filter((r) => r.status === 'new').length;
       toast.success(`Detected ${parsed.length} transaction${parsed.length === 1 ? '' : 's'} • ${newCount} ready to import`);
-    } catch (err: any) {
-      toast.error(`Parse failed: ${err.message}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Parse failed: ${message}`);
     } finally {
       setParsing(false);
     }
@@ -151,8 +152,9 @@ export const PaymentTextPasteDialog = ({ open, onOpenChange, landlordId }: Props
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
 
       handleClose(false);
-    } catch (err: any) {
-      toast.error(`Import failed: ${err.message}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Import failed: ${message}`);
     } finally {
       setImporting(false);
     }

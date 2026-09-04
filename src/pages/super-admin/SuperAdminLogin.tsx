@@ -15,12 +15,17 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 });
 
+const resetSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
 const SuperAdminLogin = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signIn } = useAuth();
+  const { user, loading: authLoading, signIn, resetPassword } = useAuth();
   const { isSuperAdmin, loading: roleLoading, checkSuperAdmin } = useSuperAdmin();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [email, setEmail] = useState('zaragency50@gmail.com');
+  const [isResetting, setIsResetting] = useState(false);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   useEffect(() => {
@@ -28,6 +33,24 @@ const SuperAdminLogin = () => {
       navigate('/super-admin');
     }
   }, [user, authLoading, roleLoading, isSuperAdmin, navigate]);
+
+  const handlePasswordReset = async () => {
+    const validation = resetSchema.safeParse({ email });
+    if (!validation.success) {
+      toast.error('Enter your email address first');
+      return;
+    }
+
+    setIsResetting(true);
+    const { error } = await resetPassword(email);
+    setIsResetting(false);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Password reset email sent. Check your inbox.');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +143,17 @@ const SuperAdminLogin = () => {
                     required
                   />
                 </div>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto px-0 py-0 text-sm text-slate-300 hover:text-white"
+                  disabled={isResetting}
+                  onClick={handlePasswordReset}
+                >
+                  {isResetting ? 'Sending reset email...' : 'Forgot password?'}
+                </Button>
               </div>
             </CardContent>
             <CardFooter>

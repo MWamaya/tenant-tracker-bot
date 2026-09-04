@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { recomputeHouseBalanceForPaymentDate } from '@/lib/syncPayments';
 import { toast } from 'sonner';
 
 export interface Payment {
@@ -88,11 +89,17 @@ export const usePayments = () => {
         .single();
 
       if (error) throw error;
+
+      if (data.house_id) {
+        await recomputeHouseBalanceForPaymentDate(landlordId, data.house_id, data.payment_date);
+      }
+
       return data as Payment;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['payments'] });
       queryClient.invalidateQueries({ queryKey: ['balances'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success('Payment recorded successfully');
     },
     onError: (error: Error) => {

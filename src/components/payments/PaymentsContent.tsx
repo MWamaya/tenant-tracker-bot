@@ -72,8 +72,9 @@ export const PaymentsContent = () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       queryClient.invalidateQueries({ queryKey: ['houses'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-    } catch (err: any) {
-      toast.error(`Sync failed: ${err.message}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Sync failed: ${message}`);
     } finally {
       setSyncing(false);
     }
@@ -148,8 +149,9 @@ export const PaymentsContent = () => {
       const fname = `payments-${monthFilter === 'all' ? 'all' : monthFilter}-${format(new Date(), 'yyyyMMdd-HHmm')}.pdf`;
       doc.save(fname);
       toast.success('PDF exported');
-    } catch (err: any) {
-      toast.error(`Export failed: ${err.message}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error(`Export failed: ${message}`);
     }
   };
 

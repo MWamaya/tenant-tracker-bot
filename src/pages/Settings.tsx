@@ -15,7 +15,6 @@ import {
   Settings as SettingsIcon,
   Mail,
   Bell,
-  Shield,
   Database,
   Clock,
   CalendarRange,
@@ -235,36 +234,6 @@ const Settings = () => {
                 <p className="text-xs text-muted-foreground">
                   Statements for the selected year will skip months before this date.
                 </p>
-              </CardContent>
-            </Card>
-
-
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-5 w-5" />
-                  Account Settings
-                </CardTitle>
-                <CardDescription>
-                  Manage your admin account details
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="adminName">Admin Name</Label>
-                    <Input id="adminName" placeholder="Michael O" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="adminEmail">Admin Email</Label>
-                    <Input id="adminEmail" type="email" placeholder="admin@example.com" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="adminPhone">Phone Number</Label>
-                  <Input id="adminPhone" placeholder="+254 7XX XXX XXX" />
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
