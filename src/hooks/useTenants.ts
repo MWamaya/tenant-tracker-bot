@@ -21,6 +21,7 @@ export interface TenantWithHouse extends Tenant {
     house_no: string;
     expected_rent: number;
     status: string;
+    occupancy_date: string | null;
   } | null;
 }
 
@@ -57,7 +58,8 @@ export const useTenants = () => {
             id,
             house_no,
             expected_rent,
-            status
+            status,
+            occupancy_date
           )
         `)
         .eq('landlord_id', landlordId)
