@@ -934,6 +934,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          inbound_email: string | null
           last_login_at: string | null
           phone: string | null
           sms_token_balance: number
@@ -947,6 +948,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          inbound_email?: string | null
           last_login_at?: string | null
           phone?: string | null
           sms_token_balance?: number
@@ -960,6 +962,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          inbound_email?: string | null
           last_login_at?: string | null
           phone?: string | null
           sms_token_balance?: number
