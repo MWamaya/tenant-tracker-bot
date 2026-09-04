@@ -5,7 +5,7 @@ import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useHouses, HouseWithProperty } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
-import { useBalances } from '@/hooks/useBalances';
+import { computeArrears } from '@/lib/arrears';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -55,6 +55,7 @@ interface HouseData {
   status: 'vacant' | 'occupied';
   property_id: string | null;
   property_name: string | null;
+  occupancy_date: string | null;
   tenant?: { id: string; name: string; phone: string; secondary_phone?: string | null; house_id: string | null };
   balance?: {
     status: 'paid' | 'partial' | 'unpaid';
@@ -69,7 +70,6 @@ const Houses = () => {
   
   const { houses, isLoading: housesLoading, addHouse, updateHouse, deleteHouse } = useHouses(propertyFilter);
   const { tenants, isLoading: tenantsLoading, updateTenant, addTenant } = useTenants();
-  const { balances } = useBalances();
   const { payments } = usePayments();
   const { properties, isLoading: propertiesLoading } = useProperties();
   
@@ -101,14 +101,10 @@ const Houses = () => {
   const getHouseData = (): HouseData[] => {
     return houses.map(house => {
       const tenant = tenants.find(t => t.house_id === house.id);
-      const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
-      const balance = balances.find(b => b.house_id === house.id && b.month === currentMonth);
-      
-      let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-      if (balance) {
-        if (balance.balance <= 0) balanceStatus = 'paid';
-        else if (balance.paid_amount > 0) balanceStatus = 'partial';
-      }
+      const housePayments = payments
+        .filter(p => p.house_id === house.id)
+        .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date }));
+      const arrears = computeArrears(house.occupancy_date, Number(house.expected_rent), housePayments);
 
       return {
         id: house.id,
@@ -117,6 +113,7 @@ const Houses = () => {
         status: house.status as 'vacant' | 'occupied',
         property_id: house.property_id,
         property_name: house.properties?.name || null,
+        occupancy_date: house.occupancy_date,
         tenant: tenant ? {
           id: tenant.id,
           name: tenant.name,
@@ -124,13 +121,13 @@ const Houses = () => {
           secondary_phone: tenant.secondary_phone,
           house_id: tenant.house_id,
         } : undefined,
-        balance: balance ? {
-          status: balanceStatus,
-          paid_amount: Number(balance.paid_amount),
-          balance: Number(balance.balance),
+        balance: arrears ? {
+          status: arrears.status,
+          paid_amount: arrears.totalPaid,
+          balance: Math.max(0, arrears.arrears),
         } : undefined,
       };
-    }).filter(house => 
+    }).filter(house =>
       house.house_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
       house.tenant?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       house.property_name?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -145,11 +142,7 @@ const Houses = () => {
   };
 
   const getHousePayments = (houseId: string) => {
-    const currentMonth = new Date().toISOString().slice(0, 7);
-    return payments.filter(p => 
-      p.house_id === houseId && 
-      p.payment_date.startsWith(currentMonth)
-    );
+    return payments.filter(p => p.house_id === houseId);
   };
 
   const handleAddHouse = async (houseData: {
@@ -518,31 +511,16 @@ const Houses = () => {
           id: selectedHouse.id,
           houseNo: selectedHouse.house_no,
           expectedRent: selectedHouse.expected_rent,
+          occupancyDate: selectedHouse.occupancy_date,
         } : null}
         tenant={selectedHouse?.tenant ? {
           id: selectedHouse.tenant.id,
           name: selectedHouse.tenant.name,
           phone: selectedHouse.tenant.phone,
-          houseId: selectedHouse.id,
-        } : undefined}
-        balance={selectedHouse?.balance ? {
-          houseId: selectedHouse.id,
-          houseNo: selectedHouse.house_no,
-          month: new Date().toISOString().slice(0, 7),
-          expectedRent: selectedHouse.expected_rent,
-          paidAmount: selectedHouse.balance.paid_amount,
-          balance: selectedHouse.balance.balance,
-          status: selectedHouse.balance.status,
         } : undefined}
         payments={selectedHouse ? getHousePayments(selectedHouse.id).map(p => ({
-          id: p.id,
           amount: Number(p.amount),
-          mpesaRef: p.mpesa_ref,
-          date: p.payment_date,
-          tenantName: p.tenants?.name || '',
-          houseNo: p.houses?.house_no || '',
-          houseId: p.house_id || '',
-          tenantId: p.tenant_id || '',
+          payment_date: p.payment_date,
         })) : []}
       />
 
