@@ -1,13 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useHouses } from '@/hooks/useHouses';
 import { useTenants, TenantWithHouse } from '@/hooks/useTenants';
-import { useBalances } from '@/hooks/useBalances';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
-import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
-import { supabase } from '@/integrations/supabase/client';
+import { computeArrears } from '@/lib/arrears';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -44,11 +42,9 @@ import {
 const Tenants = () => {
   const { houses, isLoading: housesLoading } = useHouses();
   const { tenants, isLoading: tenantsLoading, addTenant, updateTenant, deleteTenant } = useTenants();
-  const { balances } = useBalances();
   const { payments } = usePayments();
   const { properties, isLoading: propertiesLoading } = useProperties();
-  const landlordId = useEffectiveLandlordId();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -60,25 +56,8 @@ const Tenants = () => {
   const [selectedTenantForStatement, setSelectedTenantForStatement] = useState<TenantWithHouse | null>(null);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [tenantToMove, setTenantToMove] = useState<TenantWithHouse | null>(null);
-  const [landlordCreatedAt, setLandlordCreatedAt] = useState<string | null>(null);
 
   const isLoading = housesLoading || tenantsLoading || propertiesLoading;
-
-  useEffect(() => {
-    if (!landlordId) return;
-    const fetchLandlordCreatedAt = async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('created_at')
-        .eq('id', landlordId)
-        .single();
-
-      if (!error && data) {
-        setLandlordCreatedAt(data.created_at);
-      }
-    };
-    fetchLandlordCreatedAt();
-  }, [landlordId]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-KE', {
@@ -93,121 +72,28 @@ const Tenants = () => {
     const housePropertyMap = new Map<string, string | null>();
     houses.forEach(h => housePropertyMap.set(h.id, h.property_id));
 
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonthIdx = now.getMonth();
-
     return tenants.map(tenant => {
       const expectedRent = Number(tenant.houses?.expected_rent || 0);
+      const occupancyDate = tenant.houses?.occupancy_date ?? null;
 
+      const tenantPayments = payments
+        .filter(p => p.house_id === tenant.house_id)
+        .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date }));
 
-
-      let overrideMonth: number | null = null;
-      let overrideYear: number | null = null;
-      if (landlordId) {
-        try {
-          const raw = localStorage.getItem(`statement_start_${landlordId}`);
-          if (raw) {
-            const parsed = JSON.parse(raw);
-            if (typeof parsed.month === 'number') overrideMonth = parsed.month;
-            if (typeof parsed.year === 'number') overrideYear = parsed.year;
-          }
-        } catch {
-          /* ignore */
-        }
-      }
-      const registrationDateObj = landlordCreatedAt ? new Date(landlordCreatedAt) : null;
-      const baseStartMonth =
-        overrideMonth !== null && overrideYear === currentYear
-          ? overrideMonth
-          : registrationDateObj && registrationDateObj.getFullYear() === currentYear
-          ? registrationDateObj.getMonth()
-          : 0;
-
-      // Load manual B/F overrides saved from the Statement dialog (per tenant/year)
-      let bfOverrides: Record<number, number> = {};
-      try {
-        const stored = localStorage.getItem(`bf_overrides_${tenant.id}_${currentYear}`);
-        if (stored) bfOverrides = JSON.parse(stored);
-      } catch { /* ignore */ }
-
-      // Tenant's payments for the current year, grouped by month index
-      const tenantPayments = payments.filter(p => p.tenant_id === tenant.id);
-      const paidByMonth: Record<number, number> = {};
-      tenantPayments.forEach(p => {
-        const d = new Date(p.payment_date);
-        if (d.getFullYear() !== currentYear) return;
-        paidByMonth[d.getMonth()] = (paidByMonth[d.getMonth()] || 0) + Number(p.amount);
-      });
-
-      // Don't accrue rent before the tenant moved in (this year)
-      const moveInDateObj = tenant.move_in_date ? new Date(tenant.move_in_date) : null;
-      const tenantStartMonth =
-        moveInDateObj && moveInDateObj.getFullYear() === currentYear
-          ? moveInDateObj.getMonth()
-          : moveInDateObj && moveInDateObj.getFullYear() > currentYear
-          ? 12 // moves in next year — nothing to accrue this year
-          : baseStartMonth;
-      const rentStartMonth = Math.max(baseStartMonth, tenantStartMonth);
-
-      // If tenant hasn't moved in yet this month, skip C/F calculation entirely
-      if (rentStartMonth > currentMonthIdx) {
-        return {
-          ...tenant,
-          balance: {
-            status: 'unpaid' as const,
-            paid_amount: 0,
-            balance: 0,
-            carry_forward: 0,
-            monthly_balance: 0,
-            expected_rent: expectedRent,
-          },
-        };
-      }
-
-      // Walk months from tenant start..prev to derive C/F INTO the current month (allow negative = credit)
-      let bfIntoCurrent = 0;
-      for (let i = rentStartMonth; i < currentMonthIdx; i++) {
-        const hasOverride = Object.prototype.hasOwnProperty.call(bfOverrides, i);
-        const bf = hasOverride ? Number(bfOverrides[i]) || 0 : bfIntoCurrent;
-        const paid = paidByMonth[i] || 0;
-        bfIntoCurrent = expectedRent + bf - paid; // no clamp: negative = credit
-      }
-      // Apply current-month override if present (overrides incoming BF)
-      if (Object.prototype.hasOwnProperty.call(bfOverrides, currentMonthIdx)) {
-        bfIntoCurrent = Number(bfOverrides[currentMonthIdx]) || 0;
-      }
-
-      const totalPaidCurrentMonth = paidByMonth[currentMonthIdx] || 0;
-
-      // End-of-current-month projected balance (negative = credit rolling to next month)
-      const endOfMonthBalance = expectedRent + bfIntoCurrent - totalPaidCurrentMonth;
-
-      // Display "C/F" as what will roll into NEXT month (credit if overpaid)
-      const carryForward = endOfMonthBalance;
-
-      // Monthly balance still owed for the current month (0 if fully paid / overpaid)
-      const monthlyBalance = Math.max(0, expectedRent + Math.max(0, bfIntoCurrent) - totalPaidCurrentMonth);
-
-      const totalDue = expectedRent + Math.max(0, bfIntoCurrent);
-      const balanceRemaining = Math.max(0, totalDue - totalPaidCurrentMonth);
-
-      let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-      if (totalPaidCurrentMonth >= totalDue) balanceStatus = 'paid';
-      else if (totalPaidCurrentMonth > 0) balanceStatus = 'partial';
-
+      const arrears = computeArrears(occupancyDate, expectedRent, tenantPayments);
 
       return {
         ...tenant,
         balance: {
-          status: balanceStatus,
-          paid_amount: totalPaidCurrentMonth,
-          balance: balanceRemaining,
-          carry_forward: carryForward,
-          monthly_balance: monthlyBalance,
+          status: arrears?.status ?? 'unpaid',
+          paid_amount: arrears?.totalPaid ?? 0,
+          balance: Math.max(0, arrears?.arrears ?? 0),
+          carry_forward: arrears?.arrears ?? 0,
+          monthly_balance: arrears
+            ? (arrears.monthlyBreakdown[arrears.monthlyBreakdown.length - 1]?.balance ?? 0)
+            : 0,
           expected_rent: expectedRent,
         },
-
       };
     })
 
@@ -325,23 +211,15 @@ const Tenants = () => {
       id: selectedTenantForStatement.houses.id,
       houseNo: selectedTenantForStatement.houses.house_no,
       expectedRent: Number(selectedTenantForStatement.houses.expected_rent),
+      occupancyDate: selectedTenantForStatement.houses.occupancy_date,
     };
   };
 
   const getSelectedTenantPayments = () => {
     if (!selectedTenantForStatement) return [];
     return payments
-      .filter(p => p.tenant_id === selectedTenantForStatement.id)
-      .map(p => ({
-        id: p.id,
-        amount: Number(p.amount),
-        mpesaRef: p.mpesa_ref,
-        date: p.payment_date,
-        tenantName: selectedTenantForStatement.name,
-        houseNo: selectedTenantForStatement.houses?.house_no || '',
-        houseId: p.house_id || '',
-        tenantId: p.tenant_id || '',
-      }));
+      .filter(p => p.house_id === selectedTenantForStatement.house_id)
+      .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date }));
   };
 
   if (isLoading) {
