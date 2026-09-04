@@ -5,8 +5,8 @@ import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useHouses } from '@/hooks/useHouses';
 import { useTenants, TenantWithHouse } from '@/hooks/useTenants';
 import { usePayments } from '@/hooks/usePayments';
-import { useBalances } from '@/hooks/useBalances';
 import { useProperties } from '@/hooks/useProperties';
+import { computeArrears } from '@/lib/arrears';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -56,7 +56,6 @@ const PropertyDetail = () => {
   const { houses, isLoading: housesLoading, addHouse } = useHouses(propertyId);
   const { tenants, isLoading: tenantsLoading, addTenant, updateTenant } = useTenants();
   const { payments, isLoading: paymentsLoading } = usePayments();
-  const { balances } = useBalances();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('houses');
@@ -77,33 +76,26 @@ const PropertyDetail = () => {
     }).format(amount);
   };
 
-  // Get houses for this property with balance info
+  // Get houses for this property with cumulative balance info
   const propertyHouses = useMemo(() => {
-    const currentMonthPrefix = new Date().toISOString().slice(0, 7);
     return houses.map(house => {
       const tenant = tenants.find(t => t.house_id === house.id);
-      const isOccupied = house.status === 'occupied' && !!tenant;
-      const expected = isOccupied ? Number(house.expected_rent) : 0;
-      const paidAmount = payments
-        .filter(p => p.house_id === house.id && p.payment_date?.startsWith(currentMonthPrefix))
-        .reduce((sum, p) => sum + Number(p.amount), 0);
-      const outstanding = isOccupied ? Math.max(0, expected - paidAmount) : 0;
-
-      let balanceStatus: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-      if (!isOccupied) balanceStatus = 'paid'; // vacant — nothing owed
-      else if (paidAmount >= expected && expected > 0) balanceStatus = 'paid';
-      else if (paidAmount > 0) balanceStatus = 'partial';
+      const housePayments = payments
+        .filter(p => p.house_id === house.id)
+        .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date }));
+      const arrears = computeArrears(house.occupancy_date, Number(house.expected_rent), housePayments);
 
       return {
         ...house,
         tenant,
+        cumulativeExpected: arrears?.totalExpected ?? 0,
         balance: {
-          status: balanceStatus,
-          paid_amount: paidAmount,
-          balance: outstanding,
+          status: arrears?.status ?? 'paid',
+          paid_amount: arrears?.totalPaid ?? 0,
+          balance: Math.max(0, arrears?.arrears ?? 0),
         },
       };
-    }).filter(house => 
+    }).filter(house =>
       house.house_no.toLowerCase().includes(searchQuery.toLowerCase()) ||
       house.tenant?.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -133,9 +125,7 @@ const PropertyDetail = () => {
   const stats = useMemo(() => {
     const occupiedCount = propertyHouses.filter(h => h.status === 'occupied').length;
     const vacantCount = propertyHouses.filter(h => h.status === 'vacant').length;
-    const totalExpected = propertyHouses
-      .filter(h => h.status === 'occupied' && !!h.tenant)
-      .reduce((sum, h) => sum + Number(h.expected_rent), 0);
+    const totalExpected = propertyHouses.reduce((sum, h) => sum + h.cumulativeExpected, 0);
     const totalCollected = propertyHouses.reduce((sum, h) => sum + (h.balance?.paid_amount || 0), 0);
     // Aggregate outstanding = expected - collected (overpayments offset other balances)
     const totalBalance = Math.max(0, totalExpected - totalCollected);
