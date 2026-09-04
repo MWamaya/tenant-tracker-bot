@@ -19,5 +19,9 @@ export default defineConfig(({ mode }) => ({
   test: {
     globals: true,
     environment: "node",
+    // Deno-only edge function tests (supabase/functions/**) use
+    // https:// ESM imports Node's loader can't resolve — scope Vitest
+    // to the frontend so it doesn't try to collect them.
+    include: ["src/**/*.test.ts"],
   },
 }));
