@@ -9,6 +9,76 @@ export interface SyncResult {
   unmatched: number;
 }
 
+const monthKey = (dateStr: string) => {
+  const d = new Date(dateStr);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-01`;
+};
+
+/**
+ * Recomputes and upserts the balances row for one house/month from the
+ * payments table directly. Any code path that inserts, edits, or deletes a
+ * payment must call this for the affected house/month afterward — nothing
+ * else keeps `balances` in sync, and the Houses list / house detail dialog
+ * read from `balances` rather than computing live like the dashboard does.
+ */
+export async function recomputeHouseBalance(
+  landlordId: string,
+  houseId: string,
+  month: string,
+): Promise<void> {
+  const { data: house } = await supabase
+    .from('houses')
+    .select('expected_rent')
+    .eq('id', houseId)
+    .maybeSingle();
+  const expectedRent = Number(house?.expected_rent || 0);
+
+  const prev = new Date(month);
+  prev.setUTCMonth(prev.getUTCMonth() - 1);
+  const prevMonthStr = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}-01`;
+  const { data: prevBalance } = await supabase
+    .from('balances')
+    .select('balance')
+    .eq('house_id', houseId)
+    .eq('month', prevMonthStr)
+    .maybeSingle();
+  const carryForward = Number(prevBalance?.balance || 0);
+
+  const monthStart = new Date(month);
+  const monthEnd = new Date(month);
+  monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1);
+  const { data: monthPayments } = await supabase
+    .from('payments')
+    .select('amount')
+    .eq('house_id', houseId)
+    .gte('payment_date', monthStart.toISOString())
+    .lt('payment_date', monthEnd.toISOString());
+  const paidAmount = (monthPayments || []).reduce((s, p) => s + Number(p.amount), 0);
+  const balance = expectedRent + carryForward - paidAmount;
+
+  await supabase.from('balances').upsert(
+    {
+      landlord_id: landlordId,
+      house_id: houseId,
+      month,
+      expected_rent: expectedRent,
+      paid_amount: paidAmount,
+      carry_forward: carryForward,
+      balance,
+    },
+    { onConflict: 'house_id,month' },
+  );
+}
+
+/** Recomputes balances for a payment's house/month, given its payment_date. */
+export async function recomputeHouseBalanceForPaymentDate(
+  landlordId: string,
+  houseId: string,
+  paymentDate: string,
+): Promise<void> {
+  await recomputeHouseBalance(landlordId, houseId, monthKey(paymentDate));
+}
+
 /**
  * Backfill house_id / tenant_id on existing payments by matching:
  *   1) sender_name → tenant name (token overlap)
@@ -16,9 +86,8 @@ export interface SyncResult {
  * Then recompute monthly balances for every affected (house, month) pair.
  */
 export async function syncPaymentsToTenants(landlordId: string): Promise<SyncResult> {
-  // 1. Load houses + tenants
-  const [{ data: houses }, { data: tenants }, { data: unlinkedPayments }] = await Promise.all([
-    supabase.from('houses').select('id, house_no, expected_rent').eq('landlord_id', landlordId),
+  // 1. Load tenants + unlinked payments
+  const [{ data: tenants }, { data: unlinkedPayments }] = await Promise.all([
     supabase.from('tenants').select('id, name, house_id').eq('landlord_id', landlordId),
     supabase
       .from('payments')
@@ -85,52 +154,13 @@ export async function syncPaymentsToTenants(landlordId: string): Promise<SyncRes
     affected.set(`${p.house_id}_${month}`, { houseId: p.house_id, month });
   }
 
-  const rentByHouse = new Map((houses || []).map((h) => [h.id, Number(h.expected_rent)]));
-
   // 3. Recompute balances
   let recomputed = 0;
   // Sort by month ascending so prev-month carry-forward is up-to-date
   const sorted = Array.from(affected.values()).sort((a, b) => a.month.localeCompare(b.month));
   for (const { houseId, month } of sorted) {
     try {
-      const expectedRent = rentByHouse.get(houseId) ?? 0;
-      const prev = new Date(month);
-      prev.setUTCMonth(prev.getUTCMonth() - 1);
-      const prevMonthStr = `${prev.getUTCFullYear()}-${String(prev.getUTCMonth() + 1).padStart(2, '0')}-01`;
-      const { data: prevBalance } = await supabase
-        .from('balances')
-        .select('balance')
-        .eq('house_id', houseId)
-        .eq('month', prevMonthStr)
-        .maybeSingle();
-      const carryForward = Number(prevBalance?.balance || 0);
-
-      const monthStart = new Date(month);
-      const monthEnd = new Date(month);
-      monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1);
-      const { data: monthPayments } = await supabase
-        .from('payments')
-        .select('amount')
-        .eq('house_id', houseId)
-        .gte('payment_date', monthStart.toISOString())
-        .lt('payment_date', monthEnd.toISOString());
-      const paidAmount = (monthPayments || []).reduce((s, p) => s + Number(p.amount), 0);
-      const balance = expectedRent + carryForward - paidAmount;
-
-      await supabase
-        .from('balances')
-        .upsert(
-          {
-            landlord_id: landlordId,
-            house_id: houseId,
-            month,
-            expected_rent: expectedRent,
-            paid_amount: paidAmount,
-            carry_forward: carryForward,
-            balance,
-          },
-          { onConflict: 'house_id,month' }
-        );
+      await recomputeHouseBalance(landlordId, houseId, month);
       recomputed++;
     } catch (e) {
       console.error('Balance recompute failed for', houseId, month, e);
