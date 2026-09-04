@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,111 +16,31 @@ import {
   Bell,
   Database,
   Clock,
-  CalendarRange,
   Save,
   MessageSquare,
   Smartphone
 } from 'lucide-react';
 
-const MONTH_NAMES = [
-  'January','February','March','April','May','June',
-  'July','August','September','October','November','December'
-];
-
-export const getStatementStartStorageKey = (landlordId: string) =>
-  `statement_start_${landlordId}`;
-
-
 const Settings = () => {
   const landlordId = useEffectiveLandlordId();
-  const currentYear = new Date().getFullYear();
-  const [startMonth, setStartMonth] = useState<string>('0');
-  const [startYear, setStartYear] = useState<string>(String(currentYear));
   const [inboundEmail, setInboundEmail] = useState<string | null>(null);
 
   useEffect(() => {
     if (!landlordId) return;
     let cancelled = false;
 
-    // Hydrate immediately from localStorage (fast) then reconcile with DB (authoritative)
-    try {
-      const raw = localStorage.getItem(getStatementStartStorageKey(landlordId));
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (typeof parsed.month === 'number') setStartMonth(String(parsed.month));
-        if (typeof parsed.year === 'number') setStartYear(String(parsed.year));
-      }
-    } catch {
-      /* ignore */
-    }
-
     (async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('statement_start_month, statement_start_year, inbound_email')
+        .select('inbound_email')
         .eq('id', landlordId)
         .maybeSingle();
       if (cancelled || error || !data) return;
-      const row = data as {
-        statement_start_month: number | null;
-        statement_start_year: number | null;
-        inbound_email: string | null;
-      };
-      const m = row.statement_start_month;
-      const y = row.statement_start_year;
-      if (typeof m === 'number' && typeof y === 'number') {
-        setStartMonth(String(m));
-        setStartYear(String(y));
-        localStorage.setItem(
-          getStatementStartStorageKey(landlordId),
-          JSON.stringify({ month: m, year: y }),
-        );
-        window.dispatchEvent(new Event('statement-start-changed'));
-      }
-      setInboundEmail(row.inbound_email);
+      setInboundEmail(data.inbound_email);
     })();
 
     return () => { cancelled = true; };
   }, [landlordId]);
-
-  const saveStatementStart = async () => {
-    if (!landlordId) {
-      toast.error('Unable to save — no active landlord');
-      return;
-    }
-    const payload = { month: Number(startMonth), year: Number(startYear) };
-    localStorage.setItem(getStatementStartStorageKey(landlordId), JSON.stringify(payload));
-    window.dispatchEvent(new Event('statement-start-changed'));
-
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        statement_start_month: payload.month,
-        statement_start_year: payload.year,
-      })
-      .eq('id', landlordId);
-    if (error) {
-      toast.error('Saved locally, but failed to sync to your account');
-      return;
-    }
-    toast.success(`Statement will start from ${MONTH_NAMES[payload.month]} ${payload.year}`);
-  };
-
-  const resetStatementStart = async () => {
-    if (!landlordId) return;
-    localStorage.removeItem(getStatementStartStorageKey(landlordId));
-    window.dispatchEvent(new Event('statement-start-changed'));
-    setStartMonth('0');
-    setStartYear(String(currentYear));
-    await supabase
-      .from('profiles')
-      .update({ statement_start_month: null, statement_start_year: null })
-      .eq('id', landlordId);
-    toast.success('Reverted to default (registration date)');
-  };
-
-
-  const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - 4 + i);
 
   return (
     <MainLayout seo={{ title: "Settings \u2014 KODI PAP", description: "Configure your account, integrations and reminders.", path: "/settings" }}>
@@ -185,55 +104,6 @@ const Settings = () => {
                     Number of days after due date before marking as late
                   </p>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CalendarRange className="h-5 w-5" />
-                  Statement Collection Start
-                </CardTitle>
-                <CardDescription>
-                  Choose the month and year from which tenant statements should begin counting rent. Defaults to your registration date.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Start Month</Label>
-                    <Select value={startMonth} onValueChange={setStartMonth}>
-                      <SelectTrigger><SelectValue placeholder="Select month" /></SelectTrigger>
-                      <SelectContent>
-                        {MONTH_NAMES.map((m, idx) => (
-                          <SelectItem key={m} value={String(idx)}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Start Year</Label>
-                    <Select value={startYear} onValueChange={setStartYear}>
-                      <SelectTrigger><SelectValue placeholder="Select year" /></SelectTrigger>
-                      <SelectContent>
-                        {yearOptions.map((y) => (
-                          <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={saveStatementStart} className="gap-2">
-                    <Save className="h-4 w-4" /> Save
-                  </Button>
-                  <Button variant="outline" onClick={resetStatementStart}>
-                    Reset to default
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Statements for the selected year will skip months before this date.
-                </p>
               </CardContent>
             </Card>
           </TabsContent>
