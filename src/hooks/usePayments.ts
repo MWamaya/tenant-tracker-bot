@@ -47,24 +47,37 @@ export const usePayments = () => {
     queryFn: async () => {
       if (!landlordId) return [];
 
-      const { data, error } = await supabase
-        .from('payments')
-        .select(`
-          *,
-          houses (
-            id,
-            house_no
-          ),
-          tenants (
-            id,
-            name
-          )
-        `)
-        .eq('landlord_id', landlordId)
-        .order('payment_date', { ascending: false });
+      const pageSize = 1000;
+      let from = 0;
+      const allData: PaymentWithDetails[] = [];
 
-      if (error) throw error;
-      return data as PaymentWithDetails[];
+      while (true) {
+        const { data, error } = await supabase
+          .from('payments')
+          .select(`
+            *,
+            houses (
+              id,
+              house_no
+            ),
+            tenants (
+              id,
+              name
+            )
+          `)
+          .eq('landlord_id', landlordId)
+          .order('payment_date', { ascending: false })
+          .range(from, from + pageSize - 1);
+
+        if (error) throw error;
+
+        allData.push(...((data || []) as PaymentWithDetails[]));
+
+        if (!data || data.length < pageSize) break;
+        from += pageSize;
+      }
+
+      return allData;
     },
     enabled: !!landlordId,
   });

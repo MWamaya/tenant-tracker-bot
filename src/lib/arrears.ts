@@ -50,8 +50,15 @@ export function computeArrears(
 ): ArrearsResult | null {
   if (!occupancyDate) return null;
 
+  if (asOfMonth && !/^\d{4}-\d{2}$/.test(asOfMonth)) {
+    throw new Error(`computeArrears: asOfMonth must be 'yyyy-MM', got "${asOfMonth}"`);
+  }
+
   const start = monthStartUTC(occupancyDate);
-  const target = asOfMonth ? monthStartUTC(`${asOfMonth}-01`) : monthStartUTC(new Date().toISOString());
+  const now = new Date();
+  const target = asOfMonth
+    ? monthStartUTC(`${asOfMonth}-01`)
+    : new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
 
   if (start.getTime() > target.getTime()) {
     return { totalExpected: 0, totalPaid: 0, arrears: 0, status: 'paid', monthlyBreakdown: [] };
@@ -60,12 +67,11 @@ export function computeArrears(
   // Exclusive upper bound: start of the month after the target month, so a
   // point-in-time snapshot (asOfMonth in the past) ignores later payments.
   const cutoff = addMonths(target, 1);
-  const occupancyStart = new Date(occupancyDate).getTime();
 
   const totalPaid = payments
     .filter((p) => {
       const t = new Date(p.payment_date).getTime();
-      return t >= occupancyStart && t < cutoff.getTime();
+      return t >= start.getTime() && t < cutoff.getTime();
     })
     .reduce((sum, p) => sum + Number(p.amount), 0);
 

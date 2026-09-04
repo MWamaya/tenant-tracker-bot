@@ -83,7 +83,11 @@ const PropertyDetail = () => {
       const housePayments = payments
         .filter(p => p.house_id === house.id)
         .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date }));
-      const arrears = computeArrears(house.occupancy_date, Number(house.expected_rent), housePayments);
+      const arrears = computeArrears(
+        house.status === 'occupied' ? house.occupancy_date : null,
+        Number(house.expected_rent),
+        housePayments,
+      );
 
       return {
         ...house,

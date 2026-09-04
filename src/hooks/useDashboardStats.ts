@@ -65,12 +65,24 @@ export const useDashboardStats = (month?: string) => {
 
       if (tenantsError) throw tenantsError;
 
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('amount, house_id, payment_date')
-        .eq('landlord_id', landlordId);
+      const pageSize = 1000;
+      let paymentsFrom = 0;
+      const payments: { amount: number; house_id: string | null; payment_date: string }[] = [];
 
-      if (paymentsError) throw paymentsError;
+      while (true) {
+        const { data: paymentsPage, error: paymentsError } = await supabase
+          .from('payments')
+          .select('amount, house_id, payment_date')
+          .eq('landlord_id', landlordId)
+          .range(paymentsFrom, paymentsFrom + pageSize - 1);
+
+        if (paymentsError) throw paymentsError;
+
+        payments.push(...(paymentsPage || []));
+
+        if (!paymentsPage || paymentsPage.length < pageSize) break;
+        paymentsFrom += pageSize;
+      }
 
       const houseBalances: HouseBalance[] = houses.map((house) => {
         const housePayments = (payments || [])
@@ -78,7 +90,7 @@ export const useDashboardStats = (month?: string) => {
           .map((p) => ({ amount: Number(p.amount), payment_date: p.payment_date }));
 
         const arrears = computeArrears(
-          house.occupancy_date,
+          house.status === 'occupied' ? house.occupancy_date : null,
           Number(house.expected_rent),
           housePayments,
           targetMonth,

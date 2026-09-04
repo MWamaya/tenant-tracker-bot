@@ -122,7 +122,7 @@ const Dashboard = () => {
 
       autoTable(doc, {
         startY: yPosition,
-        head: [['House No', 'Tenant', 'Phone', 'Expected', 'Amount Due']],
+        head: [['House No', 'Tenant', 'Phone', 'Total Expected', 'Amount Due']],
         body: unpaidData,
         theme: 'striped',
         headStyles: { fillColor: [220, 53, 69] },
@@ -154,7 +154,7 @@ const Dashboard = () => {
 
       autoTable(doc, {
         startY: yPosition,
-        head: [['House No', 'Tenant', 'Phone', 'Expected', 'Paid', 'Balance']],
+        head: [['House No', 'Tenant', 'Phone', 'Total Expected', 'Paid', 'Balance']],
         body: partialData,
         theme: 'striped',
         headStyles: { fillColor: [255, 193, 7], textColor: [0, 0, 0] },
@@ -252,7 +252,7 @@ const Dashboard = () => {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Landlord Dashboard</h1>
             <p className="text-muted-foreground mt-1 text-sm md:text-base">
-              {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} rent collection overview
+              Cumulative rent collection overview
             </p>
           </div>
           {properties.length > 1 && (

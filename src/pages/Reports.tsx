@@ -268,6 +268,14 @@ const Reports = () => {
     [monthlyCollections]
   );
 
+  // Amount actually collected within selectedMonth (vs. stats.totalCollected,
+  // which is cumulative since occupancy) — used by the Expenses tab, which is
+  // explicitly scoped to "this month".
+  const monthCollected = useMemo(
+    () => monthlyCollections.find((m) => m.month === selectedMonth)?.total ?? 0,
+    [monthlyCollections, selectedMonth]
+  );
+
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-KE', {
       style: 'currency',
@@ -570,7 +578,7 @@ const Reports = () => {
                     <TableRow className="table-header">
                       <TableHead>House No.</TableHead>
                       {selectedProperty === 'all' && <TableHead>Property</TableHead>}
-                      <TableHead>Expected Rent</TableHead>
+                      <TableHead>Total Expected</TableHead>
                       <TableHead>Paid Amount</TableHead>
                       <TableHead>Balance</TableHead>
                       <TableHead>Status</TableHead>
@@ -767,12 +775,12 @@ const Reports = () => {
               </div>
               <div className="stat-card">
                 <p className="text-sm text-muted-foreground">Collected (this month)</p>
-                <p className="text-2xl font-bold text-success">{formatCurrency(stats.totalCollected)}</p>
+                <p className="text-2xl font-bold text-success">{formatCurrency(monthCollected)}</p>
               </div>
               <div className="stat-card">
                 <p className="text-sm text-muted-foreground">Net Income</p>
-                <p className={`text-2xl font-bold ${stats.totalCollected - totalExpenses >= 0 ? 'text-success' : 'text-destructive'}`}>
-                  {formatCurrency(stats.totalCollected - totalExpenses)}
+                <p className={`text-2xl font-bold ${monthCollected - totalExpenses >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  {formatCurrency(monthCollected - totalExpenses)}
                 </p>
               </div>
             </div>

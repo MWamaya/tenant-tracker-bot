@@ -110,4 +110,50 @@ describe('computeArrears', () => {
     expect(result?.totalPaid).toBe(5000);
     expect(result?.arrears).toBe(5000);
   });
+
+  it('is always paid with zero arrears when expectedRent is 0, regardless of payments', () => {
+    const result = computeArrears('2026-06-01', 0, [], '2026-08');
+    expect(result?.totalExpected).toBe(0);
+    expect(result?.arrears).toBe(0);
+    expect(result?.status).toBe('paid');
+    expect(result?.monthlyBreakdown.every((m) => m.status === 'paid')).toBe(true);
+  });
+
+  it('includes a payment made earlier in the same month as a mid-month occupancy date', () => {
+    const result = computeArrears(
+      '2026-08-15',
+      5000,
+      [{ amount: 5000, payment_date: '2026-08-03' }],
+      '2026-08',
+    );
+    expect(result?.totalPaid).toBe(5000);
+    expect(result?.arrears).toBe(0);
+    expect(result?.status).toBe('paid');
+  });
+
+  it('returns the all-zero early-return result when asOfMonth is before occupancyDate', () => {
+    const result = computeArrears('2026-09-01', 5000, [], '2026-08');
+    expect(result).toEqual({
+      totalExpected: 0,
+      totalPaid: 0,
+      arrears: 0,
+      status: 'paid',
+      monthlyBreakdown: [],
+    });
+  });
+
+  it('sums two payments landing in the same month into that month pool', () => {
+    const result = computeArrears(
+      '2026-08-01',
+      5000,
+      [
+        { amount: 2000, payment_date: '2026-08-03' },
+        { amount: 3000, payment_date: '2026-08-20' },
+      ],
+      '2026-08',
+    );
+    expect(result?.totalPaid).toBe(5000);
+    expect(result?.arrears).toBe(0);
+    expect(result?.status).toBe('paid');
+  });
 });

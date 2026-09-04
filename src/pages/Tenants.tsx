@@ -74,7 +74,8 @@ const Tenants = () => {
 
     return tenants.map(tenant => {
       const expectedRent = Number(tenant.houses?.expected_rent || 0);
-      const occupancyDate = tenant.houses?.occupancy_date ?? null;
+      const occupancyDate =
+        tenant.houses?.status === 'occupied' ? (tenant.houses?.occupancy_date ?? null) : null;
 
       const tenantPayments = payments
         .filter(p => p.house_id === tenant.house_id)
@@ -211,7 +212,10 @@ const Tenants = () => {
       id: selectedTenantForStatement.houses.id,
       houseNo: selectedTenantForStatement.houses.house_no,
       expectedRent: Number(selectedTenantForStatement.houses.expected_rent),
-      occupancyDate: selectedTenantForStatement.houses.occupancy_date,
+      occupancyDate:
+        selectedTenantForStatement.houses.status === 'occupied'
+          ? selectedTenantForStatement.houses.occupancy_date
+          : null,
     };
   };
 
@@ -486,8 +490,6 @@ const Tenants = () => {
           id: selectedTenantForStatement.id,
           name: selectedTenantForStatement.name,
           phone: selectedTenantForStatement.phone,
-          houseId: selectedTenantForStatement.house_id || '',
-          moveInDate: selectedTenantForStatement.move_in_date,
         } : null}
         house={getSelectedTenantHouse()}
         payments={getSelectedTenantPayments()}
