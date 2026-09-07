@@ -32,3 +32,39 @@ export function generateReportPdf(monthLabel: string, rows: HouseReportRow[]): A
 
   return doc.output('arraybuffer');
 }
+
+export function generateDefaultersPdf(monthLabel: string, rows: HouseReportRow[]): ArrayBuffer {
+  const defaulterRows = rows.filter((r) => r.status !== 'paid');
+  const doc = new jsPDF();
+
+  doc.setFontSize(18);
+  doc.text('Defaulters & Arrears Report', 14, 20);
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Month: ${monthLabel}`, 14, 28);
+
+  if (defaulterRows.length === 0) {
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text('Every house was fully paid this month.', 14, 42);
+    return doc.output('arraybuffer');
+  }
+
+  autoTable(doc, {
+    startY: 36,
+    head: [['House No', 'Tenant', 'Phone', 'Expected', 'Rent Covered', 'Arrears', 'Status']],
+    body: defaulterRows.map((r) => [
+      r.houseNo,
+      r.tenantName || 'Unassigned',
+      r.tenantPhone || '-',
+      formatCurrency(r.expectedRent),
+      formatCurrency(r.paidAmount),
+      formatCurrency(r.balance),
+      r.status.charAt(0).toUpperCase() + r.status.slice(1),
+    ]),
+    theme: 'striped',
+    headStyles: { fillColor: [153, 27, 27] },
+  });
+
+  return doc.output('arraybuffer');
+}

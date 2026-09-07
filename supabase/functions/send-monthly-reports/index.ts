@@ -2,7 +2,7 @@
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/supabase.ts';
 import { buildLandlordReport } from './report-data.ts';
-import { generateReportPdf } from './pdf.ts';
+import { generateReportPdf, generateDefaultersPdf } from './pdf.ts';
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -68,9 +68,11 @@ async function sendReportEmail(
   targetMonth: string,
   report: Awaited<ReturnType<typeof buildLandlordReport>>,
   pdfBytes: ArrayBuffer,
+  defaultersPdfBytes: ArrayBuffer,
 ): Promise<void> {
   const label = monthLabel(targetMonth);
   const pdfBase64 = arrayBufferToBase64(pdfBytes);
+  const defaultersPdfBase64 = arrayBufferToBase64(defaultersPdfBytes);
 
   const defaulterRows = report.rows.filter((r) => r.status !== 'paid');
   const defaulterHtml = report.rows.length === 0
@@ -90,7 +92,7 @@ async function sendReportEmail(
     <p style="font-size:12px;color:#64748b">Payments are applied to the oldest unpaid month first, so this reflects rent covered for ${label}, not necessarily cash received during that month.</p>
     <h3>Needs follow-up</h3>
     ${defaulterHtml}
-    <p>The full house-by-house breakdown is attached as a PDF.</p>
+    <p>Two PDFs are attached: the full house-by-house payments report, and a defaulters &amp; arrears report.</p>
   `;
 
   const res = await fetch('https://api.resend.com/emails', {
@@ -108,6 +110,10 @@ async function sendReportEmail(
         {
           filename: `rent-report-${targetMonth}.pdf`,
           content: pdfBase64,
+        },
+        {
+          filename: `defaulters-report-${targetMonth}.pdf`,
+          content: defaultersPdfBase64,
         },
       ],
     }),
@@ -158,7 +164,8 @@ Deno.serve(async (req) => {
     try {
       const report = await buildLandlordReport(supabase, landlord.id, targetMonth);
       const pdf = generateReportPdf(monthLabel(targetMonth), report.rows);
-      await sendReportEmail(resendApiKey, landlord.email, landlord.full_name, targetMonth, report, pdf);
+      const defaultersPdf = generateDefaultersPdf(monthLabel(targetMonth), report.rows);
+      await sendReportEmail(resendApiKey, landlord.email, landlord.full_name, targetMonth, report, pdf, defaultersPdf);
       results.push({ landlordId: landlord.id, status: 'sent' });
     } catch (err) {
       results.push({ landlordId: landlord.id, status: 'failed', error: err instanceof Error ? err.message : String(err) });
@@ -185,7 +192,8 @@ Deno.serve(async (req) => {
     try {
       const report = await buildLandlordReport(supabase, landlord.id, targetMonth);
       const pdf = generateReportPdf(monthLabel(targetMonth), report.rows);
-      await sendReportEmail(resendApiKey, landlord.email as string, landlord.full_name, targetMonth, report, pdf);
+      const defaultersPdf = generateDefaultersPdf(monthLabel(targetMonth), report.rows);
+      await sendReportEmail(resendApiKey, landlord.email as string, landlord.full_name, targetMonth, report, pdf, defaultersPdf);
       results.push({ landlordId: landlord.id, status: 'sent' });
     } catch (err) {
       console.error(`Failed to send report for landlord ${landlord.id}:`, err);
