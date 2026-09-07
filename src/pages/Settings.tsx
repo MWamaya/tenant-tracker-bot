@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
@@ -24,6 +25,8 @@ import {
 const Settings = () => {
   const landlordId = useEffectiveLandlordId();
   const [inboundEmail, setInboundEmail] = useState<string | null>(null);
+  const [reportDay, setReportDay] = useState<string>('5');
+  const [savingReportDay, setSavingReportDay] = useState(false);
 
   useEffect(() => {
     if (!landlordId) return;
@@ -32,15 +35,34 @@ const Settings = () => {
     (async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('inbound_email')
+        .select('inbound_email, report_day_of_month')
         .eq('id', landlordId)
         .maybeSingle();
       if (cancelled || error || !data) return;
       setInboundEmail(data.inbound_email);
+      if (typeof data.report_day_of_month === 'number') {
+        setReportDay(String(data.report_day_of_month));
+      }
     })();
 
     return () => { cancelled = true; };
   }, [landlordId]);
+
+  const saveReportDay = async (value: string) => {
+    if (!landlordId) return;
+    setReportDay(value);
+    setSavingReportDay(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ report_day_of_month: Number(value) })
+      .eq('id', landlordId);
+    setSavingReportDay(false);
+    if (error) {
+      toast.error('Failed to save monthly report day');
+      return;
+    }
+    toast.success(`Monthly report will be sent on day ${value} of each month`);
+  };
 
   return (
     <MainLayout seo={{ title: "Settings \u2014 KODI PAP", description: "Configure your account, integrations and reminders.", path: "/settings" }}>
@@ -103,6 +125,31 @@ const Settings = () => {
                   <p className="text-xs text-muted-foreground">
                     Number of days after due date before marking as late
                   </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Monthly Report Day
+                </CardTitle>
+                <CardDescription>
+                  Choose which day of each month you want your automatic rent report emailed to you, covering the month that just ended.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 max-w-xs">
+                  <Label>Send on day</Label>
+                  <Select value={reportDay} onValueChange={saveReportDay} disabled={savingReportDay}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                        <SelectItem key={day} value={String(day)}>{day}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </CardContent>
             </Card>
