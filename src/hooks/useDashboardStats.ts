@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format } from 'date-fns';
+import { computeArrears } from '@/lib/arrears';
 
 export interface DashboardStats {
   totalHouses: number;
@@ -33,13 +34,6 @@ export const useDashboardStats = (month?: string) => {
   const landlordId = useEffectiveLandlordId();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const targetMonth = month || currentMonth;
-  // Anchor to the first day of the selected month in local time
-  const monthAnchor = new Date(`${targetMonth}-01T00:00:00`);
-  // Use full ISO timestamps so the month range respects the user's local timezone.
-  const monthStart = startOfMonth(monthAnchor).toISOString();
-  const monthEnd = endOfMonth(monthAnchor).toISOString();
-  const prevMonthStart = startOfMonth(subMonths(monthAnchor, 1)).toISOString();
-  const prevMonthEnd = endOfMonth(subMonths(monthAnchor, 1)).toISOString();
 
   return useQuery({
     queryKey: ['dashboard-stats', landlordId, targetMonth],
@@ -54,6 +48,7 @@ export const useDashboardStats = (month?: string) => {
           expected_rent,
           status,
           property_id,
+          occupancy_date,
           properties (
             id,
             name
@@ -70,53 +65,48 @@ export const useDashboardStats = (month?: string) => {
 
       if (tenantsError) throw tenantsError;
 
-      const { data: payments, error: paymentsError } = await supabase
-        .from('payments')
-        .select('id, amount, house_id')
-        .eq('landlord_id', landlordId)
-        .gte('payment_date', monthStart)
-        .lte('payment_date', monthEnd);
+      const pageSize = 1000;
+      let paymentsFrom = 0;
+      const payments: { amount: number; house_id: string | null; payment_date: string }[] = [];
 
-      if (paymentsError) throw paymentsError;
+      while (true) {
+        const { data: paymentsPage, error: paymentsError } = await supabase
+          .from('payments')
+          .select('amount, house_id, payment_date')
+          .eq('landlord_id', landlordId)
+          .range(paymentsFrom, paymentsFrom + pageSize - 1);
 
-      const { data: prevPayments, error: prevPaymentsError } = await supabase
-        .from('payments')
-        .select('id, amount, house_id')
-        .eq('landlord_id', landlordId)
-        .gte('payment_date', prevMonthStart)
-        .lte('payment_date', prevMonthEnd);
+        if (paymentsError) throw paymentsError;
 
-      if (prevPaymentsError) throw prevPaymentsError;
+        payments.push(...(paymentsPage || []));
 
-      const houseBalances: HouseBalance[] = houses.map(house => {
-        const housePayments = payments.filter(p => p.house_id === house.id);
-        const currentPaid = housePayments.reduce((sum, p) => sum + p.amount, 0);
+        if (!paymentsPage || paymentsPage.length < pageSize) break;
+        paymentsFrom += pageSize;
+      }
 
-        // Carry-forward: previous month's overpayment rolls into this month
-        const prevHousePayments = prevPayments.filter(p => p.house_id === house.id);
-        const prevPaid = prevHousePayments.reduce((sum, p) => sum + p.amount, 0);
-        const carryForward = Math.max(0, prevPaid - house.expected_rent);
+      const houseBalances: HouseBalance[] = houses.map((house) => {
+        const housePayments = (payments || [])
+          .filter((p) => p.house_id === house.id)
+          .map((p) => ({ amount: Number(p.amount), payment_date: p.payment_date }));
 
-        const paidAmount = currentPaid + carryForward;
-        const balance = house.expected_rent - paidAmount;
-        const tenant = tenants.find(t => t.house_id === house.id);
+        const arrears = computeArrears(
+          house.status === 'occupied' ? house.occupancy_date : null,
+          Number(house.expected_rent),
+          housePayments,
+          targetMonth,
+        );
 
-        let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-        if (paidAmount >= house.expected_rent) {
-          status = 'paid';
-        } else if (paidAmount > 0) {
-          status = 'partial';
-        }
+        const tenant = tenants.find((t) => t.house_id === house.id);
 
         return {
           houseId: house.id,
           houseNo: house.house_no,
           propertyId: house.property_id,
           propertyName: house.properties?.name || null,
-          expectedRent: house.expected_rent,
-          paidAmount,
-          balance: Math.max(0, balance),
-          status,
+          expectedRent: arrears?.totalExpected ?? 0,
+          paidAmount: arrears?.totalPaid ?? 0,
+          balance: Math.max(0, arrears?.arrears ?? 0),
+          status: arrears?.status ?? 'paid',
           tenantId: tenant?.id || null,
           tenantName: tenant?.name || null,
           tenantPhone: tenant?.phone || null,
@@ -125,22 +115,22 @@ export const useDashboardStats = (month?: string) => {
 
       const stats: DashboardStats = {
         totalHouses: houses.length,
-        occupiedHouses: houses.filter(h => h.status === 'occupied').length,
-        vacantHouses: houses.filter(h => h.status === 'vacant').length,
-        totalExpected: houses.reduce((sum, h) => sum + h.expected_rent, 0),
+        occupiedHouses: houses.filter((h) => h.status === 'occupied').length,
+        vacantHouses: houses.filter((h) => h.status === 'vacant').length,
+        totalExpected: houseBalances.reduce((sum, h) => sum + h.expectedRent, 0),
         totalCollected: houseBalances.reduce((sum, h) => sum + h.paidAmount, 0),
         totalOutstanding: houseBalances.reduce((sum, h) => sum + h.balance, 0),
-        paidHouses: houseBalances.filter(h => h.status === 'paid').length,
-        partialHouses: houseBalances.filter(h => h.status === 'partial').length,
-        unpaidHouses: houseBalances.filter(h => h.status === 'unpaid').length,
+        paidHouses: houseBalances.filter((h) => h.status === 'paid').length,
+        partialHouses: houseBalances.filter((h) => h.status === 'partial').length,
+        unpaidHouses: houseBalances.filter((h) => h.status === 'unpaid').length,
       };
 
       return {
         stats,
         houseBalances,
-        unpaidHouses: houseBalances.filter(h => h.status === 'unpaid'),
-        partialHouses: houseBalances.filter(h => h.status === 'partial'),
-        paidHouses: houseBalances.filter(h => h.status === 'paid'),
+        unpaidHouses: houseBalances.filter((h) => h.status === 'unpaid'),
+        partialHouses: houseBalances.filter((h) => h.status === 'partial'),
+        paidHouses: houseBalances.filter((h) => h.status === 'paid'),
       };
     },
     enabled: !!landlordId,

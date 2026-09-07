@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.resend-inbound]
 verify_jwt = false
+
+[functions.send-monthly-reports]
+verify_jwt = true

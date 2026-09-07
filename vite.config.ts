@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
@@ -19,5 +20,13 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  test: {
+    globals: true,
+    environment: "node",
+    // Deno-only edge function tests (supabase/functions/**) use
+    // https:// ESM imports Node's loader can't resolve — scope Vitest
+    // to the frontend so it doesn't try to collect them.
+    include: ["src/**/*.test.ts"],
   },
 }));
