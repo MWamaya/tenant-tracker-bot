@@ -8,6 +8,7 @@ function createMockSupabase(queues: Record<string, unknown[]>) {
       const chain: any = {
         select: () => chain,
         eq: () => chain,
+        order: () => chain,
         range: async () => {
           const q = queues[table];
           const value = q && q.length ? q.shift() : [];

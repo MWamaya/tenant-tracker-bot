@@ -21,7 +21,8 @@ function isServiceRole(req: Request): boolean {
   const parts = token.split('.');
   if (parts.length !== 3) return false;
   try {
-    const payload = JSON.parse(atob(parts[1]));
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
     return payload.role === 'service_role';
   } catch {
     return false;
@@ -51,6 +52,15 @@ function arrayBufferToBase64(buf: ArrayBuffer): string {
   return btoa(binary);
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function sendReportEmail(
   resendApiKey: string,
   toEmail: string,
@@ -63,18 +73,21 @@ async function sendReportEmail(
   const pdfBase64 = arrayBufferToBase64(pdfBytes);
 
   const defaulterRows = report.rows.filter((r) => r.status !== 'paid');
-  const defaulterHtml = defaulterRows.length
-    ? `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:13px">
+  const defaulterHtml = report.rows.length === 0
+    ? '<p>No houses were found for this month\'s report.</p>'
+    : defaulterRows.length === 0
+    ? '<p>Every house was fully paid this month.</p>'
+    : `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:13px">
         <tr style="background:#f1f5f9"><th>House</th><th>Tenant</th><th>Phone</th><th>Balance</th><th>Status</th></tr>
-        ${defaulterRows.map((r) => `<tr><td>${r.houseNo}</td><td>${r.tenantName || 'Unassigned'}</td><td>${r.tenantPhone || '-'}</td><td>KES ${r.balance.toLocaleString()}</td><td>${r.status}</td></tr>`).join('')}
-      </table>`
-    : '<p>Every house was fully paid this month.</p>';
+        ${defaulterRows.map((r) => `<tr><td>${escapeHtml(r.houseNo)}</td><td>${escapeHtml(r.tenantName || 'Unassigned')}</td><td>${escapeHtml(r.tenantPhone || '-')}</td><td>KES ${r.balance.toLocaleString()}</td><td>${escapeHtml(r.status)}</td></tr>`).join('')}
+      </table>`;
 
   const html = `
     <h2>Rent Report — ${label}</h2>
-    <p>Hi ${landlordName || 'there'},</p>
+    <p>Hi ${escapeHtml(landlordName || 'there')},</p>
     <p>Here is your automatic rent report for ${label}: ${report.paidCount} paid, ${report.partialCount} partial, ${report.unpaidCount} unpaid.</p>
-    <p><strong>Total collected:</strong> KES ${report.totalCollected.toLocaleString()} of KES ${report.totalExpected.toLocaleString()} expected (KES ${report.totalOutstanding.toLocaleString()} outstanding).</p>
+    <p><strong>Rent covered:</strong> KES ${report.totalCollected.toLocaleString()} of KES ${report.totalExpected.toLocaleString()} expected (KES ${report.totalOutstanding.toLocaleString()} outstanding).</p>
+    <p style="font-size:12px;color:#64748b">Payments are applied to the oldest unpaid month first, so this reflects rent covered for ${label}, not necessarily cash received during that month.</p>
     <h3>Needs follow-up</h3>
     ${defaulterHtml}
     <p>The full house-by-house breakdown is attached as a PDF.</p>
@@ -135,6 +148,7 @@ Deno.serve(async (req) => {
       .from('profiles')
       .select('id, email, full_name')
       .eq('id', body.testLandlordId)
+      .eq('account_status', 'active')
       .maybeSingle();
 
     if (error || !landlord || !landlord.email) {
@@ -179,5 +193,6 @@ Deno.serve(async (req) => {
     }
   }
 
+  console.log('send-monthly-reports summary:', JSON.stringify({ processed: matching.length, results }));
   return jsonResponse({ processed: matching.length, results });
 });

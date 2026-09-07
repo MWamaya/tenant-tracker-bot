@@ -16,10 +16,10 @@ export function generateReportPdf(monthLabel: string, rows: HouseReportRow[]): A
 
   autoTable(doc, {
     startY: 36,
-    head: [['House No', 'Tenant', 'Phone', 'Expected', 'Paid', 'Balance', 'Status']],
+    head: [['House No', 'Tenant', 'Phone', 'Expected', 'Rent Covered', 'Balance', 'Status']],
     body: rows.map((r) => [
       r.houseNo,
-      r.tenantName || 'Vacant',
+      r.tenantName || 'Unassigned',
       r.tenantPhone || '-',
       formatCurrency(r.expectedRent),
       formatCurrency(r.paidAmount),

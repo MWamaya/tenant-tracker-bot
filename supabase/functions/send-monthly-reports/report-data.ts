@@ -52,6 +52,7 @@ export async function buildLandlordReport(
       .from('payments')
       .select('amount, house_id, payment_date')
       .eq('landlord_id', landlordId)
+      .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
     if (paymentsError) throw paymentsError;
     payments.push(...(page || []));
@@ -62,6 +63,12 @@ export async function buildLandlordReport(
   const targetMonthKey = `${targetMonth}-01`;
   const rows: HouseReportRow[] = [];
 
+  // Known limitation: this gates on the house's CURRENT status/occupancy_date,
+  // not its status during targetMonth. A house that was occupied throughout
+  // targetMonth but has since been marked vacant (occupancy_date nulled on
+  // move-out — see useTenants.ts) will be silently excluded from this
+  // historical report, even though it may have been a defaulter that month.
+  // A real fix needs a tenancy-history table; not attempted here.
   for (const house of houses || []) {
     const housePayments: ArrearsPayment[] = payments
       .filter((p) => p.house_id === house.id)
