@@ -35,6 +35,8 @@
     "https://deno.land/std@0.224.0/internal/format.ts": "0a98ee226fd3d43450245b1844b47003419d34d210fa989900861c79820d21c2",
     "https://deno.land/std@0.224.0/internal/mod.ts": "534125398c8e7426183e12dc255bb635d94e06d0f93c60a297723abe69d3b22e",
     "https://esm.sh/@supabase/supabase-js@2.49.1": "947c71e163ca8bb5b538eccb5ee86fbc8da6bcb916a861586db5fad1af4701bb",
+    "https://esm.sh/jspdf-autotable@5.0.7": "5b1dbb3ec5fd2dbe410e87cf10e03d57328a1601a9e3493e7298ec56aadf5ba0",
+    "https://esm.sh/jspdf@4.2.1": "a08e4ad4a7b589d88aa5d6d2642af6a23722550177ecbbd3061bcc63f052f653",
     "https://esm.sh/svix-fetch@3.0.0": "5a1dba6b172e83a41384b51192fe349e1efa6474c061bb82f936103190eee4b9",
     "https://esm.sh/svix-fetch@3.0.0/denonext/svix-fetch.mjs": "40f1a1c388e884af3d1639fb28cdf83f94da2fc1bf5b971fe7501083b291734c",
     "https://esm.sh/svix@1.24.0": "2c820ef252e428812db5f5ef18b0790f21450f7ec2d0ee27fa21b558e5dce5be"
