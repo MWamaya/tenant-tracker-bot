@@ -45,7 +45,7 @@ export const useDashboardStats = (month?: string, period: 'month' | 'year' = 'mo
   const prevMonthEnd = endOfMonth(subMonths(monthAnchor, 1)).toISOString();
 
   return useQuery({
-    queryKey: ['dashboard-stats', landlordId, targetMonth],
+    queryKey: ['dashboard-stats', landlordId, targetMonth, period],
     queryFn: async () => {
       if (!landlordId) return null;
 
