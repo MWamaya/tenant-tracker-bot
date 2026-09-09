@@ -6,6 +6,8 @@ import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useProperties } from '@/hooks/useProperties';
 import { useHouses } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
+import { usePayments } from '@/hooks/usePayments';
+import { format } from 'date-fns';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
 import { Home, CheckCircle, AlertCircle, XCircle, Banknote, Phone, User, MessageCircle, MessageSquare, Printer, Loader2, DoorOpen } from 'lucide-react';
@@ -27,14 +29,25 @@ const Dashboard = () => {
   const [addPropertyOpen, setAddPropertyOpen] = useState(false);
   const [addHouseOpen, setAddHouseOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
+  const currentMonth = format(new Date(), 'yyyy-MM');
+  const [monthFilter, setMonthFilter] = useState<string>(currentMonth);
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading: statsLoading } = useDashboardStats();
+  const { data, isLoading: statsLoading } = useDashboardStats(monthFilter);
   const { properties, isLoading: propertiesLoading, addProperty } = useProperties();
   const { houses, isLoading: housesLoading, addHouse } = useHouses();
   const { tenants, isLoading: tenantsLoading } = useTenants();
+  const { payments } = usePayments();
 
   const isLoading = statsLoading || propertiesLoading || housesLoading || tenantsLoading;
+
+  const monthOptions = (() => {
+    const set = new Set<string>([currentMonth]);
+    for (const p of payments) set.add(format(new Date(p.payment_date), 'yyyy-MM'));
+    return Array.from(set)
+      .sort((a, b) => b.localeCompare(a))
+      .map((value) => ({ value, label: format(new Date(value + '-01'), 'MMMM yyyy') }));
+  })();
 
   const scrollToTabs = (tab: string) => {
     setActiveTab(tab);
@@ -252,22 +265,37 @@ const Dashboard = () => {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Landlord Dashboard</h1>
             <p className="text-muted-foreground mt-1 text-sm md:text-base">
-              Cumulative rent collection overview
+              {monthFilter === 'all'
+                ? 'All-time rent collection overview'
+                : `${format(new Date(monthFilter + '-01'), 'MMMM yyyy')} overview`}
             </p>
           </div>
-          {properties.length > 1 && (
-            <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
-              <SelectTrigger className="w-full sm:w-[220px]">
-                <SelectValue placeholder="Filter by property" />
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <Select value={monthFilter} onValueChange={setMonthFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="Filter by month" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Properties</SelectItem>
-                {properties.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+                {monthOptions.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          )}
+            {properties.length > 1 && (
+              <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
+                <SelectTrigger className="w-full sm:w-[220px]">
+                  <SelectValue placeholder="Filter by property" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Properties</SelectItem>
+                  {properties.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
