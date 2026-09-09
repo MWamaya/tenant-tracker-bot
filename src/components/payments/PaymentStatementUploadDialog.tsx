@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { format, parse, isValid } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
+import { clearMatchedEmailLogs } from '@/lib/syncPayments';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -433,6 +434,8 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
       if (insertedCount === 0) {
         throw new Error(batchErrors[0] || 'No rows could be inserted');
       }
+
+      await clearMatchedEmailLogs(landlordId, successfulInserts.map((i) => i.mpesa_ref));
 
       // Build affected (house, month) pairs from the inserts that did match a house
       const matchedInserts = successfulInserts.filter((i) => i.house_id);

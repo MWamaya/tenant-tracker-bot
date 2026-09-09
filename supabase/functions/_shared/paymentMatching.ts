@@ -74,6 +74,26 @@ export async function matchHouseAndTenant(
   return { house, tenant, confidence };
 }
 
+// A payment created through mpesa-callback or bank-reconcile can share an
+// mpesa_ref with an email_logs row that arrived separately (e.g. the same
+// transaction forwarded by email) and is still sitting unmatched in Needs
+// Review. Without this, that email_logs row never learns a payment now
+// exists for it and stays in the queue forever even though it's resolved.
+export async function clearMatchedEmailLog(
+  supabase: any,
+  landlordId: string,
+  mpesaRef: string,
+  paymentId: string,
+): Promise<void> {
+  await supabase
+    .from('email_logs')
+    .update({ status: 'processed', payment_id: paymentId })
+    .eq('landlord_id', landlordId)
+    .eq('parsed_mpesa_ref', mpesaRef)
+    .eq('status', 'pending')
+    .is('payment_id', null);
+}
+
 export async function updateHouseBalance(
   supabase: any,
   landlordId: string,

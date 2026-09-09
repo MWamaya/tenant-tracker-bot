@@ -1,5 +1,6 @@
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient, getUser } from '../_shared/supabase.ts';
+import { clearMatchedEmailLog } from '../_shared/paymentMatching.ts';
 
 // Bank transaction reconciliation endpoint
 // Matches imported bank transactions to tenants and houses
@@ -86,6 +87,10 @@ Deno.serve(async (req) => {
             .single();
 
           if (!paymentError && payment) {
+            if (tx.reference) {
+              await clearMatchedEmailLog(supabase, landlordId, tx.reference, payment.id);
+            }
+
             // Update bank transaction
             await supabase
               .from('bank_transactions')

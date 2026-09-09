@@ -80,6 +80,45 @@ export async function recomputeHouseBalanceForPaymentDate(
 }
 
 /**
+ * A payment created here (statement upload, text paste) can share an
+ * mpesa_ref with an email_logs row that arrived separately (e.g. the same
+ * transaction was also forwarded by email) and is still sitting unmatched
+ * in Needs Review. Without this, that email_logs row never learns a
+ * payment now exists for it and stays in the queue forever even though
+ * it's resolved.
+ */
+export async function clearMatchedEmailLogs(landlordId: string, mpesaRefs: string[]): Promise<void> {
+  const refs = Array.from(new Set(mpesaRefs.filter(Boolean)));
+  if (refs.length === 0) return;
+
+  const { data: pendingLogs } = await supabase
+    .from('email_logs')
+    .select('id, parsed_mpesa_ref')
+    .eq('landlord_id', landlordId)
+    .eq('status', 'pending')
+    .is('payment_id', null)
+    .in('parsed_mpesa_ref', refs);
+
+  if (!pendingLogs || pendingLogs.length === 0) return;
+
+  const { data: payments } = await supabase
+    .from('payments')
+    .select('id, mpesa_ref')
+    .eq('landlord_id', landlordId)
+    .in('mpesa_ref', refs);
+  const paymentIdByRef = new Map((payments || []).map((p) => [p.mpesa_ref, p.id]));
+
+  for (const log of pendingLogs) {
+    const paymentId = log.parsed_mpesa_ref ? paymentIdByRef.get(log.parsed_mpesa_ref) : undefined;
+    if (!paymentId) continue;
+    await supabase
+      .from('email_logs')
+      .update({ status: 'processed', payment_id: paymentId })
+      .eq('id', log.id);
+  }
+}
+
+/**
  * Backfill house_id / tenant_id on existing payments by matching:
  *   1) sender_name → tenant name (token overlap)
  *   2) house_no on the payment (if any) → house

@@ -23,7 +23,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { CheckCircle2, ChevronsUpDown, Loader2, ListChecks } from 'lucide-react';
+import { CheckCircle2, ChevronsUpDown, Loader2, ListChecks, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -81,8 +81,9 @@ const HousePicker = ({
 };
 
 const Reconciliation = () => {
-  const { items, isLoading, assign } = useReconciliation();
+  const { items, isLoading, assign, dismiss } = useReconciliation();
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [dismissingId, setDismissingId] = useState<string | null>(null);
 
   const handleAssign = (item: ReconciliationItem, houseId: string) => {
     setAssigningId(item.id);
@@ -90,6 +91,11 @@ const Reconciliation = () => {
       { item, houseId },
       { onSettled: () => setAssigningId(null) },
     );
+  };
+
+  const handleDismiss = (item: ReconciliationItem) => {
+    setDismissingId(item.id);
+    dismiss.mutate(item, { onSettled: () => setDismissingId(null) });
   };
 
   if (isLoading) {
@@ -173,10 +179,26 @@ const Reconciliation = () => {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <HousePicker
-                          onAssign={(houseId) => handleAssign(item, houseId)}
-                          isAssigning={assigningId === item.id && assign.isPending}
-                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <HousePicker
+                            onAssign={(houseId) => handleAssign(item, houseId)}
+                            isAssigning={assigningId === item.id && assign.isPending}
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            title="Dismiss (won't be shown again)"
+                            disabled={dismissingId === item.id && dismiss.isPending}
+                            onClick={() => handleDismiss(item)}
+                          >
+                            {dismissingId === item.id && dismiss.isPending ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <X className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
