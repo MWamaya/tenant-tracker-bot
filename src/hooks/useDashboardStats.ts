@@ -29,20 +29,23 @@ export interface HouseBalance {
   tenantPhone: string | null;
 }
 
-export const useDashboardStats = (month?: string) => {
+export const useDashboardStats = (month?: string, period: 'month' | 'year' = 'month') => {
   const landlordId = useEffectiveLandlordId();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const targetMonth = month || currentMonth;
   // Anchor to the first day of the selected month in local time
   const monthAnchor = new Date(`${targetMonth}-01T00:00:00`);
-  // Use full ISO timestamps so the month range respects the user's local timezone.
-  const monthStart = startOfMonth(monthAnchor).toISOString();
-  const monthEnd = endOfMonth(monthAnchor).toISOString();
+  const isYear = period === 'year';
+  const yearStart = new Date(monthAnchor.getFullYear(), 0, 1);
+  const yearEnd = new Date(monthAnchor.getFullYear(), 11, 31, 23, 59, 59, 999);
+  // Use full ISO timestamps so the range respects the user's local timezone.
+  const monthStart = (isYear ? yearStart : startOfMonth(monthAnchor)).toISOString();
+  const monthEnd = (isYear ? yearEnd : endOfMonth(monthAnchor)).toISOString();
   const prevMonthStart = startOfMonth(subMonths(monthAnchor, 1)).toISOString();
   const prevMonthEnd = endOfMonth(subMonths(monthAnchor, 1)).toISOString();
 
   return useQuery({
-    queryKey: ['dashboard-stats', landlordId, targetMonth],
+    queryKey: ['dashboard-stats', landlordId, targetMonth, period],
     queryFn: async () => {
       if (!landlordId) return null;
 
@@ -88,21 +91,27 @@ export const useDashboardStats = (month?: string) => {
 
       if (prevPaymentsError) throw prevPaymentsError;
 
+      // In year mode the expected amount is 12 months of rent; carry-forward
+      // only applies to the single-month view.
+      const expectedForPeriod = (h: typeof houses[number]) =>
+        h.expected_rent * (isYear ? 12 : 1);
+
       const houseBalances: HouseBalance[] = houses.map(house => {
         const housePayments = payments.filter(p => p.house_id === house.id);
         const currentPaid = housePayments.reduce((sum, p) => sum + p.amount, 0);
+        const expectedRent = expectedForPeriod(house);
 
         // Carry-forward: previous month's overpayment rolls into this month
         const prevHousePayments = prevPayments.filter(p => p.house_id === house.id);
         const prevPaid = prevHousePayments.reduce((sum, p) => sum + p.amount, 0);
-        const carryForward = Math.max(0, prevPaid - house.expected_rent);
+        const carryForward = isYear ? 0 : Math.max(0, prevPaid - house.expected_rent);
 
         const paidAmount = currentPaid + carryForward;
-        const balance = house.expected_rent - paidAmount;
+        const balance = expectedRent - paidAmount;
         const tenant = tenants.find(t => t.house_id === house.id);
 
         let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-        if (paidAmount >= house.expected_rent) {
+        if (paidAmount >= expectedRent) {
           status = 'paid';
         } else if (paidAmount > 0) {
           status = 'partial';
@@ -113,7 +122,7 @@ export const useDashboardStats = (month?: string) => {
           houseNo: house.house_no,
           propertyId: house.property_id,
           propertyName: house.properties?.name || null,
-          expectedRent: house.expected_rent,
+          expectedRent,
           paidAmount,
           balance: Math.max(0, balance),
           status,
@@ -127,7 +136,7 @@ export const useDashboardStats = (month?: string) => {
         totalHouses: houses.length,
         occupiedHouses: houses.filter(h => h.status === 'occupied').length,
         vacantHouses: houses.filter(h => h.status === 'vacant').length,
-        totalExpected: houses.reduce((sum, h) => sum + h.expected_rent, 0),
+        totalExpected: houses.reduce((sum, h) => sum + expectedForPeriod(h), 0),
         totalCollected: houseBalances.reduce((sum, h) => sum + h.paidAmount, 0),
         totalOutstanding: houseBalances.reduce((sum, h) => sum + h.balance, 0),
         paidHouses: houseBalances.filter(h => h.status === 'paid').length,
