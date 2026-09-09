@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/select';
 import { Search, DollarSign, AlertTriangle, Upload } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/dates';
 import { PaymentStatementUploadDialog } from '@/components/payments/PaymentStatementUploadDialog';
 
 interface Payment {
@@ -109,7 +110,7 @@ const GlobalPaymentsPage = () => {
             </div>
             <div className="text-right">
               <p className="text-sm text-slate-300">
-                {format(new Date(payment.payment_date), 'd/M/yyyy')}
+                {formatDate(payment.payment_date)}
               </p>
               <p className="text-xs text-slate-500">
                 {format(new Date(payment.payment_date), 'HH:mm')}

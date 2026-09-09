@@ -15,6 +15,7 @@ import {
   Ban,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/dates';
 
 const StatCard = ({
   title,
@@ -187,7 +188,7 @@ const SuperAdminDashboard = () => {
                         {landlord.account_status}
                       </Badge>
                       <p className="text-xs text-slate-500 mt-1">
-                        {format(new Date(landlord.created_at), 'd/M/yyyy')}
+                        {formatDate(landlord.created_at)}
                       </p>
                     </div>
                   </div>

@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/table';
 import { Search, Building2, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/dates';
 
 interface PropertyRow {
   id: string;
@@ -209,7 +210,7 @@ const PropertiesPage = () => {
                             {p.houses_count - p.occupied_count}
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
-                            {format(new Date(p.created_at), 'MMM d, yyyy')}
+                            {formatDate(p.created_at)}
                           </TableCell>
                         </TableRow>
                       ))}

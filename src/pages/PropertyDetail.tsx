@@ -35,6 +35,7 @@ import {
   Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/dates';
 import { HouseFormDialog } from '@/components/houses/HouseFormDialog';
 import { BulkHouseFormDialog } from '@/components/houses/BulkHouseFormDialog';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
@@ -470,7 +471,7 @@ const PropertyDetail = () => {
                   {propertyPayments.map((payment) => (
                     <TableRow key={payment.id}>
                       <TableCell>
-                        {format(new Date(payment.payment_date), 'd/M/yyyy')}
+                        {formatDate(payment.payment_date)}
                       </TableCell>
                       <TableCell className="font-medium">
                         {payment.tenants?.name || payment.sender_name || 'Unknown'}

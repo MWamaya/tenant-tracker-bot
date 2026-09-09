@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/dates';
 
 const AuditLogsPage = () => {
   const { data: logs, isLoading } = useAuditLogs(100);
@@ -81,7 +82,7 @@ const AuditLogsPage = () => {
                     </div>
                     <div className="text-right">
                       <p className="text-sm text-slate-300">
-                        {format(new Date(log.created_at), 'd/M/yyyy')}
+                        {formatDate(log.created_at)}
                       </p>
                       <p className="text-xs text-slate-500">
                         {format(new Date(log.created_at), 'HH:mm:ss')}

@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { format, parse, isValid } from 'date-fns';
+import { formatDateTime } from '@/lib/dates';
 import { supabase } from '@/integrations/supabase/client';
 import { clearMatchedEmailLogs } from '@/lib/syncPayments';
 import { useQueryClient } from '@tanstack/react-query';
@@ -671,7 +672,7 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
                         </TableCell>
                         <TableCell className="font-mono text-xs">{r.mpesa_ref || '—'}</TableCell>
                         <TableCell className="text-xs">
-                          {r.payment_date ? format(new Date(r.payment_date), 'd/M/yyyy HH:mm') : '—'}
+                          {r.payment_date ? formatDateTime(r.payment_date) : '—'}
                         </TableCell>
                       </TableRow>
                     ))}

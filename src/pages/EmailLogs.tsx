@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog';
 import { Search, RefreshCw, CheckCircle, XCircle, AlertCircle, Mail, Zap, Edit, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/dates';
 import { toast } from 'sonner';
 import { EmailLog } from '@/hooks/useEmailLogs';
 
@@ -309,7 +310,7 @@ const EmailLogs = () => {
                   <TableCell>
                     <div>
                       <p className="font-medium">
-                        {format(new Date(log.created_at), 'd/M/yyyy')}
+                        {formatDate(log.created_at)}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {format(new Date(log.created_at), 'h:mm a')}

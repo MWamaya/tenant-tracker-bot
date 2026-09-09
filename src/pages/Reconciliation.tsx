@@ -36,6 +36,7 @@ import {
 import { CheckCircle2, ChevronsUpDown, Loader2, ListChecks, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/dates';
 
 const REASON_LABELS: Record<ReconciliationReason, string> = {
   no_house_match: 'No house match found',
@@ -173,7 +174,7 @@ const Reconciliation = () => {
                   {items.map((item) => (
                     <TableRow key={`${item.source}-${item.id}`} className="hover:bg-muted/30">
                       <TableCell>
-                        <p className="text-sm">{format(new Date(item.date), 'd/M/yyyy')}</p>
+                        <p className="text-sm">{formatDate(item.date)}</p>
                         <p className="text-xs text-muted-foreground">{format(new Date(item.date), 'h:mm a')}</p>
                       </TableCell>
                       <TableCell className="font-medium">KES {item.amount.toLocaleString()}</TableCell>

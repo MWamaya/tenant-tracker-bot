@@ -36,6 +36,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/dates';
 import {
   RadialBarChart,
   RadialBar,
@@ -676,7 +677,7 @@ const Reports = () => {
                         th{background:#f1f5f9;font-weight:600}
                       </style></head><body>
                       <h1>KODI PAP — Defaulters List</h1>
-                      <p>${selectedPropertyName} — Printed ${format(new Date(), 'dd/MM/yyyy')}</p>
+                      <p>${selectedPropertyName} — Printed ${formatDate(new Date())}</p>
                       <table>
                         <thead><tr>
                           <th>Tenant</th><th>House No.</th>
@@ -803,7 +804,7 @@ const Reports = () => {
                   <TableBody>
                     {combinedExpenses.map((e) => (
                       <TableRow key={e.id} className="hover:bg-muted/30">
-                        <TableCell>{format(new Date(e.expense_date), 'dd MMM yyyy')}</TableCell>
+                        <TableCell>{formatDate(e.expense_date)}</TableCell>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             {e.category}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/dates';
 import { supabase } from '@/integrations/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -282,7 +283,7 @@ export const PaymentTextPasteDialog = ({ open, onOpenChange, landlordId }: Props
                           />
                         </TableCell>
                         <TableCell className="text-xs">
-                          {r.payment_date ? format(new Date(r.payment_date), 'd/M/yyyy HH:mm') : '—'}
+                          {r.payment_date ? formatDateTime(r.payment_date) : '—'}
                         </TableCell>
                         <TableCell>
                           <Button

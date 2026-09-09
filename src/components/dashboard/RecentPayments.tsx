@@ -1,6 +1,7 @@
 import { payments } from '@/lib/mockData';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/dates';
 
 export const RecentPayments = () => {
   const formatCurrency = (amount: number) => {
@@ -33,7 +34,7 @@ export const RecentPayments = () => {
             <div className="space-y-1">
               <p className="font-medium text-sm">{payment.tenantName}</p>
               <p className="text-xs text-muted-foreground">
-                {payment.houseNo} • {format(new Date(payment.date), 'd/M/yyyy HH:mm')}
+                {payment.houseNo} • {formatDateTime(payment.date)}
               </p>
             </div>
             <div className="text-right">

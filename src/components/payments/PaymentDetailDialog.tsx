@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Loader2, Split } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDateTime } from '@/lib/dates';
 import { toast } from 'sonner';
 import type { PaymentWithDetails } from '@/hooks/usePayments';
 
@@ -232,7 +233,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
               <div>
                 <p className="text-muted-foreground">Date</p>
                 <p className="font-medium">
-                  {format(new Date(payment.payment_date), 'd/M/yyyy HH:mm')}
+                  {formatDateTime(payment.payment_date)}
                 </p>
               </div>
             </div>
@@ -242,10 +243,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
               <div className="rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-wrap break-words max-h-60 overflow-y-auto">
                 {`${payment.sender_name || 'Unknown'} sent ${formatCurrency(
                   Number(payment.amount)
-                )} on ${format(
-                  new Date(payment.payment_date),
-                  'd/M/yyyy HH:mm'
-                )}. Ref: ${payment.mpesa_ref}${
+                )} on ${formatDateTime(payment.payment_date)}. Ref: ${payment.mpesa_ref}${
                   payment.sender_phone ? ` • Phone: ${payment.sender_phone}` : ''
                 }${
                   payment.houses?.house_no
