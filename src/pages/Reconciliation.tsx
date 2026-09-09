@@ -14,6 +14,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
@@ -84,6 +94,7 @@ const Reconciliation = () => {
   const { items, isLoading, assign, dismiss } = useReconciliation();
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [confirmDismissItem, setConfirmDismissItem] = useState<ReconciliationItem | null>(null);
 
   const handleAssign = (item: ReconciliationItem, houseId: string) => {
     setAssigningId(item.id);
@@ -93,7 +104,10 @@ const Reconciliation = () => {
     );
   };
 
-  const handleDismiss = (item: ReconciliationItem) => {
+  const handleDismiss = () => {
+    const item = confirmDismissItem;
+    if (!item) return;
+    setConfirmDismissItem(null);
     setDismissingId(item.id);
     dismiss.mutate(item, { onSettled: () => setDismissingId(null) });
   };
@@ -185,12 +199,12 @@ const Reconciliation = () => {
                             isAssigning={assigningId === item.id && assign.isPending}
                           />
                           <Button
-                            variant="outline"
+                            variant="destructive"
                             size="sm"
-                            className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/40"
+                            className="gap-1.5"
                             title="Dismiss (won't be shown again)"
                             disabled={dismissingId === item.id && dismiss.isPending}
-                            onClick={() => handleDismiss(item)}
+                            onClick={() => setConfirmDismissItem(item)}
                           >
                             {dismissingId === item.id && dismiss.isPending ? (
                               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -209,6 +223,29 @@ const Reconciliation = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={!!confirmDismissItem} onOpenChange={(open) => !open && setConfirmDismissItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dismiss this payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDismissItem && (
+                <>
+                  KES {confirmDismissItem.amount.toLocaleString()} from{' '}
+                  {confirmDismissItem.senderName || 'an unknown sender'} (ref {confirmDismissItem.mpesaRef}) will be
+                  removed from this list permanently. It won't be attached to any house, and won't show up here again.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDismiss}>
+              Dismiss
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };
