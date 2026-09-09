@@ -22,9 +22,10 @@ const Dashboard = () => {
   const [addPropertyOpen, setAddPropertyOpen] = useState(false);
   const [addHouseOpen, setAddHouseOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string>('all');
+  const [viewPeriod, setViewPeriod] = useState<'month' | 'year'>('month');
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  const { data, isLoading: statsLoading } = useDashboardStats();
+  const { data, isLoading: statsLoading } = useDashboardStats(undefined, viewPeriod);
   const { properties, isLoading: propertiesLoading, addProperty } = useProperties();
   const { houses, isLoading: housesLoading, addHouse } = useHouses();
   const { tenants, isLoading: tenantsLoading } = useTenants();
@@ -247,9 +248,21 @@ const Dashboard = () => {
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Landlord Dashboard</h1>
             <p className="text-muted-foreground mt-1 text-sm md:text-base">
-              {new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} rent collection overview
+              {viewPeriod === 'year'
+                ? `${new Date().getFullYear()} full year rent collection overview`
+                : `${new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' })} rent collection overview`}
             </p>
           </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Select value={viewPeriod} onValueChange={(v) => setViewPeriod(v as 'month' | 'year')}>
+              <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectValue placeholder="View" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Monthly View</SelectItem>
+                <SelectItem value="year">Full Year View</SelectItem>
+              </SelectContent>
+            </Select>
           {properties.length > 1 && (
             <Select value={selectedPropertyId} onValueChange={setSelectedPropertyId}>
               <SelectTrigger className="w-full sm:w-[220px]">
