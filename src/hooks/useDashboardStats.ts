@@ -95,6 +95,11 @@ export const useDashboardStats = (month?: string) => {
           housePayments,
           targetMonth,
         );
+        // Dashboard/Reports show this month's activity, not the cumulative
+        // total since move-in — pull out just the matching month's entry
+        // (same technique the monthly-report PDF uses) rather than
+        // arrears.totalExpected/totalPaid/arrears, which are cumulative.
+        const monthEntry = arrears?.monthlyBreakdown.find((m) => m.month === `${targetMonth}-01`);
 
         const tenant = tenants.find((t) => t.house_id === house.id);
 
@@ -103,10 +108,10 @@ export const useDashboardStats = (month?: string) => {
           houseNo: house.house_no,
           propertyId: house.property_id,
           propertyName: house.properties?.name || null,
-          expectedRent: arrears?.totalExpected ?? 0,
-          paidAmount: arrears?.totalPaid ?? 0,
-          balance: Math.max(0, arrears?.arrears ?? 0),
-          status: arrears?.status ?? 'paid',
+          expectedRent: monthEntry?.expectedRent ?? 0,
+          paidAmount: monthEntry?.paidAmount ?? 0,
+          balance: monthEntry?.balance ?? 0,
+          status: monthEntry?.status ?? 'paid',
           tenantId: tenant?.id || null,
           tenantName: tenant?.name || null,
           tenantPhone: tenant?.phone || null,
