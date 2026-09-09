@@ -185,9 +185,9 @@ const Reconciliation = () => {
                             isAssigning={assigningId === item.id && assign.isPending}
                           />
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            variant="outline"
+                            size="sm"
+                            className="gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/40"
                             title="Dismiss (won't be shown again)"
                             disabled={dismissingId === item.id && dismiss.isPending}
                             onClick={() => handleDismiss(item)}
@@ -197,6 +197,7 @@ const Reconciliation = () => {
                             ) : (
                               <X className="h-3.5 w-3.5" />
                             )}
+                            Dismiss
                           </Button>
                         </div>
                       </TableCell>
