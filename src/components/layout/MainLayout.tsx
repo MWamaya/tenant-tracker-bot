@@ -1,4 +1,5 @@
 import { Sidebar } from './Sidebar';
+import { BottomNav } from './BottomNav';
 import { ImpersonationBanner } from '@/components/ImpersonationBanner';
 import { PageSeo } from '@/components/seo/PageSeo';
 
