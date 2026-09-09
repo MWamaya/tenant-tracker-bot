@@ -91,21 +91,27 @@ export const useDashboardStats = (month?: string, period: 'month' | 'year' = 'mo
 
       if (prevPaymentsError) throw prevPaymentsError;
 
+      // In year mode the expected amount is 12 months of rent; carry-forward
+      // only applies to the single-month view.
+      const expectedForPeriod = (h: typeof houses[number]) =>
+        h.expected_rent * (isYear ? 12 : 1);
+
       const houseBalances: HouseBalance[] = houses.map(house => {
         const housePayments = payments.filter(p => p.house_id === house.id);
         const currentPaid = housePayments.reduce((sum, p) => sum + p.amount, 0);
+        const expectedRent = expectedForPeriod(house);
 
         // Carry-forward: previous month's overpayment rolls into this month
         const prevHousePayments = prevPayments.filter(p => p.house_id === house.id);
         const prevPaid = prevHousePayments.reduce((sum, p) => sum + p.amount, 0);
-        const carryForward = Math.max(0, prevPaid - house.expected_rent);
+        const carryForward = isYear ? 0 : Math.max(0, prevPaid - house.expected_rent);
 
         const paidAmount = currentPaid + carryForward;
-        const balance = house.expected_rent - paidAmount;
+        const balance = expectedRent - paidAmount;
         const tenant = tenants.find(t => t.house_id === house.id);
 
         let status: 'paid' | 'partial' | 'unpaid' = 'unpaid';
-        if (paidAmount >= house.expected_rent) {
+        if (paidAmount >= expectedRent) {
           status = 'paid';
         } else if (paidAmount > 0) {
           status = 'partial';
