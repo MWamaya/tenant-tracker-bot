@@ -29,15 +29,18 @@ export interface HouseBalance {
   tenantPhone: string | null;
 }
 
-export const useDashboardStats = (month?: string) => {
+export const useDashboardStats = (month?: string, period: 'month' | 'year' = 'month') => {
   const landlordId = useEffectiveLandlordId();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const targetMonth = month || currentMonth;
   // Anchor to the first day of the selected month in local time
   const monthAnchor = new Date(`${targetMonth}-01T00:00:00`);
-  // Use full ISO timestamps so the month range respects the user's local timezone.
-  const monthStart = startOfMonth(monthAnchor).toISOString();
-  const monthEnd = endOfMonth(monthAnchor).toISOString();
+  const isYear = period === 'year';
+  const yearStart = new Date(monthAnchor.getFullYear(), 0, 1);
+  const yearEnd = new Date(monthAnchor.getFullYear(), 11, 31, 23, 59, 59, 999);
+  // Use full ISO timestamps so the range respects the user's local timezone.
+  const monthStart = (isYear ? yearStart : startOfMonth(monthAnchor)).toISOString();
+  const monthEnd = (isYear ? yearEnd : endOfMonth(monthAnchor)).toISOString();
   const prevMonthStart = startOfMonth(subMonths(monthAnchor, 1)).toISOString();
   const prevMonthEnd = endOfMonth(subMonths(monthAnchor, 1)).toISOString();
 
