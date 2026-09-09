@@ -276,6 +276,7 @@ const Dashboard = () => {
               </SelectContent>
             </Select>
           )}
+          </div>
         </div>
 
         <Tabs defaultValue="overview" className="w-full">
