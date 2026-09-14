@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { clearMatchedEmailLogs } from '@/lib/syncPayments';
 
 export interface ImportablePaymentRow {
   payment_date: string; // ISO
@@ -102,6 +103,8 @@ export async function importPaymentRows(
 
   const { error } = await supabase.from('payments').insert(inserts);
   if (error) throw error;
+
+  await clearMatchedEmailLogs(landlordId, inserts.map((i) => i.mpesa_ref));
 
   const matchedInserts = inserts.filter((i) => i.house_id);
 

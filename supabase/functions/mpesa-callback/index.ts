@@ -1,6 +1,6 @@
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/supabase.ts';
-import { matchHouseAndTenant, updateHouseBalance } from '../_shared/paymentMatching.ts';
+import { matchHouseAndTenant, updateHouseBalance, clearMatchedEmailLog } from '../_shared/paymentMatching.ts';
 
 // M-Pesa C2B and STK Push callback handler
 // This endpoint receives payment notifications from Safaricom
@@ -384,6 +384,8 @@ async function attemptAutoMatch(supabase: any, mpesaTx: any) {
     .single();
 
   if (paymentError || !payment) return;
+
+  await clearMatchedEmailLog(supabase, mpesaTx.landlord_id, mpesaTx.transaction_id, payment.id);
 
   await supabase
     .from('mpesa_transactions')

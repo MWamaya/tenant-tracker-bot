@@ -35,6 +35,7 @@ export const useReconciliation = () => {
           .from('payments')
           .select('id, amount, mpesa_ref, sender_name, payment_date, house_id, tenant_id')
           .eq('landlord_id', landlordId)
+          .eq('reconciliation_dismissed', false)
           .or('house_id.is.null,tenant_id.is.null')
           .order('payment_date', { ascending: false }),
         supabase
@@ -102,11 +103,29 @@ export const useReconciliation = () => {
     },
   });
 
+  const dismiss = useMutation({
+    mutationFn: async (item: ReconciliationItem) => {
+      const { error } =
+        item.source === 'payment'
+          ? await supabase.from('payments').update({ reconciliation_dismissed: true }).eq('id', item.id)
+          : await supabase.from('email_logs').update({ status: 'dismissed' }).eq('id', item.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reconciliation'] });
+      toast.success('Dismissed');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to dismiss: ${error.message}`);
+    },
+  });
+
   return {
     items: query.data || [],
     isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,
     assign,
+    dismiss,
   };
 };

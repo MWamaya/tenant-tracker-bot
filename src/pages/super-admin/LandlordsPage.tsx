@@ -33,6 +33,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare, LogIn, Building2, Users, Home, Mail } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDate, formatDateTime } from '@/lib/dates';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 
 const LandlordsPage = () => {
@@ -272,7 +273,7 @@ const LandlordsPage = () => {
                           {landlord.subscription?.plan_name || 'No subscription'}
                         </p>
                         <p className="text-xs text-slate-500">
-                          Joined {format(new Date(landlord.created_at), 'd/M/yyyy')}
+                          Joined {formatDate(landlord.created_at)}
                         </p>
                       </div>
 
@@ -406,14 +407,14 @@ const LandlordsPage = () => {
                 <div>
                   <Label className="text-slate-400">Joined</Label>
                   <p className="text-white">
-                    {format(new Date(selectedLandlord.created_at), 'd/M/yyyy')}
+                    {formatDate(selectedLandlord.created_at)}
                   </p>
                 </div>
                 <div>
                   <Label className="text-slate-400">Last Login</Label>
                   <p className="text-white">
                     {selectedLandlord.last_login_at
-                      ? format(new Date(selectedLandlord.last_login_at), 'd/M/yyyy HH:mm')
+                      ? formatDateTime(selectedLandlord.last_login_at)
                       : 'Never'}
                   </p>
                 </div>

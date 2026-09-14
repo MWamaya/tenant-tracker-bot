@@ -14,6 +14,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
@@ -23,9 +33,10 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { CheckCircle2, ChevronsUpDown, Loader2, ListChecks } from 'lucide-react';
+import { CheckCircle2, ChevronsUpDown, Loader2, ListChecks, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@/lib/dates';
 
 const REASON_LABELS: Record<ReconciliationReason, string> = {
   no_house_match: 'No house match found',
@@ -81,8 +92,10 @@ const HousePicker = ({
 };
 
 const Reconciliation = () => {
-  const { items, isLoading, assign } = useReconciliation();
+  const { items, isLoading, assign, dismiss } = useReconciliation();
   const [assigningId, setAssigningId] = useState<string | null>(null);
+  const [dismissingId, setDismissingId] = useState<string | null>(null);
+  const [confirmDismissItem, setConfirmDismissItem] = useState<ReconciliationItem | null>(null);
 
   const handleAssign = (item: ReconciliationItem, houseId: string) => {
     setAssigningId(item.id);
@@ -90,6 +103,14 @@ const Reconciliation = () => {
       { item, houseId },
       { onSettled: () => setAssigningId(null) },
     );
+  };
+
+  const handleDismiss = () => {
+    const item = confirmDismissItem;
+    if (!item) return;
+    setConfirmDismissItem(null);
+    setDismissingId(item.id);
+    dismiss.mutate(item, { onSettled: () => setDismissingId(null) });
   };
 
   if (isLoading) {
@@ -153,7 +174,7 @@ const Reconciliation = () => {
                   {items.map((item) => (
                     <TableRow key={`${item.source}-${item.id}`} className="hover:bg-muted/30">
                       <TableCell>
-                        <p className="text-sm">{format(new Date(item.date), 'd/M/yyyy')}</p>
+                        <p className="text-sm">{formatDate(item.date)}</p>
                         <p className="text-xs text-muted-foreground">{format(new Date(item.date), 'h:mm a')}</p>
                       </TableCell>
                       <TableCell className="font-medium">KES {item.amount.toLocaleString()}</TableCell>
@@ -173,10 +194,27 @@ const Reconciliation = () => {
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
-                        <HousePicker
-                          onAssign={(houseId) => handleAssign(item, houseId)}
-                          isAssigning={assigningId === item.id && assign.isPending}
-                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <HousePicker
+                            onAssign={(houseId) => handleAssign(item, houseId)}
+                            isAssigning={assigningId === item.id && assign.isPending}
+                          />
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="gap-1.5"
+                            title="Dismiss (won't be shown again)"
+                            disabled={dismissingId === item.id && dismiss.isPending}
+                            onClick={() => setConfirmDismissItem(item)}
+                          >
+                            {dismissingId === item.id && dismiss.isPending ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <X className="h-3.5 w-3.5" />
+                            )}
+                            Dismiss
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -186,6 +224,29 @@ const Reconciliation = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={!!confirmDismissItem} onOpenChange={(open) => !open && setConfirmDismissItem(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dismiss this payment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDismissItem && (
+                <>
+                  KES {confirmDismissItem.amount.toLocaleString()} from{' '}
+                  {confirmDismissItem.senderName || 'an unknown sender'} (ref {confirmDismissItem.mpesaRef}) will be
+                  removed from this list permanently. It won't be attached to any house, and won't show up here again.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={handleDismiss}>
+              Dismiss
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </MainLayout>
   );
 };

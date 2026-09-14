@@ -30,13 +30,18 @@ export interface HouseBalance {
   tenantPhone: string | null;
 }
 
+/**
+ * @param month 'yyyy-MM' for a single month, 'all' for cumulative
+ * totals since each house's occupancy_date, or omitted for the current month.
+ */
 export const useDashboardStats = (month?: string) => {
   const landlordId = useEffectiveLandlordId();
   const currentMonth = format(new Date(), 'yyyy-MM');
-  const targetMonth = month || currentMonth;
+  const isAllTime = month === 'all';
+  const targetMonth = month && month !== 'all' ? month : currentMonth;
 
   return useQuery({
-    queryKey: ['dashboard-stats', landlordId, targetMonth],
+    queryKey: ['dashboard-stats', landlordId, isAllTime ? 'all' : targetMonth],
     queryFn: async () => {
       if (!landlordId) return null;
 
@@ -95,18 +100,40 @@ export const useDashboardStats = (month?: string) => {
           housePayments,
           targetMonth,
         );
-
         const tenant = tenants.find((t) => t.house_id === house.id);
+
+        if (isAllTime) {
+          // Cumulative since occupancy_date — arrears.totalExpected/
+          // totalPaid/arrears already sum every month through targetMonth.
+          return {
+            houseId: house.id,
+            houseNo: house.house_no,
+            propertyId: house.property_id,
+            propertyName: house.properties?.name || null,
+            expectedRent: arrears?.totalExpected ?? 0,
+            paidAmount: arrears?.totalPaid ?? 0,
+            balance: Math.max(0, arrears?.arrears ?? 0),
+            status: arrears?.status ?? 'paid',
+            tenantId: tenant?.id || null,
+            tenantName: tenant?.name || null,
+            tenantPhone: tenant?.phone || null,
+          };
+        }
+
+        // Single-month view — pull out just the matching month's entry
+        // (same technique the monthly-report PDF uses) rather than the
+        // cumulative totals above.
+        const monthEntry = arrears?.monthlyBreakdown.find((m) => m.month === `${targetMonth}-01`);
 
         return {
           houseId: house.id,
           houseNo: house.house_no,
           propertyId: house.property_id,
           propertyName: house.properties?.name || null,
-          expectedRent: arrears?.totalExpected ?? 0,
-          paidAmount: arrears?.totalPaid ?? 0,
-          balance: Math.max(0, arrears?.arrears ?? 0),
-          status: arrears?.status ?? 'paid',
+          expectedRent: monthEntry?.expectedRent ?? 0,
+          paidAmount: monthEntry?.paidAmount ?? 0,
+          balance: monthEntry?.balance ?? 0,
+          status: monthEntry?.status ?? 'paid',
           tenantId: tenant?.id || null,
           tenantName: tenant?.name || null,
           tenantPhone: tenant?.phone || null,

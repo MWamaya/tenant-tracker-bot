@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Printer } from 'lucide-react';
 import { format } from 'date-fns';
+import { formatDate } from '@/lib/dates';
 import { computeArrears, ArrearsPayment, MonthlyStatementEntry } from '@/lib/arrears';
 
 interface TenantStatementDialogProps {
@@ -131,7 +132,7 @@ const buildPrintHtml = (
           </tr>
         </tbody>
       </table>
-      <div class="footer">Printed ${format(new Date(), 'dd/MM/yyyy')}</div>
+      <div class="footer">Printed ${formatDate(new Date())}</div>
     </body>
     </html>
   `;
