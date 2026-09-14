@@ -184,6 +184,11 @@ export const HouseDetailDialog = ({
                           value={monthData.expectedRent > 0 ? Math.min((monthData.paidAmount / monthData.expectedRent) * 100, 100) : 100}
                           className="h-1.5 mt-2"
                         />
+                        {monthData.refs.length > 0 && (
+                          <p className="text-[10px] font-mono text-muted-foreground truncate mt-1" title={monthData.refs.join(', ')}>
+                            {monthData.refs.join(', ')}
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}

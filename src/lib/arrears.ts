@@ -8,6 +8,7 @@ export interface MonthlyStatementEntry {
   paidAmount: number;
   balance: number;
   status: ArrearsStatus;
+  refs: string[]; // mpesaRefs of payments that funded this month, in application order
 }
 
 export interface ArrearsResult {
@@ -21,6 +22,7 @@ export interface ArrearsResult {
 export interface ArrearsPayment {
   amount: number;
   payment_date: string;
+  mpesaRef?: string;
 }
 
 const monthStartUTC = (dateStr: string): Date => {
@@ -68,34 +70,43 @@ export function computeArrears(
   // point-in-time snapshot (asOfMonth in the past) ignores later payments.
   const cutoff = addMonths(target, 1);
 
-  const totalPaid = payments
-    .filter((p) => {
-      const t = new Date(p.payment_date).getTime();
-      return t >= start.getTime() && t < cutoff.getTime();
-    })
-    .reduce((sum, p) => sum + Number(p.amount), 0);
+  const relevantPayments = payments.filter((p) => {
+    const t = new Date(p.payment_date).getTime();
+    return t >= start.getTime() && t < cutoff.getTime();
+  });
+
+  const totalPaid = relevantPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+  // FIFO queue of payments (earliest first) to draw down per month, so refs
+  // attribute to the same months the pooled total already settles.
+  const pool = relevantPayments
+    .slice()
+    .sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime())
+    .map((p) => ({ remaining: Number(p.amount), ref: p.mpesaRef }));
 
   const monthlyBreakdown: MonthlyStatementEntry[] = [];
-  let remainingPool = totalPaid;
   let cursor = start;
 
   while (cursor.getTime() <= target.getTime()) {
     const due = expectedRent;
     let paidAmount = 0;
+    let needed = due > 0 ? due : 0;
+    const refs: string[] = [];
     let status: ArrearsStatus;
 
     if (due <= 0) {
       status = 'paid';
-    } else if (remainingPool >= due) {
-      paidAmount = due;
-      status = 'paid';
-      remainingPool -= due;
-    } else if (remainingPool > 0) {
-      paidAmount = remainingPool;
-      status = 'partial';
-      remainingPool = 0;
     } else {
-      status = 'unpaid';
+      for (const entry of pool) {
+        if (needed <= 0) break;
+        if (entry.remaining <= 0) continue;
+        const drawn = Math.min(entry.remaining, needed);
+        entry.remaining -= drawn;
+        needed -= drawn;
+        paidAmount += drawn;
+        if (entry.ref && !refs.includes(entry.ref)) refs.push(entry.ref);
+      }
+      status = paidAmount >= due ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid';
     }
 
     monthlyBreakdown.push({
@@ -104,6 +115,7 @@ export function computeArrears(
       paidAmount,
       balance: Math.max(0, due - paidAmount),
       status,
+      refs,
     });
 
     cursor = addMonths(cursor, 1);

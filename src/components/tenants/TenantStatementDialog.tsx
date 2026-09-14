@@ -75,6 +75,7 @@ const buildPrintHtml = (
           <td class="num total">${record.paidAmount > 0 ? formatCurrency(record.paidAmount) : '-'}</td>
           <td class="num">${record.balance > 0 ? formatCurrency(record.balance) : '-'}</td>
           <td><span class="badge ${statusClass}">${statusText}</span></td>
+          <td class="ref">${record.refs.length > 0 ? record.refs.join(', ') : '-'}</td>
         </tr>
       `;
     })
@@ -98,6 +99,7 @@ const buildPrintHtml = (
         td.month { font-weight: 600; white-space: nowrap; }
         td.num { text-align: right; white-space: nowrap; }
         td.total { font-weight: 700; color: #16a34a; }
+        td.ref { font-family: monospace; font-size: 10px; color: #64748b; }
         .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
         .status-paid { background: #dcfce7; color: #166534; }
         .status-partial { background: #fef9c3; color: #854d0e; }
@@ -119,7 +121,7 @@ const buildPrintHtml = (
       </div>
       <table>
         <thead>
-          <tr><th>Month</th><th>Rent Due</th><th>Paid</th><th>Balance</th><th>Status</th></tr>
+          <tr><th>Month</th><th>Rent Due</th><th>Paid</th><th>Balance</th><th>Status</th><th>M-Pesa Ref(s)</th></tr>
         </thead>
         <tbody>
           ${rows}
@@ -128,6 +130,7 @@ const buildPrintHtml = (
             <td class="num">${formatCurrency(totalExpected)}</td>
             <td class="num total">${formatCurrency(totalPaid)}</td>
             <td class="num">${totalOutstanding > 0 ? formatCurrency(totalOutstanding) : '-'}</td>
+            <td></td>
             <td></td>
           </tr>
         </tbody>
@@ -213,6 +216,7 @@ export const TenantStatementDialog = ({
                   <TableHead className="text-right">Paid</TableHead>
                   <TableHead className="text-right">Balance</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>M-Pesa Ref(s)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -235,6 +239,9 @@ export const TenantStatementDialog = ({
                       )}
                     </TableCell>
                     <TableCell>{getStatusBadge(record.status)}</TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      {record.refs.length > 0 ? record.refs.join(', ') : '-'}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
