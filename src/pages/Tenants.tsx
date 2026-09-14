@@ -223,7 +223,7 @@ const Tenants = () => {
     if (!selectedTenantForStatement) return [];
     return payments
       .filter(p => p.house_id === selectedTenantForStatement.house_id)
-      .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date }));
+      .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date, mpesaRef: p.mpesa_ref }));
   };
 
   if (isLoading) {

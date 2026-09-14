@@ -35,7 +35,7 @@ describe('computeArrears', () => {
     expect(result?.arrears).toBe(3000);
     expect(result?.status).toBe('partial');
     expect(result?.monthlyBreakdown).toEqual([
-      { month: '2026-08-01', expectedRent: 5000, paidAmount: 2000, balance: 3000, status: 'partial' },
+      { month: '2026-08-01', expectedRent: 5000, paidAmount: 2000, balance: 3000, status: 'partial', refs: [] },
     ]);
   });
 
@@ -84,9 +84,9 @@ describe('computeArrears', () => {
     expect(result?.arrears).toBe(8000);
     expect(result?.status).toBe('partial');
     expect(result?.monthlyBreakdown).toEqual([
-      { month: '2026-06-01', expectedRent: 5000, paidAmount: 5000, balance: 0, status: 'paid' },
-      { month: '2026-07-01', expectedRent: 5000, paidAmount: 2000, balance: 3000, status: 'partial' },
-      { month: '2026-08-01', expectedRent: 5000, paidAmount: 0, balance: 5000, status: 'unpaid' },
+      { month: '2026-06-01', expectedRent: 5000, paidAmount: 5000, balance: 0, status: 'paid', refs: [] },
+      { month: '2026-07-01', expectedRent: 5000, paidAmount: 2000, balance: 3000, status: 'partial', refs: [] },
+      { month: '2026-08-01', expectedRent: 5000, paidAmount: 0, balance: 5000, status: 'unpaid', refs: [] },
     ]);
   });
 
@@ -155,5 +155,43 @@ describe('computeArrears', () => {
     expect(result?.totalPaid).toBe(5000);
     expect(result?.arrears).toBe(0);
     expect(result?.status).toBe('paid');
+  });
+
+  it('attributes a single payment\'s ref to the month it fully covers', () => {
+    const result = computeArrears(
+      '2026-08-01',
+      5000,
+      [{ amount: 5000, payment_date: '2026-08-05', mpesaRef: 'ABC123' }],
+      '2026-08',
+    );
+    expect(result?.monthlyBreakdown[0].refs).toEqual(['ABC123']);
+  });
+
+  it('lists every ref that contributed to a month funded by multiple payments', () => {
+    const result = computeArrears(
+      '2026-08-01',
+      5000,
+      [
+        { amount: 2000, payment_date: '2026-08-03', mpesaRef: 'REF1' },
+        { amount: 3000, payment_date: '2026-08-20', mpesaRef: 'REF2' },
+      ],
+      '2026-08',
+    );
+    expect(result?.monthlyBreakdown[0].refs).toEqual(['REF1', 'REF2']);
+  });
+
+  it('spreads one lump-sum payment\'s ref across every month it settles', () => {
+    const result = computeArrears(
+      '2026-06-01',
+      5000,
+      [{ amount: 15000, payment_date: '2026-08-20', mpesaRef: 'LUMP1' }],
+      '2026-08',
+    );
+    expect(result?.monthlyBreakdown.map((m) => m.refs)).toEqual([['LUMP1'], ['LUMP1'], ['LUMP1']]);
+  });
+
+  it('leaves refs empty for an unpaid month', () => {
+    const result = computeArrears('2026-06-01', 5000, [], '2026-08');
+    expect(result?.monthlyBreakdown.every((m) => m.refs.length === 0)).toBe(true);
   });
 });

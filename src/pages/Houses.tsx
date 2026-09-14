@@ -525,6 +525,7 @@ const Houses = () => {
         payments={selectedHouse ? getHousePayments(selectedHouse.id).map(p => ({
           amount: Number(p.amount),
           payment_date: p.payment_date,
+          mpesaRef: p.mpesa_ref,
         })) : []}
       />
 
