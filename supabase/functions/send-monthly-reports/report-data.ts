@@ -14,6 +14,10 @@ export interface HouseReportRow {
   paidAmount: number;
   balance: number;
   status: 'paid' | 'partial' | 'unpaid';
+  // Unpaid balance from months strictly before targetMonth (0 if none).
+  priorArrears: number;
+  // priorArrears + balance — everything currently owed through targetMonth.
+  totalOwed: number;
 }
 
 export interface LandlordReport {
@@ -84,6 +88,13 @@ export async function buildLandlordReport(
     const monthEntry = arrears?.monthlyBreakdown.find((m) => m.month === targetMonthKey);
     if (!monthEntry) continue; // vacant, or no tenancy yet during targetMonth
 
+    // Unpaid balance from every month before targetMonth — each month's
+    // balance is already floored at >=0, so this sum is the real unsettled
+    // debt regardless of how the waterfall allocated later payments.
+    const priorArrears = (arrears?.monthlyBreakdown ?? [])
+      .filter((m) => m.month !== targetMonthKey)
+      .reduce((s, m) => s + m.balance, 0);
+
     // deno-lint-ignore no-explicit-any
     const tenant = (tenants || []).find((t: any) => t.house_id === house.id);
 
@@ -95,6 +106,8 @@ export async function buildLandlordReport(
       paidAmount: monthEntry.paidAmount,
       balance: monthEntry.balance,
       status: monthEntry.status,
+      priorArrears,
+      totalOwed: priorArrears + monthEntry.balance,
     });
   }
 

@@ -64,6 +64,7 @@ function escapeHtml(value: string): string {
 async function sendReportEmail(
   resendApiKey: string,
   toEmail: string,
+  ccEmails: string[],
   landlordName: string | null,
   targetMonth: string,
   report: Awaited<ReturnType<typeof buildLandlordReport>>,
@@ -80,8 +81,8 @@ async function sendReportEmail(
     : defaulterRows.length === 0
     ? '<p>Every house was fully paid this month.</p>'
     : `<table border="1" cellpadding="6" cellspacing="0" style="border-collapse:collapse;font-size:13px">
-        <tr style="background:#f1f5f9"><th>House</th><th>Tenant</th><th>Phone</th><th>Balance</th><th>Status</th></tr>
-        ${defaulterRows.map((r) => `<tr><td>${escapeHtml(r.houseNo)}</td><td>${escapeHtml(r.tenantName || 'Unassigned')}</td><td>${escapeHtml(r.tenantPhone || '-')}</td><td>KES ${r.balance.toLocaleString()}</td><td>${escapeHtml(r.status)}</td></tr>`).join('')}
+        <tr style="background:#f1f5f9"><th>House</th><th>Tenant</th><th>Phone</th><th>This Month</th><th>Prior Arrears</th><th>Total Owed</th><th>Status</th></tr>
+        ${defaulterRows.map((r) => `<tr><td>${escapeHtml(r.houseNo)}</td><td>${escapeHtml(r.tenantName || 'Unassigned')}</td><td>${escapeHtml(r.tenantPhone || '-')}</td><td>KES ${r.balance.toLocaleString()}</td><td>${r.priorArrears > 0 ? `KES ${r.priorArrears.toLocaleString()}` : '-'}</td><td><strong>KES ${r.totalOwed.toLocaleString()}</strong></td><td>${escapeHtml(r.status)}</td></tr>`).join('')}
       </table>`;
 
   const html = `
@@ -91,6 +92,7 @@ async function sendReportEmail(
     <p><strong>Rent covered:</strong> KES ${report.totalCollected.toLocaleString()} of KES ${report.totalExpected.toLocaleString()} expected (KES ${report.totalOutstanding.toLocaleString()} outstanding).</p>
     <p style="font-size:12px;color:#64748b">Payments are applied to the oldest unpaid month first, so this reflects rent covered for ${label}, not necessarily cash received during that month.</p>
     <h3>Needs follow-up</h3>
+    <p style="font-size:12px;color:#64748b">"Prior Arrears" is unpaid rent from before ${label}; "Total Owed" is everything currently outstanding.</p>
     ${defaulterHtml}
     <p>Two PDFs are attached: the full house-by-house payments report, and a defaulters &amp; arrears report.</p>
   `;
@@ -104,6 +106,7 @@ async function sendReportEmail(
     body: JSON.stringify({
       from: 'KodiPap <noreply@kodipap.com>',
       to: [toEmail],
+      ...(ccEmails.length > 0 ? { cc: ccEmails } : {}),
       subject: `Rent Report — ${label}`,
       html,
       attachments: [
@@ -162,10 +165,16 @@ Deno.serve(async (req) => {
     }
 
     try {
+      const { data: recipients } = await supabase
+        .from('report_recipients')
+        .select('email')
+        .eq('landlord_id', landlord.id);
+      const ccEmails = (recipients || []).map((r: { email: string }) => r.email);
+
       const report = await buildLandlordReport(supabase, landlord.id, targetMonth);
       const pdf = generateReportPdf(monthLabel(targetMonth), report.rows);
       const defaultersPdf = generateDefaultersPdf(monthLabel(targetMonth), report.rows);
-      await sendReportEmail(resendApiKey, landlord.email, landlord.full_name, targetMonth, report, pdf, defaultersPdf);
+      await sendReportEmail(resendApiKey, landlord.email, ccEmails, landlord.full_name, targetMonth, report, pdf, defaultersPdf);
       results.push({ landlordId: landlord.id, status: 'sent' });
     } catch (err) {
       results.push({ landlordId: landlord.id, status: 'failed', error: err instanceof Error ? err.message : String(err) });
@@ -190,10 +199,16 @@ Deno.serve(async (req) => {
 
   for (const landlord of matching) {
     try {
+      const { data: recipients } = await supabase
+        .from('report_recipients')
+        .select('email')
+        .eq('landlord_id', landlord.id);
+      const ccEmails = (recipients || []).map((r: { email: string }) => r.email);
+
       const report = await buildLandlordReport(supabase, landlord.id, targetMonth);
       const pdf = generateReportPdf(monthLabel(targetMonth), report.rows);
       const defaultersPdf = generateDefaultersPdf(monthLabel(targetMonth), report.rows);
-      await sendReportEmail(resendApiKey, landlord.email as string, landlord.full_name, targetMonth, report, pdf, defaultersPdf);
+      await sendReportEmail(resendApiKey, landlord.email as string, ccEmails, landlord.full_name, targetMonth, report, pdf, defaultersPdf);
       results.push({ landlordId: landlord.id, status: 'sent' });
     } catch (err) {
       console.error(`Failed to send report for landlord ${landlord.id}:`, err);
