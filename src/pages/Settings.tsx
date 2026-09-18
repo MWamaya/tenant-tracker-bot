@@ -8,9 +8,25 @@ import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Settings as SettingsIcon,
   Mail,
@@ -19,14 +35,96 @@ import {
   Clock,
   Save,
   MessageSquare,
-  Smartphone
+  Smartphone,
+  Plus,
+  Pencil,
+  Trash2,
+  Users,
+  Loader2,
 } from 'lucide-react';
+
+interface ReportRecipient {
+  id: string;
+  name: string | null;
+  email: string;
+}
 
 const Settings = () => {
   const landlordId = useEffectiveLandlordId();
+  const queryClient = useQueryClient();
   const [inboundEmail, setInboundEmail] = useState<string | null>(null);
   const [reportDay, setReportDay] = useState<string>('5');
   const [savingReportDay, setSavingReportDay] = useState(false);
+
+  const [recipientDialogOpen, setRecipientDialogOpen] = useState(false);
+  const [editingRecipient, setEditingRecipient] = useState<ReportRecipient | null>(null);
+  const [recipientForm, setRecipientForm] = useState({ name: '', email: '' });
+
+  const { data: recipients = [], isLoading: recipientsLoading } = useQuery({
+    queryKey: ['report_recipients', landlordId],
+    enabled: !!landlordId,
+    queryFn: async (): Promise<ReportRecipient[]> => {
+      const { data, error } = await supabase
+        .from('report_recipients')
+        .select('id, name, email')
+        .eq('landlord_id', landlordId!)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const openAddRecipient = () => {
+    setEditingRecipient(null);
+    setRecipientForm({ name: '', email: '' });
+    setRecipientDialogOpen(true);
+  };
+
+  const openEditRecipient = (r: ReportRecipient) => {
+    setEditingRecipient(r);
+    setRecipientForm({ name: r.name || '', email: r.email });
+    setRecipientDialogOpen(true);
+  };
+
+  const saveRecipient = useMutation({
+    mutationFn: async () => {
+      if (!landlordId) throw new Error('Not signed in');
+      const email = recipientForm.email.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email');
+      const name = recipientForm.name.trim() || null;
+
+      if (editingRecipient) {
+        const { error } = await supabase
+          .from('report_recipients')
+          .update({ name, email })
+          .eq('id', editingRecipient.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('report_recipients')
+          .insert({ landlord_id: landlordId, name, email });
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingRecipient ? 'Recipient updated' : 'Recipient added');
+      queryClient.invalidateQueries({ queryKey: ['report_recipients'] });
+      setRecipientDialogOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message || 'Failed to save recipient'),
+  });
+
+  const deleteRecipient = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('report_recipients').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Recipient removed');
+      queryClient.invalidateQueries({ queryKey: ['report_recipients'] });
+    },
+    onError: (e: Error) => toast.error(e.message || 'Failed to remove recipient'),
+  });
 
   useEffect(() => {
     if (!landlordId) return;
@@ -151,6 +249,62 @@ const Settings = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Monthly Report Recipients
+                </CardTitle>
+                <CardDescription>
+                  Extra people (e.g. a caretaker) who should be CC'd on the automated monthly report alongside you.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {recipientsLoading ? (
+                  <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-primary" /></div>
+                ) : recipients.length > 0 ? (
+                  <div className="border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="table-header">
+                          <TableHead>Name</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recipients.map((r) => (
+                          <TableRow key={r.id}>
+                            <TableCell>{r.name || '-'}</TableCell>
+                            <TableCell className="font-mono text-sm">{r.email}</TableCell>
+                            <TableCell className="text-right">
+                              <Button variant="ghost" size="icon" onClick={() => openEditRecipient(r)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => {
+                                  if (confirm(`Remove ${r.email} from report recipients?`)) deleteRecipient.mutate(r.id);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No extra recipients yet. Add one below.</p>
+                )}
+                <Button variant="outline" onClick={openAddRecipient} className="gap-2">
+                  <Plus className="h-4 w-4" /> Add Recipient
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -490,6 +644,40 @@ const Settings = () => {
           </Button>
         </div>
       </div>
+
+      <Dialog open={recipientDialogOpen} onOpenChange={setRecipientDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingRecipient ? 'Edit Recipient' : 'Add Recipient'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Name (optional)</Label>
+              <Input
+                placeholder="e.g. Caretaker"
+                value={recipientForm.name}
+                onChange={(e) => setRecipientForm({ ...recipientForm, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Email *</Label>
+              <Input
+                type="email"
+                placeholder="caretaker@example.com"
+                value={recipientForm.email}
+                onChange={(e) => setRecipientForm({ ...recipientForm, email: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRecipientDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => saveRecipient.mutate()} disabled={saveRecipient.isPending}>
+              {saveRecipient.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

@@ -56,6 +56,8 @@ Deno.test('buildLandlordReport: builds one row per house using only the target m
     paidAmount: 5000,
     balance: 0,
     status: 'paid',
+    priorArrears: 0,
+    totalOwed: 0,
   });
   assertEquals(report.totalExpected, 5000);
   assertEquals(report.totalCollected, 5000);
@@ -111,4 +113,27 @@ Deno.test('buildLandlordReport: reflects an unpaid month correctly', async () =>
   assertEquals(report.rows[0].paidAmount, 0);
   assertEquals(report.rows[0].balance, 3500);
   assertEquals(report.unpaidCount, 1);
+});
+
+Deno.test('buildLandlordReport: surfaces prior-month arrears on top of the target month\'s own balance', async () => {
+  const supabase = createMockSupabase({
+    houses: [[
+      { id: 'h1', house_no: 'C3', expected_rent: 5000, status: 'occupied', occupancy_date: '2026-05-01' },
+    ]],
+    tenants: [[{ id: 't3', name: 'Amina Otieno', phone: '0722222222', house_id: 'h1' }]],
+    payments: [
+      // May (5000 due) paid in full; June (5000 due) gets a 2000 partial
+      // payment; July (5000 due, the target month) gets nothing — the
+      // waterfall applies this single lump sum oldest-first.
+      [{ amount: 7000, house_id: 'h1', payment_date: '2026-07-05' }],
+      [],
+    ],
+  });
+
+  const report = await buildLandlordReport(supabase, 'L1', '2026-07');
+
+  assertEquals(report.rows[0].status, 'unpaid');
+  assertEquals(report.rows[0].balance, 5000); // July's own unpaid balance
+  assertEquals(report.rows[0].priorArrears, 3000); // June's unpaid remainder (May is fully paid)
+  assertEquals(report.rows[0].totalOwed, 8000);
 });

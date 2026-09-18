@@ -52,14 +52,14 @@ export function generateDefaultersPdf(monthLabel: string, rows: HouseReportRow[]
 
   autoTable(doc, {
     startY: 36,
-    head: [['House No', 'Tenant', 'Phone', 'Expected', 'Rent Covered', 'Arrears', 'Status']],
+    head: [['House No', 'Tenant', 'Phone', 'This Month', 'Prior Arrears', 'Total Owed', 'Status']],
     body: defaulterRows.map((r) => [
       r.houseNo,
       r.tenantName || 'Unassigned',
       r.tenantPhone || '-',
-      formatCurrency(r.expectedRent),
-      formatCurrency(r.paidAmount),
       formatCurrency(r.balance),
+      r.priorArrears > 0 ? formatCurrency(r.priorArrears) : '-',
+      formatCurrency(r.totalOwed),
       r.status.charAt(0).toUpperCase() + r.status.slice(1),
     ]),
     theme: 'striped',
