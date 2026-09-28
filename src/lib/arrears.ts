@@ -2,6 +2,13 @@
 
 export type ArrearsStatus = 'paid' | 'partial' | 'unpaid';
 
+export interface MonthlyPaymentContribution {
+  date: string; // payment_date of the source payment
+  amount: number; // portion of that payment drawn into this month
+  ref?: string;
+  paymentTotal: number; // full amount of the source payment (> amount when it's split across months)
+}
+
 export interface MonthlyStatementEntry {
   month: string; // 'yyyy-MM-01'
   expectedRent: number;
@@ -9,6 +16,8 @@ export interface MonthlyStatementEntry {
   balance: number;
   status: ArrearsStatus;
   refs: string[]; // mpesaRefs of payments that funded this month, in application order
+  payments: MonthlyPaymentContribution[]; // per-payment breakdown, in application order
+  receivedThisMonth: number; // total of any real payments dated within this calendar month, regardless of which months they settled
 }
 
 export interface ArrearsResult {
@@ -17,6 +26,7 @@ export interface ArrearsResult {
   arrears: number;
   status: ArrearsStatus;
   monthlyBreakdown: MonthlyStatementEntry[];
+  futureCredit: MonthlyStatementEntry[]; // months after asOfMonth pre-paid from leftover credit
 }
 
 export interface ArrearsPayment {
@@ -63,7 +73,7 @@ export function computeArrears(
     : new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
 
   if (start.getTime() > target.getTime()) {
-    return { totalExpected: 0, totalPaid: 0, arrears: 0, status: 'paid', monthlyBreakdown: [] };
+    return { totalExpected: 0, totalPaid: 0, arrears: 0, status: 'paid', monthlyBreakdown: [], futureCredit: [] };
   }
 
   // Exclusive upper bound: start of the month after the target month, so a
@@ -77,12 +87,21 @@ export function computeArrears(
 
   const totalPaid = relevantPayments.reduce((sum, p) => sum + Number(p.amount), 0);
 
+  // Total actually received in each calendar month, keyed by that month —
+  // used to show the real payment amount on the month it happened in,
+  // separate from paidAmount (the portion applied to that month's rent).
+  const receivedByMonth = new Map<string, number>();
+  for (const p of relevantPayments) {
+    const key = monthKey(monthStartUTC(p.payment_date));
+    receivedByMonth.set(key, (receivedByMonth.get(key) ?? 0) + Number(p.amount));
+  }
+
   // FIFO queue of payments (earliest first) to draw down per month, so refs
   // attribute to the same months the pooled total already settles.
   const pool = relevantPayments
     .slice()
     .sort((a, b) => new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime())
-    .map((p) => ({ remaining: Number(p.amount), ref: p.mpesaRef }));
+    .map((p) => ({ remaining: Number(p.amount), total: Number(p.amount), ref: p.mpesaRef, date: p.payment_date }));
 
   const monthlyBreakdown: MonthlyStatementEntry[] = [];
   let cursor = start;
@@ -92,6 +111,7 @@ export function computeArrears(
     let paidAmount = 0;
     let needed = due > 0 ? due : 0;
     const refs: string[] = [];
+    const monthPayments: MonthlyPaymentContribution[] = [];
     let status: ArrearsStatus;
 
     if (due <= 0) {
@@ -105,6 +125,7 @@ export function computeArrears(
         needed -= drawn;
         paidAmount += drawn;
         if (entry.ref && !refs.includes(entry.ref)) refs.push(entry.ref);
+        monthPayments.push({ date: entry.date, amount: drawn, ref: entry.ref, paymentTotal: entry.total });
       }
       status = paidAmount >= due ? 'paid' : paidAmount > 0 ? 'partial' : 'unpaid';
     }
@@ -116,6 +137,8 @@ export function computeArrears(
       balance: Math.max(0, due - paidAmount),
       status,
       refs,
+      payments: monthPayments,
+      receivedThisMonth: receivedByMonth.get(monthKey(cursor)) ?? 0,
     });
 
     cursor = addMonths(cursor, 1);
@@ -128,5 +151,49 @@ export function computeArrears(
   if (arrears <= 0) status = 'paid';
   else if (totalPaid > 0) status = 'partial';
 
-  return { totalExpected, totalPaid, arrears, status, monthlyBreakdown };
+  // Any leftover pool after the target month is a credit: project it forward
+  // onto the months it actually prepays, so "Ksh 30,000 today" can be shown
+  // as this month's rent plus next month's (or more), not just a lump sum.
+  const futureCredit: MonthlyStatementEntry[] = [];
+  if (expectedRent > 0) {
+    const maxFutureMonths = 24; // safety cap against runaway credit balances
+    let futureCursor = addMonths(target, 1);
+    for (let i = 0; i < maxFutureMonths; i++) {
+      if (!pool.some((entry) => entry.remaining > 0)) break;
+
+      const due = expectedRent;
+      let paidAmount = 0;
+      let needed = due;
+      const refs: string[] = [];
+      const monthPayments: MonthlyPaymentContribution[] = [];
+
+      for (const entry of pool) {
+        if (needed <= 0) break;
+        if (entry.remaining <= 0) continue;
+        const drawn = Math.min(entry.remaining, needed);
+        entry.remaining -= drawn;
+        needed -= drawn;
+        paidAmount += drawn;
+        if (entry.ref && !refs.includes(entry.ref)) refs.push(entry.ref);
+        monthPayments.push({ date: entry.date, amount: drawn, ref: entry.ref, paymentTotal: entry.total });
+      }
+
+      if (paidAmount <= 0) break;
+
+      futureCredit.push({
+        month: monthKey(futureCursor),
+        expectedRent: due,
+        paidAmount,
+        balance: Math.max(0, due - paidAmount),
+        status: paidAmount >= due ? 'paid' : 'partial',
+        refs,
+        payments: monthPayments,
+        receivedThisMonth: 0, // future months, by construction, hold no payments dated within them
+      });
+
+      futureCursor = addMonths(futureCursor, 1);
+    }
+  }
+
+  return { totalExpected, totalPaid, arrears, status, monthlyBreakdown, futureCredit };
 }
