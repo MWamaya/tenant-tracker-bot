@@ -35,6 +35,11 @@ const formatMonthLabel = (monthStr: string): string => {
   return `${MONTH_NAMES[Number(month) - 1]} ${year}`;
 };
 
+const formatPaymentDate = (dateStr: string): string => {
+  const d = new Date(dateStr);
+  return format(d, 'd MMM yyyy');
+};
+
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-KE', {
     style: 'currency',
@@ -43,7 +48,16 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
-const getStatusBadge = (status: 'paid' | 'partial' | 'unpaid') => {
+// The amount to display in the Paid column: the real amount received when a
+// payment landed in this calendar month, otherwise the portion of an earlier
+// payment that was applied to this month's rent.
+const displayedPaid = (record: MonthlyStatementEntry): number =>
+  record.receivedThisMonth > 0 ? record.receivedThisMonth : record.paidAmount;
+
+const getStatusBadge = (status: 'paid' | 'partial' | 'unpaid', isFuture = false) => {
+  if (isFuture) {
+    return <Badge className="bg-primary/10 text-primary border-primary/20">Prepaid</Badge>;
+  }
   switch (status) {
     case 'paid':
       return <Badge className="bg-success/10 text-success border-success/20">Paid</Badge>;
@@ -60,26 +74,37 @@ const buildPrintHtml = (
   houseNo: string,
   expectedRent: number,
   monthlyBreakdown: MonthlyStatementEntry[],
+  futureCredit: MonthlyStatementEntry[],
   totalExpected: number,
   totalPaid: number,
   totalOutstanding: number,
 ): string => {
-  const rows = monthlyBreakdown
-    .map((record) => {
-      const statusClass = record.status === 'paid' ? 'status-paid' : record.status === 'partial' ? 'status-partial' : 'status-unpaid';
-      const statusText = record.status === 'paid' ? 'Paid' : record.status === 'partial' ? 'Partial' : 'Unpaid';
-      return `
-        <tr>
-          <td class="month">${formatMonthLabel(record.month)}</td>
-          <td class="num">${formatCurrency(record.expectedRent)}</td>
-          <td class="num total">${record.paidAmount > 0 ? formatCurrency(record.paidAmount) : '-'}</td>
-          <td class="num">${record.balance > 0 ? formatCurrency(record.balance) : '-'}</td>
-          <td><span class="badge ${statusClass}">${statusText}</span></td>
-          <td class="ref">${record.refs.length > 0 ? record.refs.join(', ') : '-'}</td>
-        </tr>
-      `;
-    })
-    .join('');
+  const buildRow = (record: MonthlyStatementEntry, isFuture: boolean) => {
+    const statusClass = isFuture ? 'status-future' : record.status === 'paid' ? 'status-paid' : record.status === 'partial' ? 'status-partial' : 'status-unpaid';
+    const statusText = isFuture ? 'Prepaid' : record.status === 'paid' ? 'Paid' : record.status === 'partial' ? 'Partial' : 'Unpaid';
+    const breakdown = record.payments.length > 0
+      ? `<table class="pay-list"><tbody>${record.payments
+          .map(
+            (p) =>
+              `<tr><td class="pd">${formatPaymentDate(p.date)}</td><td class="pa">${formatCurrency(p.amount)}${p.paymentTotal > p.amount ? `<span class="split"> of ${formatCurrency(p.paymentTotal)}</span>` : ''}</td><td class="pr">${p.ref ?? ''}</td></tr>`,
+          )
+          .join('')}</tbody></table>`
+      : '-';
+    const paid = displayedPaid(record);
+    return `
+      <tr class="${isFuture ? 'future-row' : ''}">
+        <td class="month">${formatMonthLabel(record.month)}</td>
+        <td class="num">${formatCurrency(record.expectedRent)}</td>
+        <td class="num total">${paid > 0 ? formatCurrency(paid) : '-'}</td>
+        <td class="num">${record.balance > 0 ? formatCurrency(record.balance) : '-'}</td>
+        <td><span class="badge ${statusClass}">${statusText}</span></td>
+        <td class="ref">${breakdown}</td>
+      </tr>
+    `;
+  };
+
+  const rows = monthlyBreakdown.map((record) => buildRow(record, false)).join('');
+  const futureRows = futureCredit.map((record) => buildRow(record, true)).join('');
 
   return `
     <html>
@@ -99,11 +124,20 @@ const buildPrintHtml = (
         td.month { font-weight: 600; white-space: nowrap; }
         td.num { text-align: right; white-space: nowrap; }
         td.total { font-weight: 700; color: #16a34a; }
-        td.ref { font-family: monospace; font-size: 10px; color: #64748b; }
+        td.ref { padding: 4px 6px; min-width: 220px; }
+        .pay-list { width: 100%; border-collapse: collapse; }
+        .pay-list td { border: none; padding: 2px 10px 2px 0; font-size: 10px; }
+        .pay-list tr + tr td { border-top: 1px dashed #e2e8f0; padding-top: 4px; margin-top: 4px; }
+        .pay-list .pd { color: #64748b; white-space: nowrap; width: 60px; }
+        .pay-list .pa { color: #16a34a; font-weight: 700; text-align: right; white-space: nowrap; }
+        .pay-list .pa .split { color: #64748b; font-weight: 400; }
+        .pay-list .pr { font-family: monospace; color: #64748b; white-space: nowrap; }
         .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600; }
         .status-paid { background: #dcfce7; color: #166534; }
         .status-partial { background: #fef9c3; color: #854d0e; }
         .status-unpaid { background: #fee2e2; color: #991b1b; }
+        .status-future { background: #dbeafe; color: #1e40af; }
+        .future-row { background: #f8fafc; }
         .totals-row { background: #f8fafc; font-weight: 700; }
         .totals-row td { border-top: 2px solid #0f172a; }
         .totals-label { text-align: right; padding-right: 8px; }
@@ -121,10 +155,11 @@ const buildPrintHtml = (
       </div>
       <table>
         <thead>
-          <tr><th>Month</th><th>Rent Due</th><th>Paid</th><th>Balance</th><th>Status</th><th>M-Pesa Ref(s)</th></tr>
+          <tr><th>Month</th><th>Rent Due</th><th>Paid</th><th>Balance</th><th>Status</th><th>Payment Breakdown</th></tr>
         </thead>
         <tbody>
           ${rows}
+          ${futureRows}
           <tr class="totals-row">
             <td class="totals-label">TOTALS</td>
             <td class="num">${formatCurrency(totalExpected)}</td>
@@ -163,6 +198,7 @@ export const TenantStatementDialog = ({
         house.houseNo,
         house.expectedRent,
         arrears.monthlyBreakdown,
+        arrears.futureCredit,
         arrears.totalExpected,
         arrears.totalPaid,
         Math.max(0, arrears.arrears),
@@ -208,41 +244,23 @@ export const TenantStatementDialog = ({
           </div>
         ) : (
           <ScrollArea className="h-[400px] rounded-md border">
-            <Table>
+            <Table className="table-fixed">
               <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
-                  <TableHead className="w-[100px]">Month</TableHead>
-                  <TableHead className="text-right">Rent Due</TableHead>
-                  <TableHead className="text-right">Paid</TableHead>
-                  <TableHead className="text-right">Balance</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>M-Pesa Ref(s)</TableHead>
+                  <TableHead className="w-[90px]">Month</TableHead>
+                  <TableHead className="w-[100px] text-right">Rent Due</TableHead>
+                  <TableHead className="w-[100px] text-right">Paid</TableHead>
+                  <TableHead className="w-[100px] text-right">Balance</TableHead>
+                  <TableHead className="w-[90px]">Status</TableHead>
+                  <TableHead>Payment Breakdown</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {arrears.monthlyBreakdown.map((record) => (
-                  <TableRow key={record.month}>
-                    <TableCell className="font-medium">{formatMonthLabel(record.month)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(record.expectedRent)}</TableCell>
-                    <TableCell className="text-right">
-                      {record.paidAmount > 0 ? (
-                        <span className="font-semibold text-success">{formatCurrency(record.paidAmount)}</span>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {record.balance > 0 ? (
-                        <span className="text-destructive font-medium">{formatCurrency(record.balance)}</span>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(record.status)}</TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
-                      {record.refs.length > 0 ? record.refs.join(', ') : '-'}
-                    </TableCell>
-                  </TableRow>
+                  <MonthRow key={record.month} record={record} />
+                ))}
+                {arrears.futureCredit.map((record) => (
+                  <MonthRow key={record.month} record={record} isFuture />
                 ))}
               </TableBody>
             </Table>
@@ -250,5 +268,50 @@ export const TenantStatementDialog = ({
         )}
       </DialogContent>
     </Dialog>
+  );
+};
+
+const MonthRow = ({ record, isFuture = false }: { record: MonthlyStatementEntry; isFuture?: boolean }) => {
+  const paid = displayedPaid(record);
+  return (
+    <TableRow className={isFuture ? 'bg-muted/30' : undefined}>
+      <TableCell className="font-medium">{formatMonthLabel(record.month)}</TableCell>
+      <TableCell className="text-right">{formatCurrency(record.expectedRent)}</TableCell>
+      <TableCell className="text-right">
+        {paid > 0 ? <span className="font-semibold text-success">{formatCurrency(paid)}</span> : '-'}
+      </TableCell>
+      <TableCell className="text-right">
+        {record.balance > 0 ? <span className="text-destructive font-medium">{formatCurrency(record.balance)}</span> : '-'}
+      </TableCell>
+      <TableCell>{getStatusBadge(record.status, isFuture)}</TableCell>
+      <TableCell>
+        {record.payments.length > 0 ? (
+          <table className="border-collapse">
+            <tbody>
+              {record.payments.map((p, i) => (
+                <tr key={i}>
+                  <td className="text-muted-foreground text-xs whitespace-nowrap py-0.5 pr-3">{formatPaymentDate(p.date)}</td>
+                  <td className="font-semibold text-success text-xs whitespace-nowrap py-0.5 pr-3">
+                    {formatCurrency(p.amount)}
+                    {p.paymentTotal > p.amount && (
+                      <span className="font-normal text-muted-foreground"> of {formatCurrency(p.paymentTotal)}</span>
+                    )}
+                  </td>
+                  <td className="py-0.5">
+                    {p.ref && (
+                      <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded whitespace-nowrap">
+                        {p.ref}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <span className="text-muted-foreground text-xs">-</span>
+        )}
+      </TableCell>
+    </TableRow>
   );
 };

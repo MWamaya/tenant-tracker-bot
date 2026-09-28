@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, CreditCard, Home, User, Phone, TrendingUp, TrendingDown, CheckCircle2, AlertCircle, XCircle } from 'lucide-react';
 import { computeArrears, ArrearsPayment, ArrearsStatus } from '@/lib/arrears';
+import { format } from 'date-fns';
 
 interface HouseDetailDialogProps {
   open: boolean;
@@ -23,6 +24,8 @@ const formatMonthLabel = (monthStr: string): string => {
   const [year, month] = monthStr.split('-');
   return `${MONTH_NAMES[Number(month) - 1]} ${year}`;
 };
+
+const formatPaymentDate = (dateStr: string): string => format(new Date(dateStr), 'd MMM');
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('en-KE', {
@@ -184,10 +187,26 @@ export const HouseDetailDialog = ({
                           value={monthData.expectedRent > 0 ? Math.min((monthData.paidAmount / monthData.expectedRent) * 100, 100) : 100}
                           className="h-1.5 mt-2"
                         />
-                        {monthData.refs.length > 0 && (
-                          <p className="text-[10px] font-mono text-muted-foreground truncate mt-1" title={monthData.refs.join(', ')}>
-                            {monthData.refs.join(', ')}
-                          </p>
+                        {monthData.payments.length > 0 && (
+                          <div className="mt-2 pt-2 border-t border-border/60 space-y-1">
+                            {monthData.payments.map((p, i) => (
+                              <div key={i} className="flex items-center justify-between gap-1.5 text-[10px]">
+                                <span className="text-muted-foreground">{formatPaymentDate(p.date)}</span>
+                                <span
+                                  className="font-semibold text-success"
+                                  title={p.paymentTotal > p.amount ? `Part of a ${formatCurrency(p.paymentTotal)} payment` : undefined}
+                                >
+                                  {formatCurrency(p.amount)}
+                                  {p.paymentTotal > p.amount && <sup className="text-muted-foreground font-normal">*</sup>}
+                                </span>
+                                {p.ref && (
+                                  <span className="font-mono text-muted-foreground truncate max-w-[70px]" title={p.ref}>
+                                    {p.ref}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         )}
                       </div>
                     </div>
