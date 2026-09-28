@@ -91,10 +91,23 @@ export const useTenants = () => {
       if (error) throw error;
 
       if (tenant.house_id) {
+        const startDate = tenant.move_in_date || new Date().toISOString().split('T')[0];
         await supabase
           .from('houses')
-          .update({ status: 'occupied', occupancy_date: tenant.move_in_date || new Date().toISOString().split('T')[0] })
+          .update({ status: 'occupied', occupancy_date: startDate })
           .eq('id', tenant.house_id);
+
+        // Historical record of this tenancy, independent of houses.occupancy_date
+        // (which gets overwritten by the next tenant) and of this tenants row
+        // (which is deleted on move-out) — see 20260928130000_add_tenancy_periods.sql.
+        await supabase.from('tenancy_periods').insert({
+          landlord_id: landlordId,
+          house_id: tenant.house_id,
+          tenant_id: data.id,
+          tenant_name: tenant.name,
+          tenant_phone: tenant.phone,
+          start_date: startDate,
+        });
       }
 
       return data as Tenant;
@@ -120,18 +133,47 @@ export const useTenants = () => {
 
       if (error) throw error;
 
+      const today = new Date().toISOString().split('T')[0];
+
       if (previousHouseId && previousHouseId !== data.house_id) {
         await supabase
           .from('houses')
           .update({ status: 'vacant', occupancy_date: null })
           .eq('id', previousHouseId);
+
+        await supabase
+          .from('tenancy_periods')
+          .update({ end_date: today })
+          .eq('house_id', previousHouseId)
+          .eq('tenant_id', id)
+          .is('end_date', null);
       }
 
       if (data.house_id && data.house_id !== previousHouseId) {
+        const startDate = data.move_in_date || today;
         await supabase
           .from('houses')
-          .update({ status: 'occupied', occupancy_date: data.move_in_date || new Date().toISOString().split('T')[0] })
+          .update({ status: 'occupied', occupancy_date: startDate })
           .eq('id', data.house_id);
+
+        await supabase.from('tenancy_periods').insert({
+          landlord_id: updated.landlord_id,
+          house_id: data.house_id,
+          tenant_id: id,
+          tenant_name: updated.name,
+          tenant_phone: updated.phone,
+          start_date: startDate,
+        });
+      } else if (updated.house_id && (data.name || data.phone)) {
+        // No move, just details edited (e.g. corrected phone number) — keep
+        // the open tenancy period's snapshot in sync so historical reports
+        // reflect the latest known contact info, not what it was at move-in.
+        await supabase
+          .from('tenancy_periods')
+          .update({ tenant_name: updated.name, tenant_phone: updated.phone })
+          .eq('house_id', updated.house_id)
+          .eq('tenant_id', id)
+          .is('end_date', null);
       }
 
       return updated as Tenant;
@@ -148,6 +190,18 @@ export const useTenants = () => {
 
   const deleteTenant = useMutation({
     mutationFn: async ({ id, houseId }: { id: string; houseId?: string | null }) => {
+      if (houseId) {
+        // Close out the tenancy record before the tenants row disappears,
+        // so historical reports still know this house was occupied — and by
+        // whom — up to today.
+        await supabase
+          .from('tenancy_periods')
+          .update({ end_date: new Date().toISOString().split('T')[0] })
+          .eq('house_id', houseId)
+          .eq('tenant_id', id)
+          .is('end_date', null);
+      }
+
       const { error } = await supabase
         .from('tenants')
         .delete()
