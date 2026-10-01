@@ -65,7 +65,7 @@ export const useBalances = () => {
       if (houseError) throw houseError;
 
       const prevMonth = new Date(month);
-      prevMonth.setMonth(prevMonth.getMonth() - 1);
+      prevMonth.setUTCMonth(prevMonth.getUTCMonth() - 1);
       const prevMonthStr = prevMonth.toISOString().slice(0, 10);
 
       const { data: prevBalance } = await supabase
@@ -79,7 +79,7 @@ export const useBalances = () => {
 
       const monthStart = new Date(month);
       const monthEnd = new Date(month);
-      monthEnd.setMonth(monthEnd.getMonth() + 1);
+      monthEnd.setUTCMonth(monthEnd.getUTCMonth() + 1);
 
       const { data: payments, error: paymentsError } = await supabase
         .from('payments')

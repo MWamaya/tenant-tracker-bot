@@ -157,7 +157,7 @@ export const PaymentsContent = () => {
   };
 
   const getMonthOptions = () => {
-    const set = new Set<string>();
+    const set = new Set<string>([format(new Date(), 'yyyy-MM')]);
     for (const p of payments) {
       set.add(format(new Date(p.payment_date), 'yyyy-MM'));
     }
@@ -270,6 +270,9 @@ export const PaymentsContent = () => {
       {/* Month Folders */}
       {(() => {
         const groups = new Map<string, typeof filteredPayments>();
+        // All Time should still surface the current month as its own (possibly
+        // empty) folder, not just months that already have a payment in them.
+        if (monthFilter === 'all') groups.set(format(new Date(), 'yyyy-MM'), []);
         for (const p of filteredPayments) {
           const d = new Date(p.payment_date);
           const key = format(d, 'yyyy-MM');

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
@@ -63,6 +63,24 @@ const Reports = () => {
   const queryClient = useQueryClient();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  // selectedMonth is seeded once from currentMonth at mount, so it goes stale
+  // if a tab stays open across a month boundary. Re-sync on focus/interval,
+  // same fix as src/pages/Dashboard.tsx, but only while not manually changed.
+  const autoMonthRef = useRef(currentMonth);
+  useEffect(() => {
+    const syncMonth = () => {
+      const now = format(new Date(), 'yyyy-MM');
+      if (now === autoMonthRef.current) return;
+      setSelectedMonth((prev) => (prev === autoMonthRef.current ? now : prev));
+      autoMonthRef.current = now;
+    };
+    document.addEventListener('visibilitychange', syncMonth);
+    const interval = setInterval(syncMonth, 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', syncMonth);
+      clearInterval(interval);
+    };
+  }, []);
   const [selectedProperty, setSelectedProperty] = useState<string>('all');
   const { data, isLoading } = useDashboardStats(selectedMonth);
   const [expenseDialogOpen, setExpenseDialogOpen] = useState(false);
@@ -250,7 +268,7 @@ const Reports = () => {
 
   // Monthly collection totals across all months (general overview)
   const monthlyCollections = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, number>([[currentMonth, 0]]);
     for (const p of payments) {
       const key = format(new Date(p.payment_date), 'yyyy-MM');
       map.set(key, (map.get(key) || 0) + Number(p.amount));
@@ -262,7 +280,7 @@ const Reports = () => {
         label: format(new Date(key + '-01'), 'MMM yyyy'),
         total: value,
       }));
-  }, [payments]);
+  }, [payments, currentMonth]);
 
   const grandTotalCollection = useMemo(
     () => monthlyCollections.reduce((s, m) => s + m.total, 0),

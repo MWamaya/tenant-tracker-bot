@@ -56,7 +56,7 @@ export function computeArrears(
   const now = new Date();
   const target = asOfMonth
     ? monthStartUTC(`${asOfMonth}-01`)
-    : new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1));
+    : new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 
   if (start.getTime() > target.getTime()) {
     return { totalExpected: 0, totalPaid: 0, arrears: 0, status: 'paid', monthlyBreakdown: [] };

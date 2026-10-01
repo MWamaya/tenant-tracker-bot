@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
@@ -32,6 +32,25 @@ const Dashboard = () => {
   const currentMonth = format(new Date(), 'yyyy-MM');
   const [monthFilter, setMonthFilter] = useState<string>(currentMonth);
   const tabsRef = useRef<HTMLDivElement>(null);
+  // monthFilter is seeded once from currentMonth at mount, so it goes stale
+  // if a tab stays open across a month boundary (useState initializers only
+  // run on first render). Re-sync it when the tab regains focus or a day
+  // passes, but only while the user hasn't picked a different month.
+  const autoMonthRef = useRef(currentMonth);
+  useEffect(() => {
+    const syncMonth = () => {
+      const now = format(new Date(), 'yyyy-MM');
+      if (now === autoMonthRef.current) return;
+      setMonthFilter((prev) => (prev === autoMonthRef.current ? now : prev));
+      autoMonthRef.current = now;
+    };
+    document.addEventListener('visibilitychange', syncMonth);
+    const interval = setInterval(syncMonth, 60_000);
+    return () => {
+      document.removeEventListener('visibilitychange', syncMonth);
+      clearInterval(interval);
+    };
+  }, []);
 
   const { data, isLoading: statsLoading } = useDashboardStats(monthFilter);
   const { properties, isLoading: propertiesLoading, addProperty } = useProperties();
