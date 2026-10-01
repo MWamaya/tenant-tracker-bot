@@ -157,7 +157,7 @@ export const PaymentsContent = () => {
   };
 
   const getMonthOptions = () => {
-    const set = new Set<string>();
+    const set = new Set<string>([format(new Date(), 'yyyy-MM')]);
     for (const p of payments) {
       set.add(format(new Date(p.payment_date), 'yyyy-MM'));
     }
