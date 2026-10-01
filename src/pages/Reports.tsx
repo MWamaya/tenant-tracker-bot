@@ -268,7 +268,7 @@ const Reports = () => {
 
   // Monthly collection totals across all months (general overview)
   const monthlyCollections = useMemo(() => {
-    const map = new Map<string, number>();
+    const map = new Map<string, number>([[currentMonth, 0]]);
     for (const p of payments) {
       const key = format(new Date(p.payment_date), 'yyyy-MM');
       map.set(key, (map.get(key) || 0) + Number(p.amount));
@@ -280,7 +280,7 @@ const Reports = () => {
         label: format(new Date(key + '-01'), 'MMM yyyy'),
         total: value,
       }));
-  }, [payments]);
+  }, [payments, currentMonth]);
 
   const grandTotalCollection = useMemo(
     () => monthlyCollections.reduce((s, m) => s + m.total, 0),
