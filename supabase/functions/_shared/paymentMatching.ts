@@ -101,7 +101,7 @@ export async function updateHouseBalance(
   amount: number,
 ): Promise<void> {
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const monthStr = monthStart.toISOString().split('T')[0];
 
   const { data: balance } = await supabase
@@ -131,7 +131,7 @@ export async function updateHouseBalance(
 
   if (!house) return;
 
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const prevMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
   const prevMonthStr = prevMonth.toISOString().split('T')[0];
 
   const { data: prevBalance } = await supabase
