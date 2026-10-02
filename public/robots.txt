@@ -12,8 +12,6 @@ Allow: /
 
 User-agent: *
 Allow: /
-Disallow: /super-admin
-Disallow: /settings
-Disallow: /email-logs
+Disallow: /app/
 
 Sitemap: https://tenant-tracker-bot.lovable.app/sitemap.xml
