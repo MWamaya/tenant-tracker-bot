@@ -1,0 +1,27 @@
+// Single source of truth for every landlord/super-admin path in the app.
+// "/" is the public marketing page (src/pages/Landing.tsx) and is NOT in
+// here — everything below lives under the authenticated /app shell.
+export const ROUTES = {
+  LANDING: '/',
+  DASHBOARD: '/app',
+  AUTH: '/app/auth',
+  RESET_PASSWORD: '/app/reset-password',
+  SUBSCRIBE: '/app/subscribe',
+  PROPERTIES: '/app/properties',
+  PROPERTY: '/app/property',
+  HOUSES: '/app/houses',
+  TENANTS: '/app/tenants',
+  PAYMENTS: '/app/payments',
+  REPORTS: '/app/reports',
+  EMAIL_LOGS: '/app/email-logs',
+  RECONCILIATION: '/app/reconciliation',
+  SETTINGS: '/app/settings',
+  SUPER_ADMIN_ROOT: '/app/super-admin',
+  SUPER_ADMIN_LOGIN: '/app/super-admin/login',
+  SUPER_ADMIN_LANDLORDS: '/app/super-admin/landlords',
+  SUPER_ADMIN_SUBSCRIPTIONS: '/app/super-admin/subscriptions',
+  SUPER_ADMIN_PAYMENTS: '/app/super-admin/payments',
+  SUPER_ADMIN_AUDIT_LOGS: '/app/super-admin/audit-logs',
+  SUPER_ADMIN_SETTINGS: '/app/super-admin/settings',
+  SUPER_ADMIN_PROPERTIES: '/app/super-admin/properties',
+} as const;
