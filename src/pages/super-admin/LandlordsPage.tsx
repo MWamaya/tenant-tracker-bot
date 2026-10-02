@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { useLandlords, useUpdateLandlordStatus, useSubscriptionPlans, useAssignSubscription, useAllocateSmsTokens, useUpdateInboundEmail } from '@/hooks/useSuperAdminData';
 import { useImpersonation } from '@/hooks/useImpersonation';
+import { ROUTES } from '@/lib/routes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +47,7 @@ const LandlordsPage = () => {
   const allocateTokens = useAllocateSmsTokens();
   const updateInboundEmail = useUpdateInboundEmail();
 
-  const handleLoginAs = async (landlord: LandlordProfile, destination = '/') => {
+  const handleLoginAs = async (landlord: LandlordProfile, destination = ROUTES.DASHBOARD) => {
     await startImpersonation({
       id: landlord.id,
       name: landlord.full_name || 'Unknown Landlord',
@@ -134,7 +135,7 @@ const LandlordsPage = () => {
       {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
-            <Link to="/super-admin" className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 mb-1">
+            <Link to={ROUTES.SUPER_ADMIN_ROOT} className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 mb-1">
               ← Back to Dashboard
             </Link>
             <h1 className="text-2xl font-bold text-white">Landlord Management</h1>
@@ -235,21 +236,21 @@ const LandlordsPage = () => {
                           <DropdownMenuSeparator className="bg-slate-700" />
                           <DropdownMenuItem
                             className="text-emerald-400 font-medium focus:bg-emerald-500/20 focus:text-emerald-300"
-                            onClick={() => handleLoginAs(landlord, '/properties')}
+                            onClick={() => handleLoginAs(landlord, ROUTES.PROPERTIES)}
                           >
                             <Building2 className="h-4 w-4 mr-2" />
                             Add Property
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-amber-400 font-medium focus:bg-amber-500/20 focus:text-amber-300"
-                            onClick={() => handleLoginAs(landlord, '/houses')}
+                            onClick={() => handleLoginAs(landlord, ROUTES.HOUSES)}
                           >
                             <Home className="h-4 w-4 mr-2" />
                             Add House
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-sky-400 font-medium focus:bg-sky-500/20 focus:text-sky-300"
-                            onClick={() => handleLoginAs(landlord, '/tenants')}
+                            onClick={() => handleLoginAs(landlord, ROUTES.TENANTS)}
                           >
                             <Users className="h-4 w-4 mr-2" />
                             Add Tenant
