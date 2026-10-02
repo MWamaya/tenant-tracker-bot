@@ -29,6 +29,12 @@ export interface ArrearsPayment {
   payment_date: string;
 }
 
+// Move-in deposits are tagged separately (payments.payment_type) so they
+// never get pooled into rent arrears math. Callers building ArrearsPayment[]
+// from raw payment rows should filter with this first.
+export const isRentPayment = (p: { payment_type?: string }): boolean =>
+  p.payment_type !== 'deposit';
+
 const monthStartUTC = (dateStr: string): Date => {
   const d = new Date(dateStr);
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));

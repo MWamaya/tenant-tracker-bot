@@ -79,6 +79,8 @@ export const useDashboardStats = (month?: string) => {
           .from('payments')
           .select('amount, house_id, payment_date')
           .eq('landlord_id', landlordId)
+          // Deposits aren't rent — exclude them from arrears math entirely.
+          .neq('payment_type', 'deposit')
           .range(paymentsFrom, paymentsFrom + pageSize - 1);
 
         if (paymentsError) throw paymentsError;

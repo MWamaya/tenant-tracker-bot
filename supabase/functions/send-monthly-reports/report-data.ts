@@ -160,6 +160,8 @@ export async function buildLandlordReport(
       .from('payments')
       .select('amount, house_id, payment_date')
       .eq('landlord_id', landlordId)
+      // Deposits aren't rent — exclude them from arrears math entirely.
+      .neq('payment_type', 'deposit')
       .order('id', { ascending: true })
       .range(from, from + pageSize - 1);
     if (paymentsError) throw paymentsError;

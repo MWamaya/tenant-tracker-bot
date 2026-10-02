@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Printer } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
-import { computeArrears, ArrearsPayment, MonthlyStatementEntry } from '@/lib/arrears';
+import { computeArrears, isRentPayment, ArrearsPayment, MonthlyStatementEntry } from '@/lib/arrears';
 
 interface TenantStatementDialogProps {
   open: boolean;
@@ -73,6 +73,7 @@ const buildPrintHtml = (
   tenantPhone: string,
   houseNo: string,
   expectedRent: number,
+  deposit: ArrearsPayment | undefined,
   monthlyBreakdown: MonthlyStatementEntry[],
   futureCredit: MonthlyStatementEntry[],
   totalExpected: number,
@@ -152,6 +153,7 @@ const buildPrintHtml = (
         <div class="meta-item"><p>Phone</p><strong>${tenantPhone}</strong></div>
         <div class="meta-item"><p>House No</p><strong>${houseNo}</strong></div>
         <div class="meta-item"><p>Monthly Rent</p><strong>${formatCurrency(expectedRent)}</strong></div>
+        ${deposit ? `<div class="meta-item"><p>Deposit</p><strong>${formatCurrency(deposit.amount)} <span style="font-weight:400;color:#64748b;">(${formatPaymentDate(deposit.payment_date)})</span></strong></div>` : ''}
       </div>
       <table>
         <thead>
@@ -185,7 +187,8 @@ export const TenantStatementDialog = ({
 }: TenantStatementDialogProps) => {
   if (!tenant || !house) return null;
 
-  const arrears = computeArrears(house.occupancyDate, house.expectedRent, payments);
+  const deposit = payments.find((p) => p.payment_type === 'deposit');
+  const arrears = computeArrears(house.occupancyDate, house.expectedRent, payments.filter(isRentPayment));
 
   const handlePrint = () => {
     if (!arrears) return;
@@ -197,6 +200,7 @@ export const TenantStatementDialog = ({
         tenant.phone,
         house.houseNo,
         house.expectedRent,
+        deposit,
         arrears.monthlyBreakdown,
         arrears.futureCredit,
         arrears.totalExpected,
@@ -236,6 +240,14 @@ export const TenantStatementDialog = ({
             <p className="text-xs text-muted-foreground">Monthly Rent</p>
             <p className="font-semibold text-primary">{formatCurrency(house.expectedRent)}</p>
           </div>
+          {deposit && (
+            <div>
+              <p className="text-xs text-muted-foreground">Deposit</p>
+              <p className="font-medium">
+                {formatCurrency(deposit.amount)} <span className="text-xs text-muted-foreground">({formatPaymentDate(deposit.payment_date)})</span>
+              </p>
+            </div>
+          )}
         </div>
 
         {!arrears ? (

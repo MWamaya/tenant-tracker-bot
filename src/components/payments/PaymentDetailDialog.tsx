@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trash2, Loader2, Split } from 'lucide-react';
+import { Trash2, Loader2, Split, PiggyBank } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDateTime } from '@/lib/dates';
 import { toast } from 'sonner';
@@ -53,11 +53,40 @@ const nameTokens = (value: string) =>
     .split(' ')
     .filter((token) => token.length >= 3);
 
+// A deposit only ever happens at move-in. Gate "Mark Deposit" to payments
+// dated near the tenant's occupancy_date so it can't be mistaken for a tool
+// to reclassify an ordinary overpayment made months into the tenancy.
+const MOVE_IN_WINDOW_DAYS = 14;
+
 export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [siblings, setSiblings] = useState<SiblingHouse[]>([]);
   const [splitConfirmOpen, setSplitConfirmOpen] = useState(false);
+  const [depositConfirmOpen, setDepositConfirmOpen] = useState(false);
+  const [hasExistingDeposit, setHasExistingDeposit] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    let cancelled = false;
+    async function checkExistingDeposit() {
+      if (!payment?.house_id || !payment.houses?.occupancy_date) {
+        setHasExistingDeposit(false);
+        return;
+      }
+      const { data } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('house_id', payment.house_id)
+        .eq('payment_type', 'deposit')
+        .gte('payment_date', payment.houses.occupancy_date)
+        .limit(1);
+      if (!cancelled) setHasExistingDeposit((data?.length ?? 0) > 0);
+    }
+    checkExistingDeposit();
+    return () => {
+      cancelled = true;
+    };
+  }, [payment?.id, payment?.house_id, payment?.houses?.occupancy_date]);
 
   useEffect(() => {
     let cancelled = false;
@@ -183,7 +212,74 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
     onError: (err: Error) => toast.error(`Failed to split: ${err.message}`),
   });
 
+  const markDeposit = useMutation({
+    mutationFn: async () => {
+      if (!payment || !payment.house_id || !payment.houses) throw new Error('No payment');
+      const depositAmount = Math.min(Number(payment.amount), Number(payment.houses.expected_rent));
+      const rentPortion = Number(payment.amount) - depositAmount;
+
+      if (rentPortion <= 0) {
+        const { error } = await supabase
+          .from('payments')
+          .update({ payment_type: 'deposit' })
+          .eq('id', payment.id);
+        if (error) throw error;
+      } else {
+        const { error: updErr } = await supabase
+          .from('payments')
+          .update({ amount: rentPortion })
+          .eq('id', payment.id);
+        if (updErr) throw updErr;
+
+        const { error: insErr } = await supabase.from('payments').insert({
+          landlord_id: payment.landlord_id,
+          tenant_id: payment.tenant_id,
+          house_id: payment.house_id,
+          amount: depositAmount,
+          mpesa_ref: `${payment.mpesa_ref}-DEP`,
+          payment_date: payment.payment_date,
+          sender_name: payment.sender_name,
+          sender_phone: payment.sender_phone,
+          payment_source: 'deposit_split',
+          payment_type: 'deposit',
+        });
+        if (insErr) throw insErr;
+      }
+
+      await recomputeHouseBalanceForPaymentDate(payment.landlord_id, payment.house_id, payment.payment_date);
+    },
+    onSuccess: () => {
+      toast.success('Deposit recorded');
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
+      queryClient.invalidateQueries({ queryKey: ['balances'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['tenants'] });
+      setDepositConfirmOpen(false);
+      onOpenChange(false);
+    },
+    onError: (err: Error) => toast.error(`Failed to mark deposit: ${err.message}`),
+  });
+
   if (!payment) return null;
+
+  const isMoveInWindow = (() => {
+    if (!payment.houses?.occupancy_date) return false;
+    const occ = new Date(payment.houses.occupancy_date).getTime();
+    const paid = new Date(payment.payment_date).getTime();
+    return Math.abs(paid - occ) / 86400000 <= MOVE_IN_WINDOW_DAYS;
+  })();
+
+  const canMarkDeposit =
+    payment.payment_type !== 'deposit' &&
+    !!payment.house_id &&
+    !!payment.houses?.expected_rent &&
+    isMoveInWindow &&
+    !hasExistingDeposit;
+
+  const depositAmount = payment.houses
+    ? Math.min(Number(payment.amount), Number(payment.houses.expected_rent))
+    : 0;
+  const rentPortionAfterDeposit = Number(payment.amount) - depositAmount;
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('en-KE', {
@@ -208,9 +304,12 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
               <span className="text-2xl font-bold text-success">
                 {formatCurrency(Number(payment.amount))}
               </span>
-              <Badge variant="outline" className="font-mono">
-                {payment.mpesa_ref}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {payment.payment_type === 'deposit' && <Badge>Deposit</Badge>}
+                <Badge variant="outline" className="font-mono">
+                  {payment.mpesa_ref}
+                </Badge>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-sm">
@@ -263,6 +362,16 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
               >
                 <Split className="h-4 w-4" />
                 Split across {siblings.length + 1} houses
+              </Button>
+            )}
+            {canMarkDeposit && (
+              <Button
+                variant="secondary"
+                onClick={() => setDepositConfirmOpen(true)}
+                className="gap-2"
+              >
+                <PiggyBank className="h-4 w-4" />
+                Mark Deposit
               </Button>
             )}
             <Button
@@ -364,6 +473,47 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
               }}
             >
               {splitPayment.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Split'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={depositConfirmOpen} onOpenChange={setDepositConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark the deposit portion?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {rentPortionAfterDeposit > 0 ? (
+                  <p>
+                    {formatCurrency(depositAmount)} of this payment will be split off and tagged as
+                    the deposit, leaving {formatCurrency(rentPortionAfterDeposit)} as rent for{' '}
+                    {payment.houses?.house_no || 'this house'}.
+                  </p>
+                ) : (
+                  <p>
+                    This entire payment ({formatCurrency(Number(payment.amount))}) will be tagged as
+                    the deposit for {payment.houses?.house_no || 'this house'} — none of it will
+                    count as rent.
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  Deposits are excluded from rent arrears and collection totals everywhere in the
+                  app.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={markDeposit.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={markDeposit.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                markDeposit.mutate();
+              }}
+            >
+              {markDeposit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Mark Deposit'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -8,6 +8,7 @@ function createMockSupabase(queues: Record<string, unknown[]>) {
       const chain: any = {
         select: () => chain,
         eq: () => chain,
+        neq: () => chain,
         order: () => chain,
         gte: () => chain,
         lte: () => chain,
