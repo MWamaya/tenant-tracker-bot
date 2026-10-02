@@ -33,7 +33,14 @@ export interface ArrearsPayment {
   amount: number;
   payment_date: string;
   mpesaRef?: string;
+  payment_type?: string;
 }
+
+// Move-in deposits are tagged separately (payments.payment_type) so they
+// never get pooled into rent arrears math. Callers building ArrearsPayment[]
+// from raw payment rows should filter with this first.
+export const isRentPayment = (p: { payment_type?: string }): boolean =>
+  p.payment_type !== 'deposit';
 
 const monthStartUTC = (dateStr: string): Date => {
   const d = new Date(dateStr);

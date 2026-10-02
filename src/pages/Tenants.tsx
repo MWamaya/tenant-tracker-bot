@@ -5,7 +5,7 @@ import { useHouses } from '@/hooks/useHouses';
 import { useTenants, TenantWithHouse } from '@/hooks/useTenants';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
-import { computeArrears } from '@/lib/arrears';
+import { computeArrears, isRentPayment } from '@/lib/arrears';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -78,7 +78,7 @@ const Tenants = () => {
         tenant.houses?.status === 'occupied' ? (tenant.houses?.occupancy_date ?? null) : null;
 
       const tenantPayments = payments
-        .filter(p => p.house_id === tenant.house_id)
+        .filter(p => p.house_id === tenant.house_id && isRentPayment(p))
         .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date }));
 
       const arrears = computeArrears(occupancyDate, expectedRent, tenantPayments);
@@ -223,7 +223,12 @@ const Tenants = () => {
     if (!selectedTenantForStatement) return [];
     return payments
       .filter(p => p.house_id === selectedTenantForStatement.house_id)
-      .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date, mpesaRef: p.mpesa_ref }));
+      .map(p => ({
+        amount: Number(p.amount),
+        payment_date: p.payment_date,
+        mpesaRef: p.mpesa_ref,
+        payment_type: p.payment_type,
+      }));
   };
 
   if (isLoading) {

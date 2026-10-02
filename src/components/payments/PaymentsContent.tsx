@@ -107,7 +107,10 @@ export const PaymentsContent = () => {
       (a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()
     );
 
-  const totalAmount = filteredPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+  // Deposits aren't rent collection — keep them listed but out of the sums.
+  const totalAmount = filteredPayments
+    .filter((p) => p.payment_type !== 'deposit')
+    .reduce((sum, p) => sum + Number(p.amount), 0);
 
   const handleExport = () => {
     if (filteredPayments.length === 0) {
@@ -286,7 +289,9 @@ export const PaymentsContent = () => {
           <Accordion type="multiple" defaultValue={defaultOpen} className="space-y-3">
             {sortedKeys.map((key) => {
               const monthPayments = groups.get(key)!;
-              const monthTotal = monthPayments.reduce((s, p) => s + Number(p.amount), 0);
+              const monthTotal = monthPayments
+                .filter((p) => p.payment_type !== 'deposit')
+                .reduce((s, p) => s + Number(p.amount), 0);
               return (
                 <AccordionItem key={key} value={key} className="stat-card border-0 p-0 overflow-hidden">
                   <AccordionTrigger className="px-4 py-4 hover:no-underline hover:bg-muted/30 [&[data-state=open]_.folder-icon-closed]:hidden [&[data-state=closed]_.folder-icon-open]:hidden">
@@ -326,7 +331,12 @@ export const PaymentsContent = () => {
                           {monthPayments.map((payment) => (
                             <TableRow key={payment.id} className="hover:bg-muted/30">
                               <TableCell className="font-medium">
-                                {payment.tenants?.name || payment.sender_name || 'Unknown'}
+                                <div className="flex items-center gap-2">
+                                  {payment.tenants?.name || payment.sender_name || 'Unknown'}
+                                  {payment.payment_type === 'deposit' && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">Deposit</Badge>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell className="font-semibold text-success">
                                 {formatCurrency(Number(payment.amount))}
@@ -362,8 +372,11 @@ export const PaymentsContent = () => {
                         <div key={payment.id} className="rounded-lg border p-3 bg-background">
                           <div className="flex items-start justify-between gap-3">
                             <div>
-                              <p className="font-semibold">
+                              <p className="font-semibold flex items-center gap-2">
                                 {payment.tenants?.name || payment.sender_name || 'Unknown'}
+                                {payment.payment_type === 'deposit' && (
+                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0">Deposit</Badge>
+                                )}
                               </p>
                               <p className="text-sm text-muted-foreground">
                                 {payment.houses?.house_no || 'Unassigned'}

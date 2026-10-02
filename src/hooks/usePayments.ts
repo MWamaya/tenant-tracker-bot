@@ -4,6 +4,8 @@ import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
 import { recomputeHouseBalanceForPaymentDate } from '@/lib/syncPayments';
 import { toast } from 'sonner';
 
+export type PaymentType = 'rent' | 'deposit';
+
 export interface Payment {
   id: string;
   landlord_id: string;
@@ -15,12 +17,16 @@ export interface Payment {
   sender_name: string | null;
   sender_phone: string | null;
   created_at: string;
+  payment_type: PaymentType;
 }
 
 export interface PaymentWithDetails extends Payment {
   houses?: {
     id: string;
     house_no: string;
+    expected_rent: number;
+    deposit: number;
+    occupancy_date: string | null;
   } | null;
   tenants?: {
     id: string;
@@ -58,7 +64,10 @@ export const usePayments = () => {
             *,
             houses (
               id,
-              house_no
+              house_no,
+              expected_rent,
+              deposit,
+              occupancy_date
             ),
             tenants (
               id,

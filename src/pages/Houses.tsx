@@ -5,7 +5,7 @@ import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useHouses, HouseWithProperty } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
-import { computeArrears } from '@/lib/arrears';
+import { computeArrears, isRentPayment } from '@/lib/arrears';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -102,7 +102,7 @@ const Houses = () => {
     return houses.map(house => {
       const tenant = tenants.find(t => t.house_id === house.id);
       const housePayments = payments
-        .filter(p => p.house_id === house.id)
+        .filter(p => p.house_id === house.id && isRentPayment(p))
         .map(p => ({ amount: Number(p.amount), payment_date: p.payment_date }));
       const arrears = computeArrears(
         house.status === 'occupied' ? house.occupancy_date : null,
@@ -522,7 +522,7 @@ const Houses = () => {
           name: selectedHouse.tenant.name,
           phone: selectedHouse.tenant.phone,
         } : undefined}
-        payments={selectedHouse ? getHousePayments(selectedHouse.id).map(p => ({
+        payments={selectedHouse ? getHousePayments(selectedHouse.id).filter(isRentPayment).map(p => ({
           amount: Number(p.amount),
           payment_date: p.payment_date,
           mpesaRef: p.mpesa_ref,
