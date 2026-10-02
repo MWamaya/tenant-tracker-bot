@@ -19,21 +19,25 @@ import {
   DollarSign,
   Mail,
 } from 'lucide-react';
+import { ROUTES } from '@/lib/routes';
 
 interface SuperAdminLayoutProps {
   children: ReactNode;
 }
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/super-admin' },
-  { icon: Users, label: 'Landlords', path: '/super-admin/landlords' },
-  { icon: CreditCard, label: 'Subscriptions', path: '/super-admin/subscriptions' },
-  { icon: MessageSquare, label: 'SMS Management', path: '/super-admin/sms' },
-  { icon: DollarSign, label: 'Payments', path: '/super-admin/payments' },
-  { icon: Building, label: 'Properties', path: '/super-admin/properties' },
-  { icon: Mail, label: 'Email Logs', path: '/super-admin/email-logs' },
-  { icon: FileText, label: 'Audit Logs', path: '/super-admin/audit-logs' },
-  { icon: Settings, label: 'Settings', path: '/super-admin/settings' },
+  { icon: LayoutDashboard, label: 'Dashboard', path: ROUTES.SUPER_ADMIN_ROOT },
+  { icon: Users, label: 'Landlords', path: ROUTES.SUPER_ADMIN_LANDLORDS },
+  { icon: CreditCard, label: 'Subscriptions', path: ROUTES.SUPER_ADMIN_SUBSCRIPTIONS },
+  // SMS Management and the second Email Logs entry below don't correspond
+  // to any defined route today (pre-existing dead links) — renamed for
+  // consistency only, not added to ROUTES since nothing routes them.
+  { icon: MessageSquare, label: 'SMS Management', path: '/app/super-admin/sms' },
+  { icon: DollarSign, label: 'Payments', path: ROUTES.SUPER_ADMIN_PAYMENTS },
+  { icon: Building, label: 'Properties', path: ROUTES.SUPER_ADMIN_PROPERTIES },
+  { icon: Mail, label: 'Email Logs', path: '/app/super-admin/email-logs' },
+  { icon: FileText, label: 'Audit Logs', path: ROUTES.SUPER_ADMIN_AUDIT_LOGS },
+  { icon: Settings, label: 'Settings', path: ROUTES.SUPER_ADMIN_SETTINGS },
 ];
 
 const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
@@ -48,7 +52,7 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
     <div className="flex flex-col h-full">
       {/* Logo */}
       <div className="p-4 border-b border-slate-700">
-        <Link to="/super-admin" className="flex items-center gap-2" onClick={onNavigate}>
+        <Link to={ROUTES.SUPER_ADMIN_ROOT} className="flex items-center gap-2" onClick={onNavigate}>
           <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
             <Shield className="h-6 w-6 text-primary" />
           </div>
