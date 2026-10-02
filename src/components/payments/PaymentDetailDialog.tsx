@@ -63,30 +63,34 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
   const [siblings, setSiblings] = useState<SiblingHouse[]>([]);
   const [splitConfirmOpen, setSplitConfirmOpen] = useState(false);
   const [depositConfirmOpen, setDepositConfirmOpen] = useState(false);
-  const [hasExistingDeposit, setHasExistingDeposit] = useState(false);
+  // How much of the house's deposit is still unpaid for the CURRENT tenancy,
+  // so the button stays available across multiple installments and disables
+  // once the deposit is fully covered (not just "any deposit row exists").
+  const [depositRemaining, setDepositRemaining] = useState(0);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     let cancelled = false;
-    async function checkExistingDeposit() {
-      if (!payment?.house_id || !payment.houses?.occupancy_date) {
-        setHasExistingDeposit(false);
+    async function loadDepositRemaining() {
+      const depositOwed = Number(payment?.houses?.deposit || 0);
+      if (!payment?.house_id || !payment.houses?.occupancy_date || depositOwed <= 0) {
+        setDepositRemaining(0);
         return;
       }
       const { data } = await supabase
         .from('payments')
-        .select('id')
+        .select('amount')
         .eq('house_id', payment.house_id)
         .eq('payment_type', 'deposit')
-        .gte('payment_date', payment.houses.occupancy_date)
-        .limit(1);
-      if (!cancelled) setHasExistingDeposit((data?.length ?? 0) > 0);
+        .gte('payment_date', payment.houses.occupancy_date);
+      const depositPaid = (data || []).reduce((sum, p) => sum + Number(p.amount), 0);
+      if (!cancelled) setDepositRemaining(Math.max(0, depositOwed - depositPaid));
     }
-    checkExistingDeposit();
+    loadDepositRemaining();
     return () => {
       cancelled = true;
     };
-  }, [payment?.id, payment?.house_id, payment?.houses?.occupancy_date]);
+  }, [payment?.id, payment?.house_id, payment?.houses?.occupancy_date, payment?.houses?.deposit]);
 
   useEffect(() => {
     let cancelled = false;
@@ -215,7 +219,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
   const markDeposit = useMutation({
     mutationFn: async () => {
       if (!payment || !payment.house_id || !payment.houses) throw new Error('No payment');
-      const depositAmount = Math.min(Number(payment.amount), Number(payment.houses.expected_rent));
+      const depositAmount = Math.min(Number(payment.amount), depositRemaining);
       const rentPortion = Number(payment.amount) - depositAmount;
 
       if (rentPortion <= 0) {
@@ -272,13 +276,10 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
   const canMarkDeposit =
     payment.payment_type !== 'deposit' &&
     !!payment.house_id &&
-    !!payment.houses?.expected_rent &&
     isMoveInWindow &&
-    !hasExistingDeposit;
+    depositRemaining > 0;
 
-  const depositAmount = payment.houses
-    ? Math.min(Number(payment.amount), Number(payment.houses.expected_rent))
-    : 0;
+  const depositAmount = Math.min(Number(payment.amount), depositRemaining);
   const rentPortionAfterDeposit = Number(payment.amount) - depositAmount;
 
   const formatCurrency = (amount: number) =>

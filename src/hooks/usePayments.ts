@@ -25,6 +25,7 @@ export interface PaymentWithDetails extends Payment {
     id: string;
     house_no: string;
     expected_rent: number;
+    deposit: number;
     occupancy_date: string | null;
   } | null;
   tenants?: {
@@ -65,6 +66,7 @@ export const usePayments = () => {
               id,
               house_no,
               expected_rent,
+              deposit,
               occupancy_date
             ),
             tenants (

@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { clearMatchedEmailLogs } from '@/lib/syncPayments';
+import { autoTagDeposits } from '@/lib/depositAutoTag';
 
 export interface ImportablePaymentRow {
   payment_date: string; // ISO
@@ -107,6 +108,8 @@ export async function importPaymentRows(
   await clearMatchedEmailLogs(landlordId, inserts.map((i) => i.mpesa_ref));
 
   const matchedInserts = inserts.filter((i) => i.house_id);
+
+  await autoTagDeposits(matchedInserts.map((i) => i.house_id as string));
 
   // Recompute affected monthly balances
   const houseMonthPairs = new Map<string, { houseId: string; month: string }>();

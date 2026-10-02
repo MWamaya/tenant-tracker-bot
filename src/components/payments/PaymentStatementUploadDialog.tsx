@@ -4,6 +4,7 @@ import { format, parse, isValid } from 'date-fns';
 import { formatDateTime } from '@/lib/dates';
 import { supabase } from '@/integrations/supabase/client';
 import { clearMatchedEmailLogs } from '@/lib/syncPayments';
+import { autoTagDeposits } from '@/lib/depositAutoTag';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -440,6 +441,8 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
 
       // Build affected (house, month) pairs from the inserts that did match a house
       const matchedInserts = successfulInserts.filter((i) => i.house_id);
+
+      await autoTagDeposits(matchedInserts.map((i) => i.house_id as string));
 
       // Recompute monthly balances for each affected (house, month) pair
       // so the Tenants page and tenant statements reflect the imported payments.

@@ -1,5 +1,6 @@
 // supabase/functions/_shared/reconcilePayment.ts
 import { updateHouseBalance } from './paymentMatching.ts';
+import { autoTagDeposits } from './depositAutoTag.ts';
 
 export class ReconcileError extends Error {
   status: number;
@@ -77,6 +78,7 @@ export async function reconcilePayment(
     }
 
     await updateHouseBalance(supabase, landlordId, houseId, payment.amount);
+    await autoTagDeposits(supabase, [houseId]);
     return { payment: updated };
   }
 
@@ -125,5 +127,6 @@ export async function reconcilePayment(
   }
 
   await updateHouseBalance(supabase, landlordId, houseId, emailLog.parsed_amount);
+  await autoTagDeposits(supabase, [houseId]);
   return { payment };
 }

@@ -4,6 +4,7 @@ import { verifyResendWebhook } from '../_shared/verifyResendWebhook.ts';
 import { htmlToText, extractForwardedFrom } from '../_shared/emailText.ts';
 import { parseBankEmail } from '../_shared/bankParsers.ts';
 import { matchHouseAndTenant, updateHouseBalance } from '../_shared/paymentMatching.ts';
+import { autoTagDeposits } from '../_shared/depositAutoTag.ts';
 
 interface ResendReceivedWebhook {
   type: string;
@@ -193,6 +194,7 @@ Deno.serve(async (req) => {
 
       if (match.house) {
         await updateHouseBalance(supabase, landlord.id, match.house.id, parsed.amount);
+        await autoTagDeposits(supabase, [match.house.id]);
       }
     }
   }
