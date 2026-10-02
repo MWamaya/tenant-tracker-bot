@@ -77,12 +77,20 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
         setDepositRemaining(0);
         return;
       }
+      // Same ±MOVE_IN_WINDOW_DAYS window as isMoveInWindow/eligibility below —
+      // a deposit is often paid a few days BEFORE occupancy_date, so a plain
+      // gte(occupancy_date) would never find it and depositRemaining would
+      // never drop, leaving the button stuck on forever.
+      const occ = new Date(payment.houses.occupancy_date).getTime();
+      const windowStart = new Date(occ - MOVE_IN_WINDOW_DAYS * 86400000).toISOString();
+      const windowEnd = new Date(occ + MOVE_IN_WINDOW_DAYS * 86400000).toISOString();
       const { data } = await supabase
         .from('payments')
         .select('amount')
         .eq('house_id', payment.house_id)
         .eq('payment_type', 'deposit')
-        .gte('payment_date', payment.houses.occupancy_date);
+        .gte('payment_date', windowStart)
+        .lte('payment_date', windowEnd);
       const depositPaid = (data || []).reduce((sum, p) => sum + Number(p.amount), 0);
       if (!cancelled) setDepositRemaining(Math.max(0, depositOwed - depositPaid));
     }
