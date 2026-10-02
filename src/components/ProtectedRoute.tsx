@@ -5,6 +5,7 @@ import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { useAccountStatus } from '@/hooks/useAccountStatus';
 import AccountSuspended from '@/pages/AccountSuspended';
+import { ROUTES } from '@/lib/routes';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -26,7 +27,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to={ROUTES.AUTH} replace />;
   }
 
   if (isSuspended && !isSuperAdmin && !impersonating) {
@@ -34,8 +35,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // New signups must choose a subscription plan before accessing the app.
-  if (isPending && !isSuperAdmin && !impersonating && location.pathname !== '/subscribe') {
-    return <Navigate to="/subscribe" replace />;
+  if (isPending && !isSuperAdmin && !impersonating && location.pathname !== ROUTES.SUBSCRIBE) {
+    return <Navigate to={ROUTES.SUBSCRIBE} replace />;
   }
 
   return <>{children}</>;
