@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ROUTES } from '@/lib/routes';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useReconciliation, ReconciliationItem, ReconciliationReason } from '@/hooks/useReconciliation';
 import { useHouses } from '@/hooks/useHouses';
@@ -115,7 +116,7 @@ const Reconciliation = () => {
 
   if (isLoading) {
     return (
-      <MainLayout seo={{ title: 'Needs Review — KODI PAP', description: 'Payments that need manual reconciliation.', path: '/reconciliation' }}>
+      <MainLayout seo={{ title: 'Needs Review — KODI PAP', description: 'Payments that need manual reconciliation.', path: ROUTES.RECONCILIATION }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -124,7 +125,7 @@ const Reconciliation = () => {
   }
 
   return (
-    <MainLayout seo={{ title: 'Needs Review — KODI PAP', description: 'Payments that need manual reconciliation.', path: '/reconciliation' }}>
+    <MainLayout seo={{ title: 'Needs Review — KODI PAP', description: 'Payments that need manual reconciliation.', path: ROUTES.RECONCILIATION }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
 

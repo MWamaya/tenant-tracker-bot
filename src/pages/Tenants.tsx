@@ -6,6 +6,7 @@ import { useTenants, TenantWithHouse } from '@/hooks/useTenants';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
 import { computeArrears, isRentPayment } from '@/lib/arrears';
+import { ROUTES } from '@/lib/routes';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -233,7 +234,7 @@ const Tenants = () => {
 
   if (isLoading) {
     return (
-      <MainLayout seo={{ title: "Tenants \u2014 KODI PAP", description: "Manage tenants, expected rent and carry-forward balances.", path: "/tenants" }}>
+      <MainLayout seo={{ title: "Tenants \u2014 KODI PAP", description: "Manage tenants, expected rent and carry-forward balances.", path: ROUTES.TENANTS }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -242,7 +243,7 @@ const Tenants = () => {
   }
 
   return (
-    <MainLayout seo={{ title: "Tenants \u2014 KODI PAP", description: "Manage tenants, expected rent and carry-forward balances.", path: "/tenants" }}>
+    <MainLayout seo={{ title: "Tenants \u2014 KODI PAP", description: "Manage tenants, expected rent and carry-forward balances.", path: ROUTES.TENANTS }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         

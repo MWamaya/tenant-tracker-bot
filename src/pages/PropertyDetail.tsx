@@ -7,6 +7,7 @@ import { useTenants, TenantWithHouse } from '@/hooks/useTenants';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
 import { computeArrears, isRentPayment } from '@/lib/arrears';
+import { ROUTES } from '@/lib/routes';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -207,7 +208,7 @@ const PropertyDetail = () => {
           <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium">Property not found</h3>
           <p className="text-muted-foreground mb-4">The property you're looking for doesn't exist.</p>
-          <Button onClick={() => navigate('/properties')}>
+          <Button onClick={() => navigate(ROUTES.PROPERTIES)}>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to Properties
           </Button>

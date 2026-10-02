@@ -86,7 +86,7 @@ const RootRoute = () => {
       </div>
     );
   }
-  return user ? <ProtectedRoute><Index /></ProtectedRoute> : <Navigate to="/auth" replace />;
+  return user ? <ProtectedRoute><Index /></ProtectedRoute> : <Navigate to={ROUTES.AUTH} replace />;
 };
 
 const App = () => (

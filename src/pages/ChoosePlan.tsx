@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Check, CreditCard, LogOut, Phone, Mail } from 'lucide-react';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
+import { ROUTES } from '@/lib/routes';
 
 const plans = [
   {
@@ -52,7 +53,7 @@ const ChoosePlan = () => {
       <PageSeo
         title="Choose your plan — KODI PAP"
         description="Pick a KODI PAP subscription plan to activate your landlord account."
-        path="/subscribe"
+        path={ROUTES.SUBSCRIBE}
         noindex
       />
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-4 sm:p-8">

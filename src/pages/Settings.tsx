@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ROUTES } from '@/lib/routes';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -163,7 +164,7 @@ const Settings = () => {
   };
 
   return (
-    <MainLayout seo={{ title: "Settings \u2014 KODI PAP", description: "Configure your account, integrations and reminders.", path: "/settings" }}>
+    <MainLayout seo={{ title: "Settings \u2014 KODI PAP", description: "Configure your account, integrations and reminders.", path: ROUTES.SETTINGS }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         

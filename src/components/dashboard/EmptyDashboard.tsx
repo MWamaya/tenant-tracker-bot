@@ -2,6 +2,7 @@ import { Building2, Home, Plus, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/lib/routes';
 
 interface EmptyDashboardProps {
   hasProperties: boolean;
@@ -94,7 +95,7 @@ export const EmptyDashboard = ({
           Great start! Now add houses or units to your property to begin tracking rent payments.
         </p>
         <div className="flex flex-col sm:flex-row gap-4">
-          <Button size="lg" onClick={() => navigate('/properties')} className="gap-2">
+          <Button size="lg" onClick={() => navigate(ROUTES.PROPERTIES)} className="gap-2">
             <Building2 className="h-5 w-5" />
             Go to Properties
           </Button>

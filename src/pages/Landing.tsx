@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Building2, ShieldCheck, Wallet, ArrowRight, Check } from 'lucide-react';
+import { ROUTES } from '@/lib/routes';
 import heroImage from '@/assets/landing-hero.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
@@ -52,7 +53,7 @@ const Landing = () => {
             Pricing
           </a>
           <Link
-            to="/auth"
+            to={ROUTES.AUTH}
             className="text-sm font-semibold text-foreground hover:text-primary underline-offset-4 hover:underline"
           >
             Log in
@@ -73,12 +74,12 @@ const Landing = () => {
 
         <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
           <Button asChild size="lg" className="gap-2">
-            <Link to="/auth">
+            <Link to={ROUTES.AUTH}>
               Log in to your account <ArrowRight className="h-4 w-4" />
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline">
-            <Link to="/auth">Create an account</Link>
+            <Link to={ROUTES.AUTH}>Create an account</Link>
           </Button>
         </div>
 
@@ -169,7 +170,7 @@ const Landing = () => {
                     className="mt-5 w-full"
                     variant={plan.highlighted ? 'default' : 'outline'}
                   >
-                    <Link to="/subscribe">Choose {plan.name}</Link>
+                    <Link to={ROUTES.SUBSCRIBE}>Choose {plan.name}</Link>
                   </Button>
                 </div>
               ))}

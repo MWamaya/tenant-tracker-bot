@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ROUTES } from '@/lib/routes';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { usePayments } from '@/hooks/usePayments';
@@ -351,7 +352,7 @@ const Reports = () => {
 
   if (isLoading) {
     return (
-      <MainLayout seo={{ title: "Reports \u2014 KODI PAP", description: "Collection rate, defaulters and monthly rent reports.", path: "/reports" }}>
+      <MainLayout seo={{ title: "Reports \u2014 KODI PAP", description: "Collection rate, defaulters and monthly rent reports.", path: ROUTES.REPORTS }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -362,7 +363,7 @@ const Reports = () => {
   const hasData = houseBalances.length > 0;
 
   return (
-    <MainLayout seo={{ title: "Reports \u2014 KODI PAP", description: "Collection rate, defaulters and monthly rent reports.", path: "/reports" }}>
+    <MainLayout seo={{ title: "Reports \u2014 KODI PAP", description: "Collection rate, defaulters and monthly rent reports.", path: ROUTES.REPORTS }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
 
