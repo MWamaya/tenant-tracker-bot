@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import ChoosePlan from "./pages/ChoosePlan";
 import Landing from "./pages/Landing";
 import { useAuth } from "@/hooks/useAuth";
+import { ROUTES } from "@/lib/routes";
 
 // Super Admin Pages — lazy-loaded: this is a separate part of the app most
 // landlords never visit, so it shouldn't inflate the bundle every landlord
@@ -100,23 +101,26 @@ const App = () => (
             <BrowserRouter>
               <BodyPointerEventsGuard />
               <Routes>
+                {/* Public marketing site */}
+                <Route path={ROUTES.LANDING} element={<Landing />} />
+
                 {/* Landlord Auth & Routes */}
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/subscribe" element={<ProtectedRoute><ChoosePlan /></ProtectedRoute>} />
-                <Route path="/" element={<RootRoute />} />
-                <Route path="/properties" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
-                <Route path="/property" element={<ProtectedRoute><PropertyDetail /></ProtectedRoute>} />
-                <Route path="/houses" element={<ProtectedRoute><Houses /></ProtectedRoute>} />
-                <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
-                <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
-                <Route path="/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                
+                <Route path={ROUTES.AUTH} element={<Auth />} />
+                <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
+                <Route path={ROUTES.SUBSCRIBE} element={<ProtectedRoute><ChoosePlan /></ProtectedRoute>} />
+                <Route path={ROUTES.DASHBOARD} element={<RootRoute />} />
+                <Route path={ROUTES.PROPERTIES} element={<ProtectedRoute><Properties /></ProtectedRoute>} />
+                <Route path={ROUTES.PROPERTY} element={<ProtectedRoute><PropertyDetail /></ProtectedRoute>} />
+                <Route path={ROUTES.HOUSES} element={<ProtectedRoute><Houses /></ProtectedRoute>} />
+                <Route path={ROUTES.TENANTS} element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
+                <Route path={ROUTES.PAYMENTS} element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+                <Route path={ROUTES.REPORTS} element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                <Route path={ROUTES.EMAIL_LOGS} element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
+                <Route path={ROUTES.RECONCILIATION} element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
+                <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
                 {/* Super Admin Routes */}
-                <Route path="/super-admin/*" element={
+                <Route path="/app/super-admin/*" element={
                   <Suspense fallback={<SuperAdminFallback />}>
                     <Routes>
                       <Route path="login" element={<SuperAdminLogin />} />
