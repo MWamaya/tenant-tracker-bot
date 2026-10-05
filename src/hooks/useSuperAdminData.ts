@@ -65,17 +65,32 @@ export interface AuditLog {
   created_at: string;
 }
 
+// A super admin's own profile row can exist without ever being a real
+// landlord (e.g. kept around because audit_logs.admin_id references it and
+// can't cascade-delete) — exclude those from every "landlord" listing/count.
+const fetchSuperAdminIds = async (): Promise<Set<string>> => {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('role', 'SUPER_ADMIN');
+  if (error) throw error;
+  return new Set((data || []).map((r) => r.user_id));
+};
+
 // Hook to fetch platform statistics
 export const usePlatformStats = () => {
   return useQuery({
     queryKey: ['platform-stats'],
     queryFn: async (): Promise<PlatformStats> => {
+      const superAdminIds = await fetchSuperAdminIds();
+
       // Fetch landlord counts by status
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: allProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, account_status, sms_token_balance');
 
       if (profilesError) throw profilesError;
+      const profiles = allProfiles?.filter((p) => !superAdminIds.has(p.id));
 
       // Fetch total properties
       const { count: propertiesCount, error: propertiesError } = await supabase
@@ -170,12 +185,15 @@ export const useLandlords = () => {
   return useQuery({
     queryKey: ['landlords'],
     queryFn: async (): Promise<LandlordProfile[]> => {
-      const { data: profiles, error } = await supabase
+      const superAdminIds = await fetchSuperAdminIds();
+
+      const { data: allProfiles, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      const profiles = allProfiles?.filter((p) => !superAdminIds.has(p.id));
 
       // Fetch subscriptions for each landlord
       const { data: subscriptions } = await supabase
