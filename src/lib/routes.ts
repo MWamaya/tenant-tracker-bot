@@ -8,6 +8,7 @@ export const ROUTES = {
   COOKIE_POLICY: '/cookie-policy',
   REFUND_CANCELLATION: '/refund-cancellation',
   CONTACT: '/contact',
+  GET_STARTED: '/get-started',
   DASHBOARD: '/app',
   AUTH: '/app/auth',
   RESET_PASSWORD: '/app/reset-password',
@@ -29,4 +30,5 @@ export const ROUTES = {
   SUPER_ADMIN_AUDIT_LOGS: '/app/super-admin/audit-logs',
   SUPER_ADMIN_SETTINGS: '/app/super-admin/settings',
   SUPER_ADMIN_PROPERTIES: '/app/super-admin/properties',
+  SUPER_ADMIN_ONBOARDING_REQUESTS: '/app/super-admin/onboarding-requests',
 } as const;

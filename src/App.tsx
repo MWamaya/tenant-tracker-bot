@@ -25,6 +25,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import ChoosePlan from "./pages/ChoosePlan";
 import Landing from "./pages/Landing";
+import GetStarted from "./pages/GetStarted";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/lib/routes";
 
@@ -47,6 +48,7 @@ const AuditLogsPage = lazy(() => import("./pages/super-admin/AuditLogsPage"));
 const GlobalPaymentsPage = lazy(() => import("./pages/super-admin/GlobalPaymentsPage"));
 const SettingsPage = lazy(() => import("./pages/super-admin/SettingsPage"));
 const SuperAdminPropertiesPage = lazy(() => import("./pages/super-admin/PropertiesPage"));
+const OnboardingRequestsPage = lazy(() => import("./pages/super-admin/OnboardingRequestsPage"));
 
 const SuperAdminFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -111,6 +113,7 @@ const App = () => (
               <Routes>
                 {/* Public marketing site */}
                 <Route path={ROUTES.LANDING} element={<Landing />} />
+                <Route path={ROUTES.GET_STARTED} element={<GetStarted />} />
 
                 {/* Legal / support pages */}
                 <Route
@@ -161,6 +164,7 @@ const App = () => (
                       <Route path="audit-logs" element={<SuperAdminRoute><AuditLogsPage /></SuperAdminRoute>} />
                       <Route path="settings" element={<SuperAdminRoute><SettingsPage /></SuperAdminRoute>} />
                       <Route path="properties" element={<SuperAdminRoute><SuperAdminPropertiesPage /></SuperAdminRoute>} />
+                      <Route path="onboarding-requests" element={<SuperAdminRoute><OnboardingRequestsPage /></SuperAdminRoute>} />
                     </Routes>
                   </Suspense>
                 } />

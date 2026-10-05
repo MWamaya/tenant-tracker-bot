@@ -2,6 +2,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface OnboardingRequest {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  plan: string;
+  status: string;
+  created_at: string;
+}
+
 // Types for Super Admin data
 export interface LandlordProfile {
   id: string;
@@ -484,6 +494,53 @@ export const useAssignSubscription = () => {
     },
     onError: (error) => {
       toast.error(`Failed to assign subscription: ${error.message}`);
+    },
+  });
+};
+
+// Hook to fetch onboarding requests from the public "Get started" lead form
+export const useOnboardingRequests = () => {
+  return useQuery({
+    queryKey: ['onboarding-requests'],
+    queryFn: async (): Promise<OnboardingRequest[]> => {
+      const { data, error } = await supabase
+        .from('onboarding_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
+
+// Mutation to update an onboarding request's triage status
+export const useUpdateOnboardingStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ requestId, status }: { requestId: string; status: string }) => {
+      const { error } = await supabase
+        .from('onboarding_requests')
+        .update({ status })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'UPDATE_ONBOARDING_REQUEST_STATUS',
+        entity_type: 'onboarding_request',
+        entity_id: requestId,
+        new_values: { status },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding-requests'] });
+      toast.success('Request updated');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update request: ${error.message}`);
     },
   });
 };

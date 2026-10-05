@@ -273,7 +273,7 @@ const Landing = () => {
                   Log in
                 </Link>
                 <Button asChild size="sm" className="rounded-full gap-1.5">
-                  <Link to={ROUTES.AUTH}>
+                  <Link to={ROUTES.GET_STARTED}>
                     Get started <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
@@ -322,7 +322,7 @@ const Landing = () => {
                     Log in
                   </Link>
                   <Button asChild size="sm" className="mt-1 w-full rounded-full">
-                    <Link to={ROUTES.AUTH} onClick={() => setMenuOpen(false)}>
+                    <Link to={ROUTES.GET_STARTED} onClick={() => setMenuOpen(false)}>
                       Get started
                     </Link>
                   </Button>
@@ -366,7 +366,7 @@ const Landing = () => {
 
                 <div className="mt-7 flex flex-col sm:flex-row gap-3">
                   <Button asChild size="lg" className="gap-2">
-                    <Link to={ROUTES.AUTH}>
+                    <Link to={ROUTES.GET_STARTED}>
                       Start managing your properties <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
@@ -600,7 +600,7 @@ const Landing = () => {
                     className="mt-6 w-full transition-transform hover:scale-[1.02]"
                     variant={plan.highlighted ? 'default' : 'outline'}
                   >
-                    <Link to={ROUTES.SUBSCRIBE}>Choose {plan.name}</Link>
+                    <Link to={`${ROUTES.GET_STARTED}?plan=${encodeURIComponent(plan.name)}`}>Choose {plan.name}</Link>
                   </Button>
                 </div>
               </Reveal>
@@ -618,8 +618,8 @@ const Landing = () => {
               Start managing your properties with KODI PAP.
             </p>
             <Button asChild size="lg" variant="secondary" className="mt-7 gap-2">
-              <Link to={ROUTES.AUTH}>
-                Create your account <ArrowRight className="h-4 w-4" />
+              <Link to={ROUTES.GET_STARTED}>
+                Get started <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
           </Reveal>

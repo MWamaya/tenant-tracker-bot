@@ -18,6 +18,7 @@ import {
   Building,
   DollarSign,
   Mail,
+  UserPlus,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 
@@ -27,6 +28,7 @@ interface SuperAdminLayoutProps {
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: ROUTES.SUPER_ADMIN_ROOT },
+  { icon: UserPlus, label: 'Onboarding Requests', path: ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS },
   { icon: Users, label: 'Landlords', path: ROUTES.SUPER_ADMIN_LANDLORDS },
   { icon: CreditCard, label: 'Subscriptions', path: ROUTES.SUPER_ADMIN_SUBSCRIPTIONS },
   // SMS Management and the second Email Logs entry below don't correspond

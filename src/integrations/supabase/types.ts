@@ -777,6 +777,36 @@ export type Database = {
           },
         ]
       }
+      onboarding_requests: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          phone: string
+          plan: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          phone: string
+          plan: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          phone?: string
+          plan?: string
+          status?: string
+        }
+        Relationships: []
+      }
       payment_sources: {
         Row: {
           account_number: string | null
