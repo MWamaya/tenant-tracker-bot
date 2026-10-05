@@ -20,16 +20,17 @@ import { useAuth } from '@/hooks/useAuth';
 import { useReconciliation } from '@/hooks/useReconciliation';
 import { toast } from 'sonner';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
+import { ROUTES } from '@/lib/routes';
 
 const navigation = [
-  { name: 'Landlord Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Properties', href: '/properties', icon: Building2 },
-  { name: 'Houses', href: '/houses', icon: Home },
-  { name: 'Tenants', href: '/tenants', icon: Users },
-  { name: 'Payments', href: '/payments', icon: CreditCard },
-  { name: 'Needs Review', href: '/reconciliation', icon: ListChecks },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Email Logs', href: '/email-logs', icon: Mail },
+  { name: 'Landlord Dashboard', href: ROUTES.DASHBOARD, icon: LayoutDashboard },
+  { name: 'Properties', href: ROUTES.PROPERTIES, icon: Building2 },
+  { name: 'Houses', href: ROUTES.HOUSES, icon: Home },
+  { name: 'Tenants', href: ROUTES.TENANTS, icon: Users },
+  { name: 'Payments', href: ROUTES.PAYMENTS, icon: CreditCard },
+  { name: 'Needs Review', href: ROUTES.RECONCILIATION, icon: ListChecks },
+  { name: 'Reports', href: ROUTES.REPORTS, icon: FileText },
+  { name: 'Email Logs', href: ROUTES.EMAIL_LOGS, icon: Mail },
 ];
 
 const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
@@ -41,14 +42,14 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const handleLogout = async () => {
     await signOut();
     toast.success('Logged out successfully');
-    navigate('/auth');
+    navigate(ROUTES.AUTH);
   };
 
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
       <NavLink
-        to="/"
+        to={ROUTES.DASHBOARD}
         onClick={onNavigate}
         className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 hover:bg-sidebar-accent/50 transition-colors"
       >
@@ -72,7 +73,7 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
             >
               <item.icon className="h-5 w-5" />
               <span className="flex-1">{item.name}</span>
-              {item.href === '/reconciliation' && reconciliationItems.length > 0 && (
+              {item.href === ROUTES.RECONCILIATION && reconciliationItems.length > 0 && (
                 <span className="ml-auto inline-flex items-center justify-center h-5 min-w-5 px-1 rounded-full text-xs font-medium bg-destructive text-destructive-foreground">
                   {reconciliationItems.length}
                 </span>
@@ -85,9 +86,9 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       {/* Footer */}
       <div className="border-t border-sidebar-border p-3">
         <NavLink
-          to="/settings"
+          to={ROUTES.SETTINGS}
           onClick={onNavigate}
-          className={`sidebar-link ${location.pathname === '/settings' ? 'sidebar-link-active' : ''}`}
+          className={`sidebar-link ${location.pathname === ROUTES.SETTINGS ? 'sidebar-link-active' : ''}`}
         >
           <Settings className="h-5 w-5" />
           <span>Settings</span>
@@ -116,7 +117,7 @@ export const Sidebar = () => {
           <button
             type="button"
             onClick={() => {
-              navigate('/');
+              navigate(ROUTES.DASHBOARD);
               setOpen(true);
             }}
             className="flex items-center gap-2"

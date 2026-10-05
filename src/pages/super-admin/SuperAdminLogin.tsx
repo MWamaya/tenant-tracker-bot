@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { toast } from 'sonner';
 import { Shield, Mail, Lock } from 'lucide-react';
 import { z } from 'zod';
+import { ROUTES } from '@/lib/routes';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -30,7 +31,7 @@ const SuperAdminLogin = () => {
 
   useEffect(() => {
     if (!authLoading && !roleLoading && user && isSuperAdmin) {
-      navigate('/super-admin');
+      navigate(ROUTES.SUPER_ADMIN_ROOT);
     }
   }, [user, authLoading, roleLoading, isSuperAdmin, navigate]);
 
@@ -80,7 +81,7 @@ const SuperAdminLogin = () => {
     
     if (isAdmin) {
       toast.success('Welcome, Super Admin!');
-      navigate('/super-admin');
+      navigate(ROUTES.SUPER_ADMIN_ROOT);
     } else {
       toast.error('Access denied. You are not a Super Admin.');
     }
@@ -174,7 +175,7 @@ const SuperAdminLogin = () => {
         <div className="text-center mt-4">
           <Button
             variant="ghost"
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate(ROUTES.AUTH)}
             className="text-slate-300 hover:text-white hover:bg-slate-800"
           >
             ← Back to Landlord Login

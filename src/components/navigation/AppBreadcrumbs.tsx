@@ -10,6 +10,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Home } from 'lucide-react';
+import { ROUTES } from '@/lib/routes';
 
 interface BreadcrumbConfig {
   label: string;
@@ -17,15 +18,15 @@ interface BreadcrumbConfig {
 }
 
 const routeConfig: Record<string, BreadcrumbConfig> = {
-  '/': { label: 'Landlord Dashboard' },
-  '/properties': { label: 'Properties', href: '/properties' },
-  '/property': { label: 'Property Details' }, // Dynamic
-  '/houses': { label: 'Houses', href: '/houses' },
-  '/tenants': { label: 'Tenants', href: '/tenants' },
-  '/payments': { label: 'Payments', href: '/payments' },
-  '/reports': { label: 'Reports', href: '/reports' },
-  '/email-logs': { label: 'Email Logs', href: '/email-logs' },
-  '/settings': { label: 'Settings', href: '/settings' },
+  [ROUTES.DASHBOARD]: { label: 'Landlord Dashboard' },
+  [ROUTES.PROPERTIES]: { label: 'Properties', href: ROUTES.PROPERTIES },
+  [ROUTES.PROPERTY]: { label: 'Property Details' }, // Dynamic
+  [ROUTES.HOUSES]: { label: 'Houses', href: ROUTES.HOUSES },
+  [ROUTES.TENANTS]: { label: 'Tenants', href: ROUTES.TENANTS },
+  [ROUTES.PAYMENTS]: { label: 'Payments', href: ROUTES.PAYMENTS },
+  [ROUTES.REPORTS]: { label: 'Reports', href: ROUTES.REPORTS },
+  [ROUTES.EMAIL_LOGS]: { label: 'Email Logs', href: ROUTES.EMAIL_LOGS },
+  [ROUTES.SETTINGS]: { label: 'Settings', href: ROUTES.SETTINGS },
 };
 
 export const AppBreadcrumbs = () => {
@@ -38,35 +39,35 @@ export const AppBreadcrumbs = () => {
 
   const getBreadcrumbs = (): BreadcrumbConfig[] => {
     const breadcrumbs: BreadcrumbConfig[] = [
-      { label: 'Landlord Dashboard', href: '/' },
+      { label: 'Landlord Dashboard', href: ROUTES.DASHBOARD },
     ];
 
     const path = location.pathname;
 
     // Handle property-specific routes
     if (propertyId && selectedProperty) {
-      breadcrumbs.push({ label: 'Properties', href: '/properties' });
-      
-      if (path === '/property') {
+      breadcrumbs.push({ label: 'Properties', href: ROUTES.PROPERTIES });
+
+      if (path === ROUTES.PROPERTY) {
         breadcrumbs.push({ label: selectedProperty.name });
       } else {
-        breadcrumbs.push({ 
-          label: selectedProperty.name, 
-          href: `/property?property=${propertyId}` 
+        breadcrumbs.push({
+          label: selectedProperty.name,
+          href: `${ROUTES.PROPERTY}?property=${propertyId}`
         });
-        
+
         // Add current page
-        if (path === '/houses') {
+        if (path === ROUTES.HOUSES) {
           breadcrumbs.push({ label: 'Houses' });
-        } else if (path === '/tenants') {
+        } else if (path === ROUTES.TENANTS) {
           breadcrumbs.push({ label: 'Tenants' });
-        } else if (path === '/payments') {
+        } else if (path === ROUTES.PAYMENTS) {
           breadcrumbs.push({ label: 'Payments' });
         }
       }
     } else {
       // Standard routes without property context
-      if (path === '/') {
+      if (path === ROUTES.DASHBOARD) {
         return [{ label: 'Landlord Dashboard' }];
       }
 
@@ -100,7 +101,7 @@ export const AppBreadcrumbs = () => {
                   <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
-                    <Link to={crumb.href || '/'} className="flex items-center gap-1.5">
+                    <Link to={crumb.href || ROUTES.DASHBOARD} className="flex items-center gap-1.5">
                       {isFirst && <Home className="h-3.5 w-3.5" />}
                       {crumb.label}
                     </Link>

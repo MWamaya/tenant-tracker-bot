@@ -6,6 +6,7 @@ import { useHouses, HouseWithProperty } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
 import { TenantFormDialog } from '@/components/tenants/TenantFormDialog';
 import { computeArrears, isRentPayment } from '@/lib/arrears';
+import { ROUTES } from '@/lib/routes';
 import { usePayments } from '@/hooks/usePayments';
 import { useProperties } from '@/hooks/useProperties';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -204,7 +205,7 @@ const Houses = () => {
 
   if (isLoading) {
     return (
-      <MainLayout seo={{ title: "Houses \u2014 KODI PAP", description: "Track every rental house, its tenant and payment status.", path: "/houses" }}>
+      <MainLayout seo={{ title: "Houses \u2014 KODI PAP", description: "Track every rental house, its tenant and payment status.", path: ROUTES.HOUSES }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -213,7 +214,7 @@ const Houses = () => {
   }
 
   return (
-    <MainLayout seo={{ title: "Houses \u2014 KODI PAP", description: "Track every rental house, its tenant and payment status.", path: "/houses" }}>
+    <MainLayout seo={{ title: "Houses \u2014 KODI PAP", description: "Track every rental house, its tenant and payment status.", path: ROUTES.HOUSES }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         

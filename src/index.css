@@ -104,6 +104,31 @@
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'DM Sans', system-ui, sans-serif;
   }
+
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--primary) / 0.4) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--primary) / 0.35);
+    border-radius: 9999px;
+    border: 2px solid hsl(var(--background));
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: hsl(var(--primary) / 0.6);
+  }
 }
 
 @layer utilities {
@@ -182,5 +207,16 @@
   to {
     opacity: 1;
     transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

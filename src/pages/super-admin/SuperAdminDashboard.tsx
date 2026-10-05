@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
+import { ROUTES } from '@/lib/routes';
 
 const StatCard = ({
   title,
@@ -83,7 +84,7 @@ const SuperAdminDashboard = () => {
             description={`${stats?.activeLandlords || 0} active · View all`}
             icon={Users}
             loading={statsLoading}
-            onClick={() => navigate('/super-admin/landlords')}
+            onClick={() => navigate(ROUTES.SUPER_ADMIN_LANDLORDS)}
           />
           <StatCard
             title="Total Properties"

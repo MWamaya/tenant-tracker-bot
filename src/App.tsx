@@ -25,7 +25,17 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import ChoosePlan from "./pages/ChoosePlan";
 import Landing from "./pages/Landing";
+import GetStarted from "./pages/GetStarted";
 import { useAuth } from "@/hooks/useAuth";
+import { ROUTES } from "@/lib/routes";
+
+// Legal/support pages — lazy-loaded: rarely visited, no reason to inflate
+// the bundle every visitor downloads to see the landing page.
+const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
+const TermsOfUse = lazy(() => import("./pages/legal/TermsOfUse"));
+const CookiePolicy = lazy(() => import("./pages/legal/CookiePolicy"));
+const RefundCancellation = lazy(() => import("./pages/legal/RefundCancellation"));
+const Contact = lazy(() => import("./pages/legal/Contact"));
 
 // Super Admin Pages — lazy-loaded: this is a separate part of the app most
 // landlords never visit, so it shouldn't inflate the bundle every landlord
@@ -38,6 +48,7 @@ const AuditLogsPage = lazy(() => import("./pages/super-admin/AuditLogsPage"));
 const GlobalPaymentsPage = lazy(() => import("./pages/super-admin/GlobalPaymentsPage"));
 const SettingsPage = lazy(() => import("./pages/super-admin/SettingsPage"));
 const SuperAdminPropertiesPage = lazy(() => import("./pages/super-admin/PropertiesPage"));
+const OnboardingRequestsPage = lazy(() => import("./pages/super-admin/OnboardingRequestsPage"));
 
 const SuperAdminFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-background">
@@ -85,7 +96,7 @@ const RootRoute = () => {
       </div>
     );
   }
-  return user ? <ProtectedRoute><Index /></ProtectedRoute> : <Navigate to="/auth" replace />;
+  return user ? <ProtectedRoute><Index /></ProtectedRoute> : <Navigate to={ROUTES.AUTH} replace />;
 };
 
 const App = () => (
@@ -100,23 +111,49 @@ const App = () => (
             <BrowserRouter>
               <BodyPointerEventsGuard />
               <Routes>
+                {/* Public marketing site */}
+                <Route path={ROUTES.LANDING} element={<Landing />} />
+                <Route path={ROUTES.GET_STARTED} element={<GetStarted />} />
+
+                {/* Legal / support pages */}
+                <Route
+                  path={ROUTES.PRIVACY_POLICY}
+                  element={<Suspense fallback={<SuperAdminFallback />}><PrivacyPolicy /></Suspense>}
+                />
+                <Route
+                  path={ROUTES.TERMS_OF_USE}
+                  element={<Suspense fallback={<SuperAdminFallback />}><TermsOfUse /></Suspense>}
+                />
+                <Route
+                  path={ROUTES.COOKIE_POLICY}
+                  element={<Suspense fallback={<SuperAdminFallback />}><CookiePolicy /></Suspense>}
+                />
+                <Route
+                  path={ROUTES.REFUND_CANCELLATION}
+                  element={<Suspense fallback={<SuperAdminFallback />}><RefundCancellation /></Suspense>}
+                />
+                <Route
+                  path={ROUTES.CONTACT}
+                  element={<Suspense fallback={<SuperAdminFallback />}><Contact /></Suspense>}
+                />
+
                 {/* Landlord Auth & Routes */}
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="/subscribe" element={<ProtectedRoute><ChoosePlan /></ProtectedRoute>} />
-                <Route path="/" element={<RootRoute />} />
-                <Route path="/properties" element={<ProtectedRoute><Properties /></ProtectedRoute>} />
-                <Route path="/property" element={<ProtectedRoute><PropertyDetail /></ProtectedRoute>} />
-                <Route path="/houses" element={<ProtectedRoute><Houses /></ProtectedRoute>} />
-                <Route path="/tenants" element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
-                <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-                <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-                <Route path="/email-logs" element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
-                <Route path="/reconciliation" element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                
+                <Route path={ROUTES.AUTH} element={<Auth />} />
+                <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
+                <Route path={ROUTES.SUBSCRIBE} element={<ProtectedRoute><ChoosePlan /></ProtectedRoute>} />
+                <Route path={ROUTES.DASHBOARD} element={<RootRoute />} />
+                <Route path={ROUTES.PROPERTIES} element={<ProtectedRoute><Properties /></ProtectedRoute>} />
+                <Route path={ROUTES.PROPERTY} element={<ProtectedRoute><PropertyDetail /></ProtectedRoute>} />
+                <Route path={ROUTES.HOUSES} element={<ProtectedRoute><Houses /></ProtectedRoute>} />
+                <Route path={ROUTES.TENANTS} element={<ProtectedRoute><Tenants /></ProtectedRoute>} />
+                <Route path={ROUTES.PAYMENTS} element={<ProtectedRoute><Payments /></ProtectedRoute>} />
+                <Route path={ROUTES.REPORTS} element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+                <Route path={ROUTES.EMAIL_LOGS} element={<ProtectedRoute><EmailLogs /></ProtectedRoute>} />
+                <Route path={ROUTES.RECONCILIATION} element={<ProtectedRoute><Reconciliation /></ProtectedRoute>} />
+                <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+
                 {/* Super Admin Routes */}
-                <Route path="/super-admin/*" element={
+                <Route path="/app/super-admin/*" element={
                   <Suspense fallback={<SuperAdminFallback />}>
                     <Routes>
                       <Route path="login" element={<SuperAdminLogin />} />
@@ -127,6 +164,7 @@ const App = () => (
                       <Route path="audit-logs" element={<SuperAdminRoute><AuditLogsPage /></SuperAdminRoute>} />
                       <Route path="settings" element={<SuperAdminRoute><SettingsPage /></SuperAdminRoute>} />
                       <Route path="properties" element={<SuperAdminRoute><SuperAdminPropertiesPage /></SuperAdminRoute>} />
+                      <Route path="onboarding-requests" element={<SuperAdminRoute><OnboardingRequestsPage /></SuperAdminRoute>} />
                     </Routes>
                   </Suspense>
                 } />

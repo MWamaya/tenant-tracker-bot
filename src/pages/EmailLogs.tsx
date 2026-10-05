@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { ROUTES } from '@/lib/routes';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { useEmailLogs, parsePaymentMessage } from '@/hooks/useEmailLogs';
 import { Input } from '@/components/ui/input';
@@ -127,7 +128,7 @@ const EmailLogs = () => {
 
   if (isLoading) {
     return (
-      <MainLayout seo={{ title: "Email Logs \u2014 KODI PAP", description: "Bank and M-Pesa email parsing logs.", path: "/email-logs" }}>
+      <MainLayout seo={{ title: "Email Logs \u2014 KODI PAP", description: "Bank and M-Pesa email parsing logs.", path: ROUTES.EMAIL_LOGS }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -136,7 +137,7 @@ const EmailLogs = () => {
   }
 
   return (
-    <MainLayout seo={{ title: "Email Logs \u2014 KODI PAP", description: "Bank and M-Pesa email parsing logs.", path: "/email-logs" }}>
+    <MainLayout seo={{ title: "Email Logs \u2014 KODI PAP", description: "Bank and M-Pesa email parsing logs.", path: ROUTES.EMAIL_LOGS }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         

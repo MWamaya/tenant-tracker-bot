@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ROUTES } from '@/lib/routes';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,7 @@ const ResetPassword = () => {
       toast.error(error.message);
     } else {
       toast.success('Password updated successfully. Please log in.');
-      navigate('/auth');
+      navigate(ROUTES.AUTH);
     }
   };
 
@@ -114,7 +115,7 @@ const ResetPassword = () => {
               <Button type="submit" className="w-full" disabled={isSubmitting}>
                 {isSubmitting ? 'Updating password...' : 'Update Password'}
               </Button>
-              <Button type="button" variant="link" onClick={() => navigate('/auth')}>
+              <Button type="button" variant="link" onClick={() => navigate(ROUTES.AUTH)}>
                 Back to login
               </Button>
             </CardFooter>

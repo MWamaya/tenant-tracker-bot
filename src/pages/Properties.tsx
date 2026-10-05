@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { PropertyFormDialog } from '@/components/properties/PropertyFormDialog';
 import { useNavigate } from 'react-router-dom';
+import { ROUTES } from '@/lib/routes';
 
 const Properties = () => {
   const { propertiesWithStats, isLoading, addProperty, updateProperty, deleteProperty } = useProperties();
@@ -71,7 +72,7 @@ const Properties = () => {
   };
 
   const handlePropertyClick = (property: PropertyWithStats) => {
-    navigate(`/property?property=${property.id}`);
+    navigate(`${ROUTES.PROPERTY}?property=${property.id}`);
   };
 
   const getPropertyTypeLabel = (type: string | null) => {
@@ -85,7 +86,7 @@ const Properties = () => {
 
   if (isLoading) {
     return (
-      <MainLayout seo={{ title: "Properties \u2014 KODI PAP", description: "Manage your properties and grouped houses in one place.", path: "/properties" }}>
+      <MainLayout seo={{ title: "Properties \u2014 KODI PAP", description: "Manage your properties and grouped houses in one place.", path: ROUTES.PROPERTIES }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -94,7 +95,7 @@ const Properties = () => {
   }
 
   return (
-    <MainLayout seo={{ title: "Properties \u2014 KODI PAP", description: "Manage your properties and grouped houses in one place.", path: "/properties" }}>
+    <MainLayout seo={{ title: "Properties \u2014 KODI PAP", description: "Manage your properties and grouped houses in one place.", path: ROUTES.PROPERTIES }}>
       <div className="space-y-6">
         <AppBreadcrumbs />
         

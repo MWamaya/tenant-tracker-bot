@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { z } from 'zod';
+import { ROUTES } from '@/lib/routes';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -51,7 +52,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (!loading && user) {
-      navigate('/');
+      navigate(ROUTES.DASHBOARD);
     }
   }, [user, loading, navigate]);
 
@@ -76,7 +77,7 @@ const Auth = () => {
       }
     } else {
       toast.success('Welcome back!');
-      navigate('/');
+      navigate(ROUTES.DASHBOARD);
     }
   };
 
@@ -130,7 +131,7 @@ const Auth = () => {
       }
     } else {
       toast.success('Account created successfully!');
-      navigate('/');
+      navigate(ROUTES.DASHBOARD);
     }
   };
 
@@ -147,7 +148,7 @@ const Auth = () => {
       <PageSeo
         title="Sign in or sign up — KODI PAP"
         description="Log in to KODI PAP or create a landlord account to start tracking rent collection."
-        path="/auth"
+        path={ROUTES.AUTH}
       />
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-secondary/10 p-4">
       <div className="w-full max-w-md">
@@ -333,7 +334,7 @@ const Auth = () => {
 
         <div className="text-center mt-3">
           <Link
-            to="/super-admin/login"
+            to={ROUTES.SUPER_ADMIN_LOGIN}
             className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
           >
             <Shield className="h-3.5 w-3.5" />

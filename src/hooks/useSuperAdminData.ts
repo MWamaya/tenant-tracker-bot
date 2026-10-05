@@ -2,6 +2,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface OnboardingRequest {
+  id: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  plan: string;
+  status: string;
+  created_at: string;
+}
+
 // Types for Super Admin data
 export interface LandlordProfile {
   id: string;
@@ -65,17 +75,32 @@ export interface AuditLog {
   created_at: string;
 }
 
+// A super admin's own profile row can exist without ever being a real
+// landlord (e.g. kept around because audit_logs.admin_id references it and
+// can't cascade-delete) — exclude those from every "landlord" listing/count.
+const fetchSuperAdminIds = async (): Promise<Set<string>> => {
+  const { data, error } = await supabase
+    .from('user_roles')
+    .select('user_id')
+    .eq('role', 'SUPER_ADMIN');
+  if (error) throw error;
+  return new Set((data || []).map((r) => r.user_id));
+};
+
 // Hook to fetch platform statistics
 export const usePlatformStats = () => {
   return useQuery({
     queryKey: ['platform-stats'],
     queryFn: async (): Promise<PlatformStats> => {
+      const superAdminIds = await fetchSuperAdminIds();
+
       // Fetch landlord counts by status
-      const { data: profiles, error: profilesError } = await supabase
+      const { data: allProfiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, account_status, sms_token_balance');
 
       if (profilesError) throw profilesError;
+      const profiles = allProfiles?.filter((p) => !superAdminIds.has(p.id));
 
       // Fetch total properties
       const { count: propertiesCount, error: propertiesError } = await supabase
@@ -170,12 +195,15 @@ export const useLandlords = () => {
   return useQuery({
     queryKey: ['landlords'],
     queryFn: async (): Promise<LandlordProfile[]> => {
-      const { data: profiles, error } = await supabase
+      const superAdminIds = await fetchSuperAdminIds();
+
+      const { data: allProfiles, error } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+      const profiles = allProfiles?.filter((p) => !superAdminIds.has(p.id));
 
       // Fetch subscriptions for each landlord
       const { data: subscriptions } = await supabase
@@ -466,6 +494,53 @@ export const useAssignSubscription = () => {
     },
     onError: (error) => {
       toast.error(`Failed to assign subscription: ${error.message}`);
+    },
+  });
+};
+
+// Hook to fetch onboarding requests from the public "Get started" lead form
+export const useOnboardingRequests = () => {
+  return useQuery({
+    queryKey: ['onboarding-requests'],
+    queryFn: async (): Promise<OnboardingRequest[]> => {
+      const { data, error } = await supabase
+        .from('onboarding_requests')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data || [];
+    },
+  });
+};
+
+// Mutation to update an onboarding request's triage status
+export const useUpdateOnboardingStatus = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ requestId, status }: { requestId: string; status: string }) => {
+      const { error } = await supabase
+        .from('onboarding_requests')
+        .update({ status })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'UPDATE_ONBOARDING_REQUEST_STATUS',
+        entity_type: 'onboarding_request',
+        entity_id: requestId,
+        new_values: { status },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding-requests'] });
+      toast.success('Request updated');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update request: ${error.message}`);
     },
   });
 };

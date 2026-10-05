@@ -3,6 +3,7 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { ROUTES } from '@/lib/routes';
 import { useProperties } from '@/hooks/useProperties';
 import { useHouses } from '@/hooks/useHouses';
 import { useTenants } from '@/hooks/useTenants';
@@ -218,7 +219,7 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: "/" }}>
+      <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: ROUTES.DASHBOARD }}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -229,7 +230,7 @@ const Dashboard = () => {
   // Show empty state for new landlords
   if (properties.length === 0 || houses.length === 0) {
     return (
-      <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: "/" }}>
+      <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: ROUTES.DASHBOARD }}>
         <EmptyDashboard 
           hasProperties={properties.length > 0}
           hasHouses={houses.length > 0}
@@ -277,7 +278,7 @@ const Dashboard = () => {
   const vacantHouses = filteredBalances.filter(h => !h.tenantId);
 
   return (
-    <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: "/" }}>
+    <MainLayout seo={{ title: "Dashboard \u2014 KODI PAP", description: "Overview of rent collection, tenant status and recent payments.", path: ROUTES.DASHBOARD }}>
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
