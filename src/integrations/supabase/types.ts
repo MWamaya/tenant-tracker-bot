@@ -10,7 +10,32 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -214,6 +239,36 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string
+          topic: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string
+          topic?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string
+          topic?: string | null
+        }
+        Relationships: []
+      }
       email_logs: {
         Row: {
           created_at: string
@@ -227,6 +282,7 @@ export type Database = {
           parsed_tenant_name: string | null
           payment_id: string | null
           raw_message: string
+          resend_message_id: string | null
           status: string
           updated_at: string
         }
@@ -242,6 +298,7 @@ export type Database = {
           parsed_tenant_name?: string | null
           payment_id?: string | null
           raw_message: string
+          resend_message_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -257,6 +314,7 @@ export type Database = {
           parsed_tenant_name?: string | null
           payment_id?: string | null
           raw_message?: string
+          resend_message_id?: string | null
           status?: string
           updated_at?: string
         }
@@ -786,6 +844,8 @@ export type Database = {
           mpesa_transaction_id: string | null
           payment_date: string
           payment_source: string | null
+          payment_type: string
+          reconciliation_dismissed: boolean
           sender_name: string | null
           sender_phone: string | null
           tenant_id: string | null
@@ -803,6 +863,8 @@ export type Database = {
           mpesa_transaction_id?: string | null
           payment_date: string
           payment_source?: string | null
+          payment_type?: string
+          reconciliation_dismissed?: boolean
           sender_name?: string | null
           sender_phone?: string | null
           tenant_id?: string | null
@@ -820,6 +882,8 @@ export type Database = {
           mpesa_transaction_id?: string | null
           payment_date?: string
           payment_source?: string | null
+          payment_type?: string
+          reconciliation_dismissed?: boolean
           sender_name?: string | null
           sender_phone?: string | null
           tenant_id?: string | null
@@ -932,10 +996,13 @@ export type Database = {
           account_status: string
           company_name: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
+          inbound_email: string | null
           last_login_at: string | null
           phone: string | null
+          report_day_of_month: number
           sms_token_balance: number
           statement_start_month: number | null
           statement_start_year: number | null
@@ -945,10 +1012,13 @@ export type Database = {
           account_status?: string
           company_name?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
+          inbound_email?: string | null
           last_login_at?: string | null
           phone?: string | null
+          report_day_of_month?: number
           sms_token_balance?: number
           statement_start_month?: number | null
           statement_start_year?: number | null
@@ -958,10 +1028,13 @@ export type Database = {
           account_status?: string
           company_name?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
+          inbound_email?: string | null
           last_login_at?: string | null
           phone?: string | null
+          report_day_of_month?: number
           sms_token_balance?: number
           statement_start_month?: number | null
           statement_start_year?: number | null
@@ -1143,6 +1216,41 @@ export type Database = {
           },
         ]
       }
+      report_recipients: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          landlord_id: string
+          name: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          landlord_id: string
+          name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          landlord_id?: string
+          name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_recipients_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sms_transactions: {
         Row: {
           amount: number
@@ -1276,6 +1384,64 @@ export type Database = {
             columns: ["updated_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenancy_periods: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          house_id: string
+          id: string
+          landlord_id: string
+          start_date: string
+          tenant_id: string | null
+          tenant_name: string
+          tenant_phone: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          house_id: string
+          id?: string
+          landlord_id: string
+          start_date: string
+          tenant_id?: string | null
+          tenant_name: string
+          tenant_phone?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          house_id?: string
+          id?: string
+          landlord_id?: string
+          start_date?: string
+          tenant_id?: string | null
+          tenant_name?: string
+          tenant_phone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenancy_periods_house_id_fkey"
+            columns: ["house_id"]
+            isOneToOne: false
+            referencedRelation: "houses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_periods_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenancy_periods_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1435,12 +1601,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1464,11 +1630,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1489,11 +1655,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1514,11 +1680,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1531,11 +1697,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1545,6 +1711,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["SUPER_ADMIN", "LANDLORD_ADMIN"],
