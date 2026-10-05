@@ -19,7 +19,8 @@ import { Search, DollarSign, AlertTriangle, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
 import { PaymentStatementUploadDialog } from '@/components/payments/PaymentStatementUploadDialog';
-import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 interface Payment {
   id: string;
@@ -118,21 +119,21 @@ const GlobalPaymentsPage = () => {
     <div className="space-y-3">
       {payments.length === 0 ? (
         <div className="text-center py-12">
-          <DollarSign className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+          <DollarSign className="h-12 w-12 text-slate-700 mx-auto mb-4" />
           <p className="text-slate-400">No payments found</p>
         </div>
       ) : (
         payments.map((payment) => (
           <div
             key={payment.id}
-            className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg bg-slate-900/50"
+            className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4", ADMIN_SURFACE, "hover:bg-white/[0.06] transition-colors duration-150")}
           >
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-medium text-white">
                   KES {payment.amount.toLocaleString()}
                 </span>
-                <Badge variant="outline" className="border-slate-600 text-slate-400 font-mono">
+                <Badge variant="outline" className="border-white/10 text-slate-400 font-mono">
                   {payment.mpesa_ref}
                 </Badge>
                 {(!payment.tenant_id || !payment.house_id) && (
@@ -168,12 +169,12 @@ const GlobalPaymentsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Global Payments</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Global Payments</h1>
             <p className="text-slate-400">View all payments across all landlords</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Select value={selectedLandlord} onValueChange={setSelectedLandlord}>
-              <SelectTrigger className="w-full sm:w-64 bg-slate-900/50 border-slate-600 text-white">
+              <SelectTrigger className="w-full sm:w-64 bg-white/[0.04] border-white/10 text-white">
                 <SelectValue placeholder="Select landlord for upload" />
               </SelectTrigger>
               <SelectContent>
@@ -207,13 +208,13 @@ const GlobalPaymentsPage = () => {
         />
 
         {/* Search */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className={ADMIN_CARD}>
           <CardContent className="pt-6">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <Input
                 placeholder="Search by M-Pesa ref, sender name, or phone..."
-                className="pl-10 bg-slate-900/50 border-slate-600 text-white"
+                className="pl-10 bg-white/[0.04] border-white/10 text-white"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -223,20 +224,20 @@ const GlobalPaymentsPage = () => {
 
         {/* Payments Tabs */}
         <Tabs defaultValue="all" className="space-y-4">
-          <TabsList className="bg-slate-800 border-slate-700">
-            <TabsTrigger value="all" className="data-[state=active]:bg-slate-700">
+          <TabsList className="bg-[#121a2e] border-white/10">
+            <TabsTrigger value="all" className="data-[state=active]:bg-white/10">
               All Payments ({allPayments.length})
             </TabsTrigger>
-            <TabsTrigger value="unmatched" className="data-[state=active]:bg-slate-700">
+            <TabsTrigger value="unmatched" className="data-[state=active]:bg-white/10">
               <AlertTriangle className="h-4 w-4 mr-2" />
               Unmatched ({unmatchedTotal ?? unmatchedPayments.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="all">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className={ADMIN_CARD}>
               <CardHeader>
-                <CardTitle className="text-white">All Payments</CardTitle>
+                <CardTitle className="text-lg font-semibold tracking-tight text-white">All Payments</CardTitle>
                 <CardDescription className="text-slate-400">
                   Across all landlords, newest first
                 </CardDescription>
@@ -245,7 +246,7 @@ const GlobalPaymentsPage = () => {
                 {isLoading ? (
                   <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <Skeleton key={i} className="h-16 w-full bg-slate-700" />
+                      <Skeleton key={i} className="h-16 w-full bg-white/[0.06]" />
                     ))}
                   </div>
                 ) : (
@@ -254,7 +255,7 @@ const GlobalPaymentsPage = () => {
                     {hasNextPage && (
                       <Button
                         variant="outline"
-                        className="w-full mt-4 border-slate-600 text-slate-200 hover:bg-slate-800"
+                        className="w-full mt-4 bg-transparent border-white/10 text-slate-200 hover:bg-white/[0.06]"
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNextPage}
                       >
@@ -268,9 +269,9 @@ const GlobalPaymentsPage = () => {
           </TabsContent>
 
           <TabsContent value="unmatched">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className={ADMIN_CARD}>
               <CardHeader>
-                <CardTitle className="text-white">Unmatched Payments</CardTitle>
+                <CardTitle className="text-lg font-semibold tracking-tight text-white">Unmatched Payments</CardTitle>
                 <CardDescription className="text-slate-400">
                   Payments that are not linked to a tenant or house, among those loaded
                   below — the tab count above is the real platform-wide total
@@ -280,7 +281,7 @@ const GlobalPaymentsPage = () => {
                 {isLoading ? (
                   <div className="space-y-3">
                     {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-16 w-full bg-slate-700" />
+                      <Skeleton key={i} className="h-16 w-full bg-white/[0.06]" />
                     ))}
                   </div>
                 ) : (
@@ -289,7 +290,7 @@ const GlobalPaymentsPage = () => {
                     {hasNextPage && (
                       <Button
                         variant="outline"
-                        className="w-full mt-4 border-slate-600 text-slate-200 hover:bg-slate-800"
+                        className="w-full mt-4 bg-transparent border-white/10 text-slate-200 hover:bg-white/[0.06]"
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNextPage}
                       >

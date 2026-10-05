@@ -7,6 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Settings, Mail, MessageSquare, Shield, Clock } from 'lucide-react';
+import { ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 interface SystemSetting {
   id: string;
@@ -74,16 +76,16 @@ const SettingsPage = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-white">System Settings</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">System Settings</h1>
           <p className="text-slate-400">Configure platform-wide settings</p>
         </div>
 
         {/* Settings Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* General Settings */}
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className={ADMIN_CARD}>
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
                 <Settings className="h-5 w-5" />
                 General Settings
               </CardTitle>
@@ -95,7 +97,7 @@ const SettingsPage = () => {
               {isLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-slate-700" />
+                    <Skeleton key={i} className="h-12 w-full bg-white/[0.06]" />
                   ))}
                 </div>
               ) : (
@@ -147,9 +149,9 @@ const SettingsPage = () => {
           </Card>
 
           {/* SMS Settings */}
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className={ADMIN_CARD}>
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
                 SMS Configuration
               </CardTitle>
@@ -161,7 +163,7 @@ const SettingsPage = () => {
               {isLoading ? (
                 <div className="space-y-4">
                   {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-slate-700" />
+                    <Skeleton key={i} className="h-12 w-full bg-white/[0.06]" />
                   ))}
                 </div>
               ) : (
@@ -184,9 +186,9 @@ const SettingsPage = () => {
           </Card>
 
           {/* Security Settings */}
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className={ADMIN_CARD}>
             <CardHeader>
-              <CardTitle className="text-white flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
                 <Shield className="h-5 w-5" />
                 Security
               </CardTitle>
@@ -196,7 +198,7 @@ const SettingsPage = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-slate-900/50">
+                <div className={cn("p-4", ADMIN_SURFACE)}>
                   <div className="flex items-center gap-2 text-green-400">
                     <div className="w-2 h-2 rounded-full bg-green-400" />
                     <span className="text-sm font-medium">RLS Enabled</span>
@@ -205,7 +207,7 @@ const SettingsPage = () => {
                     Row Level Security is active on all tables
                   </p>
                 </div>
-                <div className="p-4 rounded-lg bg-slate-900/50">
+                <div className={cn("p-4", ADMIN_SURFACE)}>
                   <div className="flex items-center gap-2 text-green-400">
                     <div className="w-2 h-2 rounded-full bg-green-400" />
                     <span className="text-sm font-medium">RBAC Active</span>
@@ -219,9 +221,9 @@ const SettingsPage = () => {
           </Card>
 
           {/* All Settings */}
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className={ADMIN_CARD}>
             <CardHeader>
-              <CardTitle className="text-white">All Settings</CardTitle>
+              <CardTitle className="text-lg font-semibold tracking-tight text-white">All Settings</CardTitle>
               <CardDescription className="text-slate-400">
                 Complete list of system configuration
               </CardDescription>
@@ -230,7 +232,7 @@ const SettingsPage = () => {
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-10 w-full bg-slate-700" />
+                    <Skeleton key={i} className="h-10 w-full bg-white/[0.06]" />
                   ))}
                 </div>
               ) : (
@@ -240,7 +242,7 @@ const SettingsPage = () => {
                     return (
                       <div
                         key={setting.id}
-                        className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50"
+                        className={cn("flex items-center justify-between p-3", ADMIN_SURFACE, "hover:bg-white/[0.06] transition-colors duration-150")}
                       >
                         <div className="flex items-center gap-3">
                           <Icon className="h-4 w-4 text-primary" />

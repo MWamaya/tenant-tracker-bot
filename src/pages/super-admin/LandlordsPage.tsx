@@ -36,7 +36,8 @@ import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, Mess
 import { formatDate, formatDateTime } from '@/lib/dates';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
-import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 const LandlordsPage = () => {
   const navigate = useNavigate();
@@ -141,11 +142,11 @@ const LandlordsPage = () => {
             <Link to={ROUTES.SUPER_ADMIN_ROOT} className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 mb-1">
               ← Back to Dashboard
             </Link>
-            <h1 className="text-2xl font-bold text-white">Landlord Management</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Landlord Management</h1>
             <p className="text-slate-400">Manage landlord accounts and subscriptions</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" className="border-slate-600">
+            <Button asChild variant="outline" className="bg-transparent border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
               <Link to={ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS}>
                 View Onboarding Requests
               </Link>
@@ -160,23 +161,23 @@ const LandlordsPage = () => {
         <CreateLandlordDialog open={addLandlordOpen} onOpenChange={setAddLandlordOpen} />
 
         {/* Filters */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className={ADMIN_CARD}>
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search by name, company, or phone..."
-                  className="pl-10 bg-slate-900/50 border-slate-600 text-white"
+                  className="pl-10 bg-white/[0.04] border-white/10 text-white"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48 bg-slate-900/50 border-slate-600 text-white">
+                <SelectTrigger className="w-full sm:w-48 bg-white/[0.04] border-white/10 text-white">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-[#121a2e] border-white/10">
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="suspended">Suspended</SelectItem>
@@ -189,9 +190,9 @@ const LandlordsPage = () => {
         </Card>
 
         {/* Landlords List */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className={ADMIN_CARD}>
           <CardHeader>
-            <CardTitle className="text-white">Landlords ({filteredLandlords?.length || 0})</CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight text-white">Landlords ({filteredLandlords?.length || 0})</CardTitle>
             <CardDescription className="text-slate-400">
               All registered landlords on the platform
             </CardDescription>
@@ -200,7 +201,7 @@ const LandlordsPage = () => {
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full bg-slate-700" />
+                  <Skeleton key={i} className="h-16 w-full bg-white/[0.06]" />
                 ))}
               </div>
             ) : filteredLandlords?.length === 0 ? (
@@ -210,10 +211,10 @@ const LandlordsPage = () => {
                 {filteredLandlords?.map((landlord) => (
                   <div
                     key={landlord.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-slate-900/50"
+                    className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4", ADMIN_SURFACE, "hover:bg-white/[0.06] transition-colors duration-150")}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center">
                         <span className="text-primary font-bold text-lg">
                           {landlord.full_name?.[0] || 'L'}
                         </span>
@@ -237,7 +238,7 @@ const LandlordsPage = () => {
                             Manage
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="start" className="bg-slate-800 border-slate-700">
+                        <DropdownMenuContent align="start" className="bg-[#121a2e] border-white/10">
                           <DropdownMenuItem
                             className="text-primary font-medium focus:bg-primary/20 focus:text-primary"
                             onClick={() => handleLoginAs(landlord)}
@@ -245,7 +246,7 @@ const LandlordsPage = () => {
                             <LogIn className="h-4 w-4 mr-2" />
                             Open Dashboard
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-slate-700" />
+                          <DropdownMenuSeparator className="bg-white/10" />
                           <DropdownMenuItem
                             className="text-emerald-400 font-medium focus:bg-emerald-500/20 focus:text-emerald-300"
                             onClick={() => handleLoginAs(landlord, ROUTES.PROPERTIES)}
@@ -296,7 +297,7 @@ const LandlordsPage = () => {
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
+                        <DropdownMenuContent align="end" className="bg-[#121a2e] border-white/10">
                           <DropdownMenuItem
                             className="text-slate-200"
                             onClick={() => {
@@ -345,7 +346,7 @@ const LandlordsPage = () => {
                             <Mail className="h-4 w-4 mr-2" />
                             Edit Inbound Email
                           </DropdownMenuItem>
-                          <DropdownMenuSeparator className="bg-slate-700" />
+                          <DropdownMenuSeparator className="bg-white/10" />
                           {landlord.account_status !== 'active' && (
                             <DropdownMenuItem
                               className="text-green-400"
@@ -377,7 +378,7 @@ const LandlordsPage = () => {
 
       {/* View Details Dialog */}
       <Dialog open={dialogType === 'view'} onOpenChange={() => setDialogType(null)}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+        <DialogContent className="bg-[#121a2e] border-white/10 text-white">
           <DialogHeader>
             <DialogTitle>Landlord Details</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -439,7 +440,7 @@ const LandlordsPage = () => {
 
       {/* Assign Subscription Dialog */}
       <Dialog open={dialogType === 'subscription'} onOpenChange={() => setDialogType(null)}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+        <DialogContent className="bg-[#121a2e] border-white/10 text-white">
           <DialogHeader>
             <DialogTitle>Assign Subscription</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -455,10 +456,10 @@ const LandlordsPage = () => {
                   setSubscriptionData({ ...subscriptionData, planId: value })
                 }
               >
-                <SelectTrigger className="bg-slate-900/50 border-slate-600">
+                <SelectTrigger className="bg-white/[0.04] border-white/10">
                   <SelectValue placeholder="Select a plan" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-[#121a2e] border-white/10">
                   {plans?.map((plan) => (
                     <SelectItem key={plan.id} value={plan.id}>
                       {plan.name} - KES {plan.price}
@@ -470,7 +471,7 @@ const LandlordsPage = () => {
             <div className="space-y-2">
               <Label className="text-slate-200">Payment Reference (Optional)</Label>
               <Input
-                className="bg-slate-900/50 border-slate-600"
+                className="bg-white/[0.04] border-white/10"
                 value={subscriptionData.paymentReference}
                 onChange={(e) =>
                   setSubscriptionData({ ...subscriptionData, paymentReference: e.target.value })
@@ -482,7 +483,7 @@ const LandlordsPage = () => {
               <Label className="text-slate-200">Amount Paid (Optional)</Label>
               <Input
                 type="number"
-                className="bg-slate-900/50 border-slate-600"
+                className="bg-white/[0.04] border-white/10"
                 value={subscriptionData.amountPaid}
                 onChange={(e) =>
                   setSubscriptionData({ ...subscriptionData, amountPaid: e.target.value })
@@ -492,7 +493,7 @@ const LandlordsPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogType(null)} className="border-slate-600">
+            <Button variant="outline" onClick={() => setDialogType(null)} className="bg-transparent border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
               Cancel
             </Button>
             <Button onClick={handleAssignSubscription} disabled={!subscriptionData.planId}>
@@ -504,7 +505,7 @@ const LandlordsPage = () => {
 
       {/* Edit Inbound Email Dialog */}
       <Dialog open={dialogType === 'inboundEmail'} onOpenChange={() => setDialogType(null)}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+        <DialogContent className="bg-[#121a2e] border-white/10 text-white">
           <DialogHeader>
             <DialogTitle>Edit Inbound Email</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -515,7 +516,7 @@ const LandlordsPage = () => {
             <div className="space-y-2">
               <Label className="text-slate-200">Inbound Email</Label>
               <Input
-                className="bg-slate-900/50 border-slate-600"
+                className="bg-white/[0.04] border-white/10"
                 value={inboundEmailInput}
                 onChange={(e) => setInboundEmailInput(e.target.value)}
                 placeholder="e.g., munene@kodipap.com"
@@ -523,7 +524,7 @@ const LandlordsPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogType(null)}>
+            <Button variant="outline" onClick={() => setDialogType(null)} className="bg-transparent border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
               Cancel
             </Button>
             <Button
@@ -538,7 +539,7 @@ const LandlordsPage = () => {
 
       {/* Allocate SMS Dialog */}
       <Dialog open={dialogType === 'sms'} onOpenChange={() => setDialogType(null)}>
-        <DialogContent className="bg-slate-800 border-slate-700 text-white">
+        <DialogContent className="bg-[#121a2e] border-white/10 text-white">
           <DialogHeader>
             <DialogTitle>Allocate SMS Tokens</DialogTitle>
             <DialogDescription className="text-slate-400">
@@ -546,7 +547,7 @@ const LandlordsPage = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-slate-900/50">
+            <div className={cn("p-4", ADMIN_SURFACE)}>
               <p className="text-sm text-slate-400">Current Balance</p>
               <p className="text-2xl font-bold text-white">
                 {selectedLandlord?.sms_token_balance || 0} tokens
@@ -556,7 +557,7 @@ const LandlordsPage = () => {
               <Label className="text-slate-200">Tokens to Add</Label>
               <Input
                 type="number"
-                className="bg-slate-900/50 border-slate-600"
+                className="bg-white/[0.04] border-white/10"
                 value={smsAmount}
                 onChange={(e) => setSmsAmount(e.target.value)}
                 placeholder="Enter number of tokens"
@@ -564,7 +565,7 @@ const LandlordsPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogType(null)} className="border-slate-600">
+            <Button variant="outline" onClick={() => setDialogType(null)} className="bg-transparent border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
               Cancel
             </Button>
             <Button

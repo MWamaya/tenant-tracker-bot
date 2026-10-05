@@ -19,3 +19,14 @@ export const STATUS_BADGE_CLASSES = {
 } as const;
 
 export type StatusBadgeTone = keyof typeof STATUS_BADGE_CLASSES;
+
+// Shared elevated-card treatment for the super-admin area: a faint
+// top-to-bottom gradient + inset border + soft shadow so cards read as
+// raised surfaces instead of flat slate rectangles. Replaces the old
+// flat "bg-slate-800/50 border-slate-700" used everywhere.
+export const ADMIN_CARD =
+  'bg-[#121a2e] bg-gradient-to-b from-white/[0.05] to-white/[0.015] border border-white/[0.08] shadow-lg shadow-black/20 rounded-xl';
+
+// Nested/inset surfaces inside a card (table rows, list items).
+export const ADMIN_SURFACE = 'bg-white/[0.03] border border-white/[0.06] rounded-lg';
+export const ADMIN_SURFACE_HOVER = 'hover:bg-white/[0.06] transition-colors duration-150';

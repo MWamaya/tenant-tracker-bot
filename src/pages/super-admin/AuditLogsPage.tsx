@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
-import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 const AuditLogsPage = () => {
   const { data: logs, isLoading } = useAuditLogs(100);
@@ -29,14 +30,14 @@ const AuditLogsPage = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-white">Audit Logs</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Audit Logs</h1>
           <p className="text-slate-400">Track all Super Admin actions on the platform</p>
         </div>
 
         {/* Logs List */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className={ADMIN_CARD}>
           <CardHeader>
-            <CardTitle className="text-white flex items-center gap-2">
+            <CardTitle className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Activity Log
             </CardTitle>
@@ -48,12 +49,12 @@ const AuditLogsPage = () => {
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full bg-slate-700" />
+                  <Skeleton key={i} className="h-16 w-full bg-white/[0.06]" />
                 ))}
               </div>
             ) : logs?.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-slate-600 mx-auto mb-4" />
+                <FileText className="h-12 w-12 text-slate-700 mx-auto mb-4" />
                 <p className="text-slate-400">No audit logs recorded yet</p>
               </div>
             ) : (
@@ -61,7 +62,7 @@ const AuditLogsPage = () => {
                 {logs?.map((log) => (
                   <div
                     key={log.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-lg bg-slate-900/50"
+                    className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4", ADMIN_SURFACE, "hover:bg-white/[0.06] transition-colors duration-150")}
                   >
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full bg-primary mt-2" />

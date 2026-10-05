@@ -19,7 +19,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Check, Building, Users, MessageSquare, Pencil } from 'lucide-react';
-import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 const EditPlanDialog = ({
   plan,
@@ -74,7 +75,7 @@ const EditPlanDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white max-h-[85vh] overflow-y-auto">
+      <DialogContent className="bg-[#121a2e] border-white/10 text-white max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit {plan?.name}</DialogTitle>
           <DialogDescription className="text-slate-400">
@@ -87,7 +88,7 @@ const EditPlanDialog = ({
             <Input
               type="number"
               min="0"
-              className="bg-slate-900/50 border-slate-600"
+              className="bg-white/[0.04] border-white/10"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
             />
@@ -95,7 +96,7 @@ const EditPlanDialog = ({
           <div className="space-y-2">
             <Label className="text-slate-200">Description</Label>
             <Input
-              className="bg-slate-900/50 border-slate-600"
+              className="bg-white/[0.04] border-white/10"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -107,7 +108,7 @@ const EditPlanDialog = ({
                 type="number"
                 min="0"
                 placeholder="Unlimited"
-                className="bg-slate-900/50 border-slate-600"
+                className="bg-white/[0.04] border-white/10"
                 value={maxProperties}
                 onChange={(e) => setMaxProperties(e.target.value)}
               />
@@ -118,7 +119,7 @@ const EditPlanDialog = ({
                 type="number"
                 min="0"
                 placeholder="Unlimited"
-                className="bg-slate-900/50 border-slate-600"
+                className="bg-white/[0.04] border-white/10"
                 value={maxTenants}
                 onChange={(e) => setMaxTenants(e.target.value)}
               />
@@ -129,7 +130,7 @@ const EditPlanDialog = ({
             <Input
               type="number"
               min="0"
-              className="bg-slate-900/50 border-slate-600"
+              className="bg-white/[0.04] border-white/10"
               value={smsTokens}
               onChange={(e) => setSmsTokens(e.target.value)}
             />
@@ -137,7 +138,7 @@ const EditPlanDialog = ({
           <div className="space-y-2">
             <Label className="text-slate-200">Features (one per line)</Label>
             <Textarea
-              className="bg-slate-900/50 border-slate-600 min-h-[100px]"
+              className="bg-white/[0.04] border-white/10 min-h-[100px]"
               value={features}
               onChange={(e) => setFeatures(e.target.value)}
             />
@@ -148,7 +149,7 @@ const EditPlanDialog = ({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-slate-600">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-transparent border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
             Cancel
           </Button>
           <Button
@@ -173,7 +174,7 @@ const SubscriptionsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Subscription Plans</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Subscription Plans</h1>
             <p className="text-slate-400">Manage subscription plans and pricing</p>
           </div>
         </div>
@@ -182,7 +183,7 @@ const SubscriptionsPage = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-80 bg-slate-700" />
+              <Skeleton key={i} className="h-80 bg-white/[0.06]" />
             ))}
           </div>
         ) : (
@@ -190,19 +191,17 @@ const SubscriptionsPage = () => {
             {plans?.map((plan) => (
               <Card
                 key={plan.id}
-                className={`bg-slate-800/50 border-slate-700 ${
-                  plan.name === 'Pro' ? 'ring-2 ring-primary' : ''
-                }`}
+                className={cn(ADMIN_CARD, plan.name === 'Pro' && 'ring-2 ring-primary')}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-white">{plan.name}</CardTitle>
+                    <CardTitle className="text-lg font-semibold tracking-tight text-white">{plan.name}</CardTitle>
                     <div className="flex items-center gap-2">
                       {plan.name === 'Pro' && <Badge className="bg-primary">Popular</Badge>}
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-slate-400 hover:text-white hover:bg-slate-700"
+                        className="h-7 w-7 text-slate-400 hover:text-white hover:bg-white/10"
                         onClick={() => setEditingPlan(plan)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
@@ -247,7 +246,7 @@ const SubscriptionsPage = () => {
                   </div>
 
                   {/* Features */}
-                  <div className="space-y-2 pt-4 border-t border-slate-700">
+                  <div className="space-y-2 pt-4 border-t border-white/10">
                     {plan.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm text-slate-300">
                         <Check className="h-4 w-4 text-green-400" />

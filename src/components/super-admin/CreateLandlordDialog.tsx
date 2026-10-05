@@ -107,7 +107,7 @@ export const CreateLandlordDialog = ({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-slate-600">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-transparent border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
             Cancel
           </Button>
           <Button

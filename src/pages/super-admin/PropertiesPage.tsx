@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/table';
 import { Search, Building2, MapPin } from 'lucide-react';
 import { formatDate } from '@/lib/dates';
+import { ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 interface PropertyRow {
   id: string;
@@ -102,7 +104,7 @@ const PropertiesPage = () => {
           </p>
         </div>
 
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className={ADMIN_CARD}>
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -120,7 +122,7 @@ const PropertiesPage = () => {
                   placeholder="Search properties..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-slate-900/50 border-slate-600 text-white"
+                  className="pl-10 bg-white/[0.04] border-white/10 text-white"
                 />
               </div>
             </div>
@@ -129,12 +131,12 @@ const PropertiesPage = () => {
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full bg-slate-700" />
+                  <Skeleton key={i} className="h-14 w-full bg-white/[0.06]" />
                 ))}
               </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-12">
-                <Building2 className="h-12 w-12 text-slate-600 mx-auto mb-3" />
+                <Building2 className="h-12 w-12 text-slate-700 mx-auto mb-3" />
                 <p className="text-slate-400">No properties found</p>
               </div>
             ) : (
@@ -142,7 +144,7 @@ const PropertiesPage = () => {
                 {/* Mobile cards */}
                 <div className="md:hidden space-y-3">
                   {filtered.map((p) => (
-                    <div key={p.id} className="rounded-lg bg-slate-900/50 p-4 space-y-2">
+                    <div key={p.id} className={cn(ADMIN_SURFACE, "p-4 space-y-2")}>
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="font-semibold text-white">{p.name}</div>
@@ -151,7 +153,7 @@ const PropertiesPage = () => {
                             {[p.town, p.county].filter(Boolean).join(', ') || 'No location'}
                           </div>
                         </div>
-                        <Badge variant="outline" className="border-slate-600 text-slate-300 capitalize">
+                        <Badge variant="outline" className="border-white/10 text-slate-300 capitalize">
                           {p.property_type || 'residential'}
                         </Badge>
                       </div>
@@ -161,7 +163,7 @@ const PropertiesPage = () => {
                           {p.landlord_company || p.landlord_name}
                         </span>
                       </div>
-                      <div className="flex gap-4 text-xs text-slate-400 pt-1 border-t border-slate-700">
+                      <div className="flex gap-4 text-xs text-slate-400 pt-1 border-t border-white/10">
                         <span>{p.houses_count} units</span>
                         <span className="text-success">{p.occupied_count} occupied</span>
                         <span>{p.houses_count - p.occupied_count} vacant</span>
@@ -174,7 +176,7 @@ const PropertiesPage = () => {
                 <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-slate-700 hover:bg-transparent">
+                      <TableRow className="border-white/10 hover:bg-transparent">
                         <TableHead className="text-slate-400">Property</TableHead>
                         <TableHead className="text-slate-400">Landlord</TableHead>
                         <TableHead className="text-slate-400">Location</TableHead>
@@ -187,7 +189,7 @@ const PropertiesPage = () => {
                     </TableHeader>
                     <TableBody>
                       {filtered.map((p) => (
-                        <TableRow key={p.id} className="border-slate-700">
+                        <TableRow key={p.id} className="border-white/10 hover:bg-white/[0.04]">
                           <TableCell className="font-medium text-white">{p.name}</TableCell>
                           <TableCell>
                             <div className="text-sm text-slate-200">
@@ -201,7 +203,7 @@ const PropertiesPage = () => {
                             {[p.town, p.county].filter(Boolean).join(', ') || '—'}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="border-slate-600 text-slate-300 capitalize">
+                            <Badge variant="outline" className="border-white/10 text-slate-300 capitalize">
                               {p.property_type || 'residential'}
                             </Badge>
                           </TableCell>

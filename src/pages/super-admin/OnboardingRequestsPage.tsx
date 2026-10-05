@@ -17,7 +17,8 @@ import { Search, Phone, Mail, Check, X, PhoneCall, UserPlus } from 'lucide-react
 import { formatDateTime } from '@/lib/dates';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
-import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 const STATUS_OPTIONS = ['new', 'contacted', 'converted', 'dismissed'];
 
@@ -63,30 +64,30 @@ const OnboardingRequestsPage = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-white">Onboarding Requests</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-white">Onboarding Requests</h1>
           <p className="text-slate-400">
             Leads from the public "Get started" form — reach out and onboard them.
           </p>
         </div>
 
         {/* Filters */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className={ADMIN_CARD}>
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search by name, email, or phone..."
-                  className="pl-10 bg-slate-900/50 border-slate-600 text-white"
+                  className="pl-10 bg-white/[0.04] border-white/10 text-white"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48 bg-slate-900/50 border-slate-600 text-white">
+                <SelectTrigger className="w-full sm:w-48 bg-white/[0.04] border-white/10 text-white">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent className="bg-[#121a2e] border-white/10">
                   <SelectItem value="all">All Status</SelectItem>
                   {STATUS_OPTIONS.map((s) => (
                     <SelectItem key={s} value={s} className="capitalize">
@@ -100,9 +101,9 @@ const OnboardingRequestsPage = () => {
         </Card>
 
         {/* Requests List */}
-        <Card className="bg-slate-800/50 border-slate-700">
+        <Card className={ADMIN_CARD}>
           <CardHeader>
-            <CardTitle className="text-white">Requests ({filteredRequests?.length || 0})</CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight text-white">Requests ({filteredRequests?.length || 0})</CardTitle>
             <CardDescription className="text-slate-400">
               Newest requests first
             </CardDescription>
@@ -111,20 +112,20 @@ const OnboardingRequestsPage = () => {
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-20 w-full bg-slate-700" />
+                  <Skeleton key={i} className="h-20 w-full bg-white/[0.06]" />
                 ))}
               </div>
             ) : filteredRequests?.length === 0 ? (
               <p className="text-slate-400 text-center py-8">No onboarding requests found</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {filteredRequests?.map((request) => (
                   <div
                     key={request.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-lg bg-slate-900/50"
+                    className={cn('flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4', ADMIN_SURFACE, 'hover:bg-white/[0.06] transition-colors duration-150')}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 shrink-0 rounded-full bg-primary/20 flex items-center justify-center">
+                      <div className="w-12 h-12 shrink-0 rounded-full bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center">
                         <span className="text-primary font-bold text-lg">
                           {request.full_name[0]}
                         </span>
@@ -157,7 +158,7 @@ const OnboardingRequestsPage = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-slate-600 text-slate-200 hover:bg-slate-800"
+                          className="bg-transparent border-white/10 text-slate-200 hover:bg-white/10"
                           onClick={() => handleStatusChange(request.id, 'contacted')}
                         >
                           <PhoneCall className="h-4 w-4 mr-1.5" /> Mark contacted
@@ -176,7 +177,7 @@ const OnboardingRequestsPage = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-green-600 text-green-400 hover:bg-green-950"
+                          className="bg-transparent border-green-600/50 text-green-400 hover:bg-green-500/10"
                           onClick={() => handleStatusChange(request.id, 'converted')}
                         >
                           <Check className="h-4 w-4 mr-1.5" /> Mark converted
@@ -186,7 +187,7 @@ const OnboardingRequestsPage = () => {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="border-red-600 text-red-400 hover:bg-red-950"
+                          className="bg-transparent border-red-600/50 text-red-400 hover:bg-red-500/10"
                           onClick={() => handleStatusChange(request.id, 'dismissed')}
                         >
                           <X className="h-4 w-4 mr-1.5" /> Dismiss
