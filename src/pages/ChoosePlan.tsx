@@ -1,52 +1,16 @@
 import { useAuth } from '@/hooks/useAuth';
+import { usePublicPlans } from '@/hooks/usePublicPlans';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Check, CreditCard, LogOut, Phone, Mail } from 'lucide-react';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { ROUTES } from '@/lib/routes';
 
-const plans = [
-  {
-    name: 'Starter',
-    price: 'KES 500',
-    period: '/month',
-    description: 'For small landlords getting started',
-    features: ['Up to 10 houses', 'Manual payment entry', 'Basic reports', 'Email support'],
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    price: 'KES 1,500',
-    period: '/month',
-    description: 'For growing property portfolios',
-    features: [
-      'Up to 50 houses',
-      'M-Pesa & bank auto-sync',
-      'SMS reminders (100 tokens)',
-      'PDF & CSV reports',
-      'Priority support',
-    ],
-    highlighted: true,
-  },
-  {
-    name: 'Premium',
-    price: 'KES 3,500',
-    period: '/month',
-    description: 'For established property managers',
-    features: [
-      'Unlimited houses',
-      'All Pro features',
-      'SMS reminders (500 tokens)',
-      'Multi-property management',
-      'Dedicated account manager',
-    ],
-    highlighted: false,
-  },
-];
-
 const ChoosePlan = () => {
   const { signOut } = useAuth();
+  const { data: plans = [], isLoading: plansLoading } = usePublicPlans();
 
   return (
     <>
@@ -68,51 +32,66 @@ const ChoosePlan = () => {
         </div>
 
         <div className="grid gap-4 sm:gap-6 md:grid-cols-3 mb-8">
-          {plans.map((plan) => (
-            <Card
-              key={plan.name}
-              className={
-                plan.highlighted
-                  ? 'border-primary shadow-lg relative md:scale-105'
-                  : 'border-border/60'
-              }
-            >
-              {plan.highlighted && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
-                  Most Popular
-                </div>
-              )}
-              <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>{plan.description}</CardDescription>
-                <div className="pt-2">
-                  <span className="text-3xl font-bold">{plan.price}</span>
-                  <span className="text-muted-foreground text-sm">{plan.period}</span>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <ul className="space-y-2">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <span>{f}</span>
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  className="w-full"
-                  variant={plan.highlighted ? 'default' : 'outline'}
-                  onClick={() =>
-                    document
-                      .getElementById('payment-instructions')
-                      ?.scrollIntoView({ behavior: 'smooth' })
+          {plansLoading
+            ? Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="border-border/60">
+                  <CardHeader>
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-4 w-full mt-2" />
+                    <Skeleton className="h-8 w-28 mt-2" />
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-10 w-full" />
+                  </CardContent>
+                </Card>
+              ))
+            : plans.map((plan) => (
+                <Card
+                  key={plan.name}
+                  className={
+                    plan.highlighted
+                      ? 'border-primary shadow-lg relative md:scale-105'
+                      : 'border-border/60'
                   }
                 >
-                  Choose {plan.name}
-                </Button>
-              </CardContent>
-            </Card>
-          ))}
+                  {plan.highlighted && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-full">
+                      Most Popular
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle>{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                    <div className="pt-2">
+                      <span className="text-3xl font-bold">KES {plan.price.toLocaleString()}</span>
+                      <span className="text-muted-foreground text-sm">/month</span>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <ul className="space-y-2">
+                      {plan.features.map((f) => (
+                        <li key={f} className="flex items-start gap-2 text-sm">
+                          <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <Button
+                      className="w-full"
+                      variant={plan.highlighted ? 'default' : 'outline'}
+                      onClick={() =>
+                        document
+                          .getElementById('payment-instructions')
+                          ?.scrollIntoView({ behavior: 'smooth' })
+                      }
+                    >
+                      Choose {plan.name}
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
         </div>
 
         <Card id="payment-instructions" className="max-w-2xl mx-auto">

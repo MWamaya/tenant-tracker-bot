@@ -32,13 +32,13 @@ const SubscriptionsPage = () => {
               <Card
                 key={plan.id}
                 className={`bg-slate-800/50 border-slate-700 ${
-                  plan.name === 'Professional' ? 'ring-2 ring-primary' : ''
+                  plan.name === 'Pro' ? 'ring-2 ring-primary' : ''
                 }`}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-white">{plan.name}</CardTitle>
-                    {plan.name === 'Professional' && (
+                    {plan.name === 'Pro' && (
                       <Badge className="bg-primary">Popular</Badge>
                     )}
                   </div>

@@ -19,9 +19,11 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
+import { usePublicPlans } from '@/hooks/usePublicPlans';
 import heroImage from '@/assets/landing-hero.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const WITHOUT = [
   'Search through M-Pesa messages',
@@ -102,26 +104,6 @@ const FEATURES = [
   },
 ];
 
-const PRICING_PLANS = [
-  {
-    name: 'Starter',
-    price: 'KES 500',
-    features: ['Up to 10 houses', 'Manual payment entry', 'Basic reports', 'Email support'],
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    price: 'KES 1,500',
-    features: ['Up to 50 houses', 'M-Pesa & bank auto-sync', 'SMS reminders (100 tokens)', 'Priority support'],
-    highlighted: true,
-  },
-  {
-    name: 'Premium',
-    price: 'KES 3,500',
-    features: ['Unlimited houses', 'All Pro features', 'SMS reminders (500 tokens)', 'Dedicated manager'],
-    highlighted: false,
-  },
-];
 
 /** Small uppercase label above a section heading. */
 const Kicker = ({ children }: { children: React.ReactNode }) => (
@@ -237,6 +219,7 @@ const DashboardMockup = () => (
 
 const Landing = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { data: plans = [], isLoading: plansLoading } = usePublicPlans();
 
   return (
     <>
@@ -570,41 +553,54 @@ const Landing = () => {
           </Reveal>
 
           <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            {PRICING_PLANS.map((plan, i) => (
-              <Reveal key={plan.name} delay={i * 100}>
-                <div
-                  className={`relative h-full rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                    plan.highlighted ? 'border-primary shadow-lg sm:scale-105' : ''
-                  }`}
-                >
-                  {plan.highlighted && (
-                    <div className="absolute -top-3 left-6 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full">
-                      Most Popular
-                    </div>
-                  )}
-                  <h3 className="font-semibold text-foreground">{plan.name}</h3>
-                  <div className="mt-3">
-                    <span className="text-3xl font-bold tracking-tight text-foreground">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground"> / month</span>
+            {plansLoading
+              ? Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="h-full rounded-2xl border bg-card p-6 shadow-sm">
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-8 w-28 mt-3" />
+                    <Skeleton className="h-4 w-full mt-5" />
+                    <Skeleton className="h-4 w-full mt-2.5" />
+                    <Skeleton className="h-4 w-3/4 mt-2.5" />
+                    <Skeleton className="h-10 w-full mt-6" />
                   </div>
-                  <ul className="mt-5 space-y-2.5 flex-1">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    asChild
-                    className="mt-6 w-full transition-transform hover:scale-[1.02]"
-                    variant={plan.highlighted ? 'default' : 'outline'}
-                  >
-                    <Link to={`${ROUTES.GET_STARTED}?plan=${encodeURIComponent(plan.name)}`}>Choose {plan.name}</Link>
-                  </Button>
-                </div>
-              </Reveal>
-            ))}
+                ))
+              : plans.map((plan, i) => (
+                  <Reveal key={plan.name} delay={i * 100}>
+                    <div
+                      className={`relative h-full rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                        plan.highlighted ? 'border-primary shadow-lg sm:scale-105' : ''
+                      }`}
+                    >
+                      {plan.highlighted && (
+                        <div className="absolute -top-3 left-6 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full">
+                          Most Popular
+                        </div>
+                      )}
+                      <h3 className="font-semibold text-foreground">{plan.name}</h3>
+                      <div className="mt-3">
+                        <span className="text-3xl font-bold tracking-tight text-foreground">
+                          KES {plan.price.toLocaleString()}
+                        </span>
+                        <span className="text-sm text-muted-foreground"> / month</span>
+                      </div>
+                      <ul className="mt-5 space-y-2.5 flex-1">
+                        {plan.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <Button
+                        asChild
+                        className="mt-6 w-full transition-transform hover:scale-[1.02]"
+                        variant={plan.highlighted ? 'default' : 'outline'}
+                      >
+                        <Link to={`${ROUTES.GET_STARTED}?plan=${encodeURIComponent(plan.name)}`}>Choose {plan.name}</Link>
+                      </Button>
+                    </div>
+                  </Reveal>
+                ))}
           </div>
         </section>
 
