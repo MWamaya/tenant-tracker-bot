@@ -612,3 +612,65 @@ export const useCreateLandlordAccount = () => {
     },
   });
 };
+
+// Mutation to edit a subscription plan's price/features/limits. Name is
+// deliberately not editable here — the public site (Landing, GetStarted,
+// ChoosePlan) matches plans by exact name, so renaming one in place would
+// silently break that match rather than updating it.
+export const useUpdateSubscriptionPlan = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      planId,
+      price,
+      description,
+      maxProperties,
+      maxTenants,
+      smsTokensIncluded,
+      features,
+      isActive,
+    }: {
+      planId: string;
+      price: number;
+      description: string;
+      maxProperties: number | null;
+      maxTenants: number | null;
+      smsTokensIncluded: number;
+      features: string[];
+      isActive: boolean;
+    }) => {
+      const { error } = await supabase
+        .from('subscription_plans')
+        .update({
+          price,
+          description,
+          max_properties: maxProperties,
+          max_tenants: maxTenants,
+          sms_tokens_included: smsTokensIncluded,
+          features,
+          is_active: isActive,
+        })
+        .eq('id', planId);
+
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'UPDATE_SUBSCRIPTION_PLAN',
+        entity_type: 'subscription_plan',
+        entity_id: planId,
+        new_values: { price, is_active: isActive },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+      // Also read by the public site (Landing, GetStarted, ChoosePlan).
+      queryClient.invalidateQueries({ queryKey: ['public-subscription-plans'] });
+      toast.success('Plan updated');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update plan: ${error.message}`);
+    },
+  });
+};

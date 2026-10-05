@@ -14,6 +14,7 @@ import {
   Clock,
   Ban,
   UserPlus,
+  CircleAlert,
 } from 'lucide-react';
 import { formatDate } from '@/lib/dates';
 import { ROUTES } from '@/lib/routes';
@@ -26,6 +27,7 @@ const StatCard = ({
   icon: Icon,
   trend,
   loading,
+  error,
   onClick,
 }: {
   title: string;
@@ -34,6 +36,9 @@ const StatCard = ({
   icon: React.ComponentType<{ className?: string }>;
   trend?: 'up' | 'down' | 'neutral';
   loading?: boolean;
+  /** When true, shows a distinct error state instead of falling back to a
+   * misleading "0" that's indistinguishable from a real zero count. */
+  error?: boolean;
   onClick?: () => void;
 }) => (
   <Card
@@ -49,6 +54,11 @@ const StatCard = ({
     <CardContent>
       {loading ? (
         <Skeleton className="h-8 w-24 bg-slate-700" />
+      ) : error ? (
+        <div className="flex items-center gap-1.5 text-destructive">
+          <CircleAlert className="h-4 w-4 shrink-0" />
+          <span className="text-sm font-medium">Failed to load</span>
+        </div>
       ) : (
         <>
           <div className="text-2xl font-bold text-white">{value}</div>
@@ -62,9 +72,13 @@ const StatCard = ({
 );
 
 const SuperAdminDashboard = () => {
-  const { data: stats, isLoading: statsLoading } = usePlatformStats();
-  const { data: landlords, isLoading: landlordsLoading } = useLandlords();
-  const { data: newRequestsCount, isLoading: newRequestsLoading } = useNewOnboardingRequestsCount();
+  const { data: stats, isLoading: statsLoading, isError: statsError } = usePlatformStats();
+  const { data: landlords, isLoading: landlordsLoading, isError: landlordsError } = useLandlords();
+  const {
+    data: newRequestsCount,
+    isLoading: newRequestsLoading,
+    isError: newRequestsError,
+  } = useNewOnboardingRequestsCount();
   const navigate = useNavigate();
 
   const recentLandlords = landlords?.slice(0, 5) || [];
@@ -86,6 +100,7 @@ const SuperAdminDashboard = () => {
             description="Awaiting triage"
             icon={UserPlus}
             loading={newRequestsLoading}
+            error={newRequestsError}
             onClick={() => navigate(ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS)}
           />
           <StatCard
@@ -94,6 +109,7 @@ const SuperAdminDashboard = () => {
             description={`${stats?.activeLandlords || 0} active · View all`}
             icon={Users}
             loading={statsLoading}
+            error={statsError}
             onClick={() => navigate(ROUTES.SUPER_ADMIN_LANDLORDS)}
           />
           <StatCard
@@ -101,18 +117,21 @@ const SuperAdminDashboard = () => {
             value={stats?.totalProperties || 0}
             icon={Building}
             loading={statsLoading}
+            error={statsError}
           />
           <StatCard
             title="Total Tenants"
             value={stats?.totalTenants || 0}
             icon={UserCheck}
             loading={statsLoading}
+            error={statsError}
           />
           <StatCard
             title="Rent Collected"
             value={`KES ${(stats?.totalRentCollected || 0).toLocaleString()}`}
             icon={DollarSign}
             loading={statsLoading}
+            error={statsError}
           />
         </div>
 
@@ -123,6 +142,7 @@ const SuperAdminDashboard = () => {
             value={stats?.suspendedLandlords || 0}
             icon={Ban}
             loading={statsLoading}
+            error={statsError}
           />
           <StatCard
             title="Expiring Soon"
@@ -130,6 +150,7 @@ const SuperAdminDashboard = () => {
             description="Within 7 days"
             icon={Clock}
             loading={statsLoading}
+            error={statsError}
           />
           <StatCard
             title="SMS Tokens"
@@ -137,12 +158,14 @@ const SuperAdminDashboard = () => {
             description={`${stats?.smsTokensUsed || 0} used`}
             icon={MessageSquare}
             loading={statsLoading}
+            error={statsError}
           />
           <StatCard
             title="Unmatched Payments"
             value={stats?.unmatchedPayments || 0}
             icon={AlertTriangle}
             loading={statsLoading}
+            error={statsError}
           />
         </div>
 
@@ -160,6 +183,11 @@ const SuperAdminDashboard = () => {
                 {[1, 2, 3].map((i) => (
                   <Skeleton key={i} className="h-12 w-full bg-slate-700" />
                 ))}
+              </div>
+            ) : landlordsError ? (
+              <div className="flex items-center justify-center gap-1.5 text-destructive py-8">
+                <CircleAlert className="h-4 w-4 shrink-0" />
+                <span className="text-sm font-medium">Failed to load landlords</span>
               </div>
             ) : recentLandlords.length === 0 ? (
               <p className="text-slate-400 text-center py-8">No landlords registered yet</p>

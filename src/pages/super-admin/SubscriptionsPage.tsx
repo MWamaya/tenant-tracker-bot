@@ -1,13 +1,171 @@
+import { useEffect, useState } from 'react';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { useSubscriptionPlans } from '@/hooks/useSuperAdminData';
+import { useSubscriptionPlans, useUpdateSubscriptionPlan } from '@/hooks/useSuperAdminData';
+import type { SubscriptionPlan } from '@/hooks/useSuperAdminData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Check, Building, Users, MessageSquare } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Check, Building, Users, MessageSquare, Pencil } from 'lucide-react';
 import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
+
+const EditPlanDialog = ({
+  plan,
+  open,
+  onOpenChange,
+}: {
+  plan: SubscriptionPlan | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) => {
+  const updatePlan = useUpdateSubscriptionPlan();
+  const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
+  const [maxProperties, setMaxProperties] = useState('');
+  const [maxTenants, setMaxTenants] = useState('');
+  const [smsTokens, setSmsTokens] = useState('');
+  const [features, setFeatures] = useState('');
+  const [isActive, setIsActive] = useState(true);
+
+  useEffect(() => {
+    if (plan) {
+      setPrice(String(plan.price));
+      setDescription(plan.description || '');
+      setMaxProperties(plan.max_properties === null ? '' : String(plan.max_properties));
+      setMaxTenants(plan.max_tenants === null ? '' : String(plan.max_tenants));
+      setSmsTokens(String(plan.sms_tokens_included));
+      setFeatures(plan.features.join('\n'));
+      setIsActive(plan.is_active);
+    }
+  }, [plan]);
+
+  const handleSubmit = async () => {
+    if (!plan) return;
+    const parsedPrice = parseFloat(price);
+    if (!Number.isFinite(parsedPrice) || parsedPrice < 0) return;
+
+    await updatePlan.mutateAsync({
+      planId: plan.id,
+      price: parsedPrice,
+      description: description.trim(),
+      maxProperties: maxProperties.trim() === '' ? null : parseInt(maxProperties, 10),
+      maxTenants: maxTenants.trim() === '' ? null : parseInt(maxTenants, 10),
+      smsTokensIncluded: Number.isFinite(parseInt(smsTokens, 10)) ? parseInt(smsTokens, 10) : 0,
+      features: features
+        .split('\n')
+        .map((f) => f.trim())
+        .filter(Boolean),
+      isActive,
+    });
+    onOpenChange(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="bg-slate-800 border-slate-700 text-white max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit {plan?.name}</DialogTitle>
+          <DialogDescription className="text-slate-400">
+            Plan name isn't editable here — the public site matches plans by name.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label className="text-slate-200">Price (KES / {plan?.duration_days} days)</Label>
+            <Input
+              type="number"
+              min="0"
+              className="bg-slate-900/50 border-slate-600"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-200">Description</Label>
+            <Input
+              className="bg-slate-900/50 border-slate-600"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-slate-200">Max Properties</Label>
+              <Input
+                type="number"
+                min="0"
+                placeholder="Unlimited"
+                className="bg-slate-900/50 border-slate-600"
+                value={maxProperties}
+                onChange={(e) => setMaxProperties(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-slate-200">Max Tenants</Label>
+              <Input
+                type="number"
+                min="0"
+                placeholder="Unlimited"
+                className="bg-slate-900/50 border-slate-600"
+                value={maxTenants}
+                onChange={(e) => setMaxTenants(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-200">SMS Tokens Included</Label>
+            <Input
+              type="number"
+              min="0"
+              className="bg-slate-900/50 border-slate-600"
+              value={smsTokens}
+              onChange={(e) => setSmsTokens(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-200">Features (one per line)</Label>
+            <Textarea
+              className="bg-slate-900/50 border-slate-600 min-h-[100px]"
+              value={features}
+              onChange={(e) => setFeatures(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <Label className="text-slate-200">Active</Label>
+            <Switch checked={isActive} onCheckedChange={setIsActive} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-slate-600">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={updatePlan.isPending || !Number.isFinite(parseFloat(price)) || parseFloat(price) < 0}
+          >
+            {updatePlan.isPending ? 'Saving…' : 'Save Changes'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 const SubscriptionsPage = () => {
   const { data: plans, isLoading } = useSubscriptionPlans();
+  const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
 
   return (
     <SuperAdminLayout>
@@ -39,9 +197,17 @@ const SubscriptionsPage = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-white">{plan.name}</CardTitle>
-                    {plan.name === 'Pro' && (
-                      <Badge className="bg-primary">Popular</Badge>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {plan.name === 'Pro' && <Badge className="bg-primary">Popular</Badge>}
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-slate-400 hover:text-white hover:bg-slate-700"
+                        onClick={() => setEditingPlan(plan)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
                   </div>
                   <CardDescription className="text-slate-400">
                     {plan.description}
@@ -105,6 +271,12 @@ const SubscriptionsPage = () => {
           </div>
         )}
       </div>
+
+      <EditPlanDialog
+        plan={editingPlan}
+        open={!!editingPlan}
+        onOpenChange={(open) => !open && setEditingPlan(null)}
+      />
     </SuperAdminLayout>
   );
 };
