@@ -1,11 +1,9 @@
-import { useState } from 'react';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { useSubscriptionPlans } from '@/hooks/useSuperAdminData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Check, Building, Users, MessageSquare } from 'lucide-react';
+import { Check, Building, Users, MessageSquare } from 'lucide-react';
 
 const SubscriptionsPage = () => {
   const { data: plans, isLoading } = useSubscriptionPlans();
@@ -19,10 +17,6 @@ const SubscriptionsPage = () => {
             <h1 className="text-2xl font-bold text-white">Subscription Plans</h1>
             <p className="text-slate-400">Manage subscription plans and pricing</p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
-            Create Plan
-          </Button>
         </div>
 
         {/* Plans Grid */}

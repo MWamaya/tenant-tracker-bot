@@ -9,7 +9,6 @@ import {
   LayoutDashboard,
   Users,
   CreditCard,
-  MessageSquare,
   Settings,
   FileText,
   LogOut,
@@ -17,7 +16,6 @@ import {
   Shield,
   Building,
   DollarSign,
-  Mail,
   UserPlus,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
@@ -31,13 +29,8 @@ const navItems = [
   { icon: UserPlus, label: 'Onboarding Requests', path: ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS },
   { icon: Users, label: 'Landlords', path: ROUTES.SUPER_ADMIN_LANDLORDS },
   { icon: CreditCard, label: 'Subscriptions', path: ROUTES.SUPER_ADMIN_SUBSCRIPTIONS },
-  // SMS Management and the second Email Logs entry below don't correspond
-  // to any defined route today (pre-existing dead links) — renamed for
-  // consistency only, not added to ROUTES since nothing routes them.
-  { icon: MessageSquare, label: 'SMS Management', path: '/app/super-admin/sms' },
   { icon: DollarSign, label: 'Payments', path: ROUTES.SUPER_ADMIN_PAYMENTS },
   { icon: Building, label: 'Properties', path: ROUTES.SUPER_ADMIN_PROPERTIES },
-  { icon: Mail, label: 'Email Logs', path: '/app/super-admin/email-logs' },
   { icon: FileText, label: 'Audit Logs', path: ROUTES.SUPER_ADMIN_AUDIT_LOGS },
   { icon: Settings, label: 'Settings', path: ROUTES.SUPER_ADMIN_SETTINGS },
 ];

@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,8 @@ interface SystemSetting {
 }
 
 const SettingsPage = () => {
+  const queryClient = useQueryClient();
+
   const { data: settings, isLoading } = useQuery({
     queryKey: ['system-settings'],
     queryFn: async (): Promise<SystemSetting[]> => {
@@ -26,6 +29,31 @@ const SettingsPage = () => {
 
       if (error) throw error;
       return data || [];
+    },
+  });
+
+  const updateSetting = useMutation({
+    mutationFn: async ({ key, value }: { key: string; value: boolean }) => {
+      const { error } = await supabase
+        .from('system_settings')
+        .update({ setting_value: value })
+        .eq('setting_key', key);
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'UPDATE_SYSTEM_SETTING',
+        entity_type: 'system_setting',
+        entity_id: key,
+        new_values: { [key]: value },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['system-settings'] });
+      toast.success('Setting updated');
+    },
+    onError: (error) => {
+      toast.error(`Failed to update setting: ${error.message}`);
     },
   });
 
@@ -79,7 +107,13 @@ const SettingsPage = () => {
                         Put the platform in maintenance mode
                       </p>
                     </div>
-                    <Switch checked={getSetting('maintenance_mode') === true} />
+                    <Switch
+                      checked={getSetting('maintenance_mode') === true}
+                      disabled={updateSetting.isPending}
+                      onCheckedChange={(checked) =>
+                        updateSetting.mutate({ key: 'maintenance_mode', value: checked })
+                      }
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
@@ -88,7 +122,13 @@ const SettingsPage = () => {
                         Enable automatic bank email parsing
                       </p>
                     </div>
-                    <Switch checked={getSetting('bank_email_parsing_enabled') === true} />
+                    <Switch
+                      checked={getSetting('bank_email_parsing_enabled') === true}
+                      disabled={updateSetting.isPending}
+                      onCheckedChange={(checked) =>
+                        updateSetting.mutate({ key: 'bank_email_parsing_enabled', value: checked })
+                      }
+                    />
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">

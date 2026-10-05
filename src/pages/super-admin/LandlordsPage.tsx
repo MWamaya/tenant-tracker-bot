@@ -141,9 +141,14 @@ const LandlordsPage = () => {
             <h1 className="text-2xl font-bold text-white">Landlord Management</h1>
             <p className="text-slate-400">Manage landlord accounts and subscriptions</p>
           </div>
-          <Button className="bg-primary hover:bg-primary/90">
-            <UserPlus className="h-4 w-4 mr-2" />
-            Add Landlord
+          {/* No in-app flow creates a landlord account yet (landlords self-signup
+              at /app/auth) — point admins at the real current entry point
+              instead of a button that did nothing. */}
+          <Button asChild className="bg-primary hover:bg-primary/90">
+            <Link to={ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              View Onboarding Requests
+            </Link>
           </Button>
         </div>
 
