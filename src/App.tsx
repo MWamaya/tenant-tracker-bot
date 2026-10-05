@@ -28,6 +28,14 @@ import Landing from "./pages/Landing";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/lib/routes";
 
+// Legal/support pages — lazy-loaded: rarely visited, no reason to inflate
+// the bundle every visitor downloads to see the landing page.
+const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
+const TermsOfUse = lazy(() => import("./pages/legal/TermsOfUse"));
+const CookiePolicy = lazy(() => import("./pages/legal/CookiePolicy"));
+const RefundCancellation = lazy(() => import("./pages/legal/RefundCancellation"));
+const Contact = lazy(() => import("./pages/legal/Contact"));
+
 // Super Admin Pages — lazy-loaded: this is a separate part of the app most
 // landlords never visit, so it shouldn't inflate the bundle every landlord
 // downloads on login.
@@ -103,6 +111,28 @@ const App = () => (
               <Routes>
                 {/* Public marketing site */}
                 <Route path={ROUTES.LANDING} element={<Landing />} />
+
+                {/* Legal / support pages */}
+                <Route
+                  path={ROUTES.PRIVACY_POLICY}
+                  element={<Suspense fallback={<SuperAdminFallback />}><PrivacyPolicy /></Suspense>}
+                />
+                <Route
+                  path={ROUTES.TERMS_OF_USE}
+                  element={<Suspense fallback={<SuperAdminFallback />}><TermsOfUse /></Suspense>}
+                />
+                <Route
+                  path={ROUTES.COOKIE_POLICY}
+                  element={<Suspense fallback={<SuperAdminFallback />}><CookiePolicy /></Suspense>}
+                />
+                <Route
+                  path={ROUTES.REFUND_CANCELLATION}
+                  element={<Suspense fallback={<SuperAdminFallback />}><RefundCancellation /></Suspense>}
+                />
+                <Route
+                  path={ROUTES.CONTACT}
+                  element={<Suspense fallback={<SuperAdminFallback />}><Contact /></Suspense>}
+                />
 
                 {/* Landlord Auth & Routes */}
                 <Route path={ROUTES.AUTH} element={<Auth />} />

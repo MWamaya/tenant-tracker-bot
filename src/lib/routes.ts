@@ -3,6 +3,11 @@
 // here — everything below lives under the authenticated /app shell.
 export const ROUTES = {
   LANDING: '/',
+  PRIVACY_POLICY: '/privacy-policy',
+  TERMS_OF_USE: '/terms-of-use',
+  COOKIE_POLICY: '/cookie-policy',
+  REFUND_CANCELLATION: '/refund-cancellation',
+  CONTACT: '/contact',
   DASHBOARD: '/app',
   AUTH: '/app/auth',
   RESET_PASSWORD: '/app/reset-password',
