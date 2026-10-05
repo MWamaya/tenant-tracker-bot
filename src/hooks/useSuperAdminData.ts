@@ -575,3 +575,40 @@ export const useUpdateOnboardingStatus = () => {
     },
   });
 };
+
+// Mutation to create a landlord account from the admin UI (blank "Add
+// Landlord" form, or "Create account" on an onboarding request). Goes
+// through the admin-create-landlord edge function since creating an auth
+// user requires the Admin API (service role), not something the client
+// SDK can do directly.
+export const useCreateLandlordAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      fullName: string;
+      email: string;
+      phone?: string;
+      companyName?: string;
+      onboardingRequestId?: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('admin-create-landlord', {
+        body: params,
+      });
+
+      if (error) throw error;
+      if (data && 'error' in data) throw new Error(data.error);
+      return data as { ok: true; landlordId: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['landlords'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-requests-new-count'] });
+      toast.success('Landlord account created — they’ve been emailed an invite to set a password.');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create landlord: ${error.message}`);
+    },
+  });
+};

@@ -13,8 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Phone, Mail, Check, X, PhoneCall } from 'lucide-react';
+import { Search, Phone, Mail, Check, X, PhoneCall, UserPlus } from 'lucide-react';
 import { formatDateTime } from '@/lib/dates';
+import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
+import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
 
 const STATUS_OPTIONS = ['new', 'contacted', 'converted', 'dismissed'];
 
@@ -39,6 +41,7 @@ const OnboardingRequestsPage = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [createAccountFor, setCreateAccountFor] = useState<OnboardingRequest | null>(null);
 
   const filteredRequests = requests?.filter((r) => {
     const q = searchQuery.toLowerCase();
@@ -162,11 +165,20 @@ const OnboardingRequestsPage = () => {
                       {request.status !== 'converted' && (
                         <Button
                           size="sm"
+                          className="bg-primary hover:bg-primary/90"
+                          onClick={() => setCreateAccountFor(request)}
+                        >
+                          <UserPlus className="h-4 w-4 mr-1.5" /> Create account
+                        </Button>
+                      )}
+                      {request.status !== 'converted' && (
+                        <Button
+                          size="sm"
                           variant="outline"
                           className="border-green-600 text-green-400 hover:bg-green-950"
                           onClick={() => handleStatusChange(request.id, 'converted')}
                         >
-                          <Check className="h-4 w-4 mr-1.5" /> Converted
+                          <Check className="h-4 w-4 mr-1.5" /> Mark converted
                         </Button>
                       )}
                       {request.status !== 'dismissed' && (
@@ -187,6 +199,21 @@ const OnboardingRequestsPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      <CreateLandlordDialog
+        open={!!createAccountFor}
+        onOpenChange={(open) => !open && setCreateAccountFor(null)}
+        initial={
+          createAccountFor
+            ? {
+                fullName: createAccountFor.full_name,
+                email: createAccountFor.email,
+                phone: createAccountFor.phone,
+              }
+            : undefined
+        }
+        onboardingRequestId={createAccountFor?.id}
+      />
     </SuperAdminLayout>
   );
 };

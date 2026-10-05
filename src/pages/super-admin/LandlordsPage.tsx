@@ -35,9 +35,11 @@ import { Label } from '@/components/ui/label';
 import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare, LogIn, Building2, Users, Home, Mail } from 'lucide-react';
 import { formatDate, formatDateTime } from '@/lib/dates';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
+import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 
 const LandlordsPage = () => {
   const navigate = useNavigate();
+  const [addLandlordOpen, setAddLandlordOpen] = useState(false);
   const { startImpersonation } = useImpersonation();
   const { data: landlords, isLoading } = useLandlords();
   const { data: plans } = useSubscriptionPlans();
@@ -141,16 +143,20 @@ const LandlordsPage = () => {
             <h1 className="text-2xl font-bold text-white">Landlord Management</h1>
             <p className="text-slate-400">Manage landlord accounts and subscriptions</p>
           </div>
-          {/* No in-app flow creates a landlord account yet (landlords self-signup
-              at /app/auth) — point admins at the real current entry point
-              instead of a button that did nothing. */}
-          <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link to={ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS}>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" className="border-slate-600">
+              <Link to={ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS}>
+                View Onboarding Requests
+              </Link>
+            </Button>
+            <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddLandlordOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
-              View Onboarding Requests
-            </Link>
-          </Button>
+              Add Landlord
+            </Button>
+          </div>
         </div>
+
+        <CreateLandlordDialog open={addLandlordOpen} onOpenChange={setAddLandlordOpen} />
 
         {/* Filters */}
         <Card className="bg-slate-800/50 border-slate-700">
