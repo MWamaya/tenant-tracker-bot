@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,19 +50,31 @@ const GlobalPaymentsPage = () => {
     },
   });
 
-  const { data: payments, isLoading } = useQuery({
+  const PAGE_SIZE = 100;
+  const {
+    data: paymentPages,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery({
     queryKey: ['all-payments'],
-    queryFn: async (): Promise<Payment[]> => {
+    queryFn: async ({ pageParam }): Promise<Payment[]> => {
       const { data, error } = await supabase
         .from('payments')
         .select('*')
         .order('payment_date', { ascending: false })
-        .limit(200);
+        .range(pageParam, pageParam + PAGE_SIZE - 1);
 
       if (error) throw error;
       return data || [];
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.length * PAGE_SIZE : undefined,
   });
+
+  const payments = paymentPages?.pages.flat();
 
   // The list above is capped at the most recent 200 payments, so deriving
   // the "Unmatched" count from it undercounts once a landlord has more than
@@ -225,7 +237,7 @@ const GlobalPaymentsPage = () => {
               <CardHeader>
                 <CardTitle className="text-white">All Payments</CardTitle>
                 <CardDescription className="text-slate-400">
-                  Showing the last 200 payments across all landlords
+                  Across all landlords, newest first
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -236,7 +248,19 @@ const GlobalPaymentsPage = () => {
                     ))}
                   </div>
                 ) : (
-                  <PaymentsList payments={filteredPayments(allPayments)} />
+                  <>
+                    <PaymentsList payments={filteredPayments(allPayments)} />
+                    {hasNextPage && (
+                      <Button
+                        variant="outline"
+                        className="w-full mt-4 border-slate-600 text-slate-200 hover:bg-slate-800"
+                        onClick={() => fetchNextPage()}
+                        disabled={isFetchingNextPage}
+                      >
+                        {isFetchingNextPage ? 'Loading…' : 'Load more'}
+                      </Button>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -247,8 +271,8 @@ const GlobalPaymentsPage = () => {
               <CardHeader>
                 <CardTitle className="text-white">Unmatched Payments</CardTitle>
                 <CardDescription className="text-slate-400">
-                  Payments that are not linked to a tenant or house — showing from the
-                  most recent 200 platform-wide payments
+                  Payments that are not linked to a tenant or house, among those loaded
+                  below — the tab count above is the real platform-wide total
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -259,7 +283,19 @@ const GlobalPaymentsPage = () => {
                     ))}
                   </div>
                 ) : (
-                  <PaymentsList payments={filteredPayments(unmatchedPayments)} />
+                  <>
+                    <PaymentsList payments={filteredPayments(unmatchedPayments)} />
+                    {hasNextPage && (
+                      <Button
+                        variant="outline"
+                        className="w-full mt-4 border-slate-600 text-slate-200 hover:bg-slate-800"
+                        onClick={() => fetchNextPage()}
+                        disabled={isFetchingNextPage}
+                      >
+                        {isFetchingNextPage ? 'Loading…' : 'Load more'}
+                      </Button>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
