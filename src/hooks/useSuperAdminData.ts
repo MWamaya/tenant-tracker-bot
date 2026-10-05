@@ -341,24 +341,14 @@ export const useAllocateSmsTokens = () => {
 
   return useMutation({
     mutationFn: async ({ landlordId, amount, description }: { landlordId: string; amount: number; description?: string }) => {
-      // Get current balance
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('sms_token_balance')
-        .eq('id', landlordId)
-        .single();
+      // Atomic increment — avoids the read-then-write race of fetching the
+      // balance in JS and writing back old+amount.
+      const { data: newBalance, error: incrementError } = await supabase.rpc('increment_sms_balance', {
+        p_landlord_id: landlordId,
+        p_amount: amount,
+      });
 
-      if (profileError) throw profileError;
-
-      const newBalance = (profile?.sms_token_balance || 0) + amount;
-
-      // Update balance
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ sms_token_balance: newBalance })
-        .eq('id', landlordId);
-
-      if (updateError) throw updateError;
+      if (incrementError) throw incrementError;
 
       // Record transaction
       const { error: transactionError } = await supabase
@@ -418,6 +408,18 @@ export const useAssignSubscription = () => {
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + plan.duration_days);
 
+      // A landlord should only ever have one active subscription — cancel
+      // any existing one first, otherwise two "active" rows can coexist and
+      // which plan shows up (e.g. in useLandlords' subscriptionMap) becomes
+      // whichever row the query happens to return last.
+      const { error: cancelError } = await supabase
+        .from('landlord_subscriptions')
+        .update({ status: 'cancelled' })
+        .eq('landlord_id', landlordId)
+        .eq('status', 'active');
+
+      if (cancelError) throw cancelError;
+
       // Create subscription
       const { data: subscription, error: subError } = await supabase
         .from('landlord_subscriptions')
@@ -436,27 +438,23 @@ export const useAssignSubscription = () => {
       if (subError) throw subError;
 
       // Update landlord status to active
-      await supabase
+      const { error: statusError } = await supabase
         .from('profiles')
         .update({ account_status: 'active' })
         .eq('id', landlordId);
 
+      if (statusError) throw statusError;
+
       // Add SMS tokens if included in plan
       if (plan.sms_tokens_included > 0) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('sms_token_balance')
-          .eq('id', landlordId)
-          .single();
+        const { data: newBalance, error: incrementError } = await supabase.rpc('increment_sms_balance', {
+          p_landlord_id: landlordId,
+          p_amount: plan.sms_tokens_included,
+        });
 
-        const newBalance = (profile?.sms_token_balance || 0) + plan.sms_tokens_included;
+        if (incrementError) throw incrementError;
 
-        await supabase
-          .from('profiles')
-          .update({ sms_token_balance: newBalance })
-          .eq('id', landlordId);
-
-        await supabase.from('sms_transactions').insert({
+        const { error: smsTxError } = await supabase.from('sms_transactions').insert({
           landlord_id: landlordId,
           transaction_type: 'credit',
           amount: plan.sms_tokens_included,
@@ -464,11 +462,13 @@ export const useAssignSubscription = () => {
           description: `SMS tokens from ${plan.name} subscription`,
           created_by: (await supabase.auth.getUser()).data.user?.id,
         });
+
+        if (smsTxError) throw smsTxError;
       }
 
       // Record platform revenue
       if (amountPaid && amountPaid > 0) {
-        await supabase.from('platform_revenue').insert({
+        const { error: revenueError } = await supabase.from('platform_revenue').insert({
           landlord_id: landlordId,
           subscription_id: subscription.id,
           amount: amountPaid,
@@ -476,6 +476,8 @@ export const useAssignSubscription = () => {
           payment_reference: paymentReference,
           status: 'completed',
         });
+
+        if (revenueError) throw revenueError;
       }
 
       // Log the action

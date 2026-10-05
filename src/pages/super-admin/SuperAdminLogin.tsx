@@ -22,7 +22,7 @@ const resetSchema = z.object({
 
 const SuperAdminLogin = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, signIn, resetPassword } = useAuth();
+  const { user, loading: authLoading, signIn, resetPassword, signOut } = useAuth();
   const { isSuperAdmin, loading: roleLoading, checkSuperAdmin } = useSuperAdmin();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -83,6 +83,10 @@ const SuperAdminLogin = () => {
       toast.success('Welcome, Super Admin!');
       navigate(ROUTES.SUPER_ADMIN_ROOT);
     } else {
+      // Sign-in succeeded but the account isn't a super admin — don't leave
+      // an authenticated session sitting in the browser for an account that
+      // just failed this access check.
+      await signOut();
       toast.error('Access denied. You are not a Super Admin.');
     }
   };

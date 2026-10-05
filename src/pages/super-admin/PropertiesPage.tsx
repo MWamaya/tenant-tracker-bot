@@ -15,7 +15,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Search, Building2, MapPin } from 'lucide-react';
-import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
 
 interface PropertyRow {

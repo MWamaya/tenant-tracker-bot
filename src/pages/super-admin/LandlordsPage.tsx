@@ -33,7 +33,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
 import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, MessageSquare, LogIn, Building2, Users, Home, Mail } from 'lucide-react';
-import { format } from 'date-fns';
 import { formatDate, formatDateTime } from '@/lib/dates';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 
@@ -94,10 +93,11 @@ const LandlordsPage = () => {
   };
 
   const handleAllocateSms = async () => {
-    if (!selectedLandlord || !smsAmount) return;
+    const amount = parseInt(smsAmount, 10);
+    if (!selectedLandlord || !Number.isFinite(amount) || amount <= 0) return;
     await allocateTokens.mutateAsync({
       landlordId: selectedLandlord.id,
-      amount: parseInt(smsAmount),
+      amount,
       description: 'Manual allocation by Super Admin',
     });
     setDialogType(null);
@@ -560,7 +560,10 @@ const LandlordsPage = () => {
             <Button variant="outline" onClick={() => setDialogType(null)} className="border-slate-600">
               Cancel
             </Button>
-            <Button onClick={handleAllocateSms} disabled={!smsAmount || parseInt(smsAmount) <= 0}>
+            <Button
+              onClick={handleAllocateSms}
+              disabled={!Number.isFinite(parseInt(smsAmount, 10)) || parseInt(smsAmount, 10) <= 0}
+            >
               Allocate Tokens
             </Button>
           </DialogFooter>

@@ -1613,6 +1613,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_sms_balance: {
+        Args: { p_amount: number; p_landlord_id: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "SUPER_ADMIN" | "LANDLORD_ADMIN"

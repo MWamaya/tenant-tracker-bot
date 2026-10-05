@@ -64,6 +64,23 @@ const GlobalPaymentsPage = () => {
     },
   });
 
+  // The list above is capped at the most recent 200 payments, so deriving
+  // the "Unmatched" count from it undercounts once a landlord has more than
+  // that — and disagrees with the dashboard's exact platform-wide count.
+  // This mirrors usePlatformStats' query so the two numbers always match.
+  const { data: unmatchedTotal } = useQuery({
+    queryKey: ['all-payments-unmatched-count'],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('payments')
+        .select('*', { count: 'exact', head: true })
+        .or('tenant_id.is.null,house_id.is.null');
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+
   const allPayments = payments || [];
   const unmatchedPayments = allPayments.filter(
     (p) => !p.tenant_id || !p.house_id
@@ -189,7 +206,7 @@ const GlobalPaymentsPage = () => {
             </TabsTrigger>
             <TabsTrigger value="unmatched" className="data-[state=active]:bg-slate-700">
               <AlertTriangle className="h-4 w-4 mr-2" />
-              Unmatched ({unmatchedPayments.length})
+              Unmatched ({unmatchedTotal ?? unmatchedPayments.length})
             </TabsTrigger>
           </TabsList>
 
@@ -220,7 +237,8 @@ const GlobalPaymentsPage = () => {
               <CardHeader>
                 <CardTitle className="text-white">Unmatched Payments</CardTitle>
                 <CardDescription className="text-slate-400">
-                  Payments that are not linked to a tenant or house
+                  Payments that are not linked to a tenant or house — showing from the
+                  most recent 200 platform-wide payments
                 </CardDescription>
               </CardHeader>
               <CardContent>
