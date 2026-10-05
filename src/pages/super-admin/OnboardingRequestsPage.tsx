@@ -17,21 +17,22 @@ import { Search, Phone, Mail, Check, X, PhoneCall, UserPlus } from 'lucide-react
 import { formatDateTime } from '@/lib/dates';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
+import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
 
 const STATUS_OPTIONS = ['new', 'contacted', 'converted', 'dismissed'];
 
 const getStatusBadgeColor = (status: string) => {
   switch (status) {
     case 'new':
-      return 'border-blue-500 text-blue-400';
+      return STATUS_BADGE_CLASSES.info;
     case 'contacted':
-      return 'border-yellow-500 text-yellow-400';
+      return STATUS_BADGE_CLASSES.warning;
     case 'converted':
-      return 'border-green-500 text-green-400';
+      return STATUS_BADGE_CLASSES.success;
     case 'dismissed':
-      return 'border-slate-500 text-slate-400';
+      return STATUS_BADGE_CLASSES.neutral;
     default:
-      return 'border-slate-500 text-slate-400';
+      return STATUS_BADGE_CLASSES.neutral;
   }
 };
 

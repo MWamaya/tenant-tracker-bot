@@ -6,21 +6,22 @@ import { Badge } from '@/components/ui/badge';
 import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
+import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
 
 const AuditLogsPage = () => {
   const { data: logs, isLoading } = useAuditLogs(100);
 
   const getActionColor = (action: string) => {
     if (action.includes('CREATE') || action.includes('ASSIGN') || action.includes('ALLOCATE')) {
-      return 'border-green-500 text-green-400';
+      return STATUS_BADGE_CLASSES.success;
     }
     if (action.includes('UPDATE')) {
-      return 'border-blue-500 text-blue-400';
+      return STATUS_BADGE_CLASSES.info;
     }
     if (action.includes('DELETE') || action.includes('SUSPEND')) {
-      return 'border-red-500 text-red-400';
+      return STATUS_BADGE_CLASSES.destructive;
     }
-    return 'border-slate-500 text-slate-400';
+    return STATUS_BADGE_CLASSES.neutral;
   };
 
   return (

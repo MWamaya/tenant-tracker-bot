@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Check, Building, Users, MessageSquare } from 'lucide-react';
+import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
 
 const SubscriptionsPage = () => {
   const { data: plans, isLoading } = useSubscriptionPlans();
@@ -93,11 +94,7 @@ const SubscriptionsPage = () => {
                   <div className="pt-4">
                     <Badge
                       variant="outline"
-                      className={
-                        plan.is_active
-                          ? 'border-green-500 text-green-400'
-                          : 'border-red-500 text-red-400'
-                      }
+                      className={plan.is_active ? STATUS_BADGE_CLASSES.success : STATUS_BADGE_CLASSES.destructive}
                     >
                       {plan.is_active ? 'Active' : 'Inactive'}
                     </Badge>

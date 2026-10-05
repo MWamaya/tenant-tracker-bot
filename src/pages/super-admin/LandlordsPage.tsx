@@ -36,6 +36,7 @@ import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, CreditCard, Mess
 import { formatDate, formatDateTime } from '@/lib/dates';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
+import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
 
 const LandlordsPage = () => {
   const navigate = useNavigate();
@@ -119,15 +120,15 @@ const LandlordsPage = () => {
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'border-green-500 text-green-400';
+        return STATUS_BADGE_CLASSES.success;
       case 'suspended':
-        return 'border-red-500 text-red-400';
+        return STATUS_BADGE_CLASSES.destructive;
       case 'expired':
-        return 'border-yellow-500 text-yellow-400';
+        return STATUS_BADGE_CLASSES.warning;
       case 'pending':
-        return 'border-blue-500 text-blue-400';
+        return STATUS_BADGE_CLASSES.info;
       default:
-        return 'border-slate-500 text-slate-400';
+        return STATUS_BADGE_CLASSES.neutral;
     }
   };
 

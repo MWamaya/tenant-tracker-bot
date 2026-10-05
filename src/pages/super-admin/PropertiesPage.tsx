@@ -96,29 +96,31 @@ const PropertiesPage = () => {
     <SuperAdminLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">All Properties</h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">All Properties</h1>
+          <p className="text-slate-400 mt-1 text-sm md:text-base">
             Complete list of properties registered across all landlords
           </p>
         </div>
 
-        <Card>
+        <Card className="bg-slate-800/50 border-slate-700">
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-white">
                   <Building2 className="h-5 w-5" />
                   Properties ({filtered.length})
                 </CardTitle>
-                <CardDescription>Search by property, landlord, or location</CardDescription>
+                <CardDescription className="text-slate-400">
+                  Search by property, landlord, or location
+                </CardDescription>
               </div>
               <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search properties..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 bg-slate-900/50 border-slate-600 text-white"
                 />
               </div>
             </div>
@@ -127,44 +129,44 @@ const PropertiesPage = () => {
             {isLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full" />
+                  <Skeleton key={i} className="h-14 w-full bg-slate-700" />
                 ))}
               </div>
             ) : filtered.length === 0 ? (
               <div className="text-center py-12">
-                <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">No properties found</p>
+                <Building2 className="h-12 w-12 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400">No properties found</p>
               </div>
             ) : (
               <>
                 {/* Mobile cards */}
                 <div className="md:hidden space-y-3">
                   {filtered.map((p) => (
-                    <Card key={p.id} className="border-border/60">
-                      <CardContent className="p-4 space-y-2">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-semibold">{p.name}</div>
-                            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                              <MapPin className="h-3 w-3" />
-                              {[p.town, p.county].filter(Boolean).join(', ') || 'No location'}
-                            </div>
+                    <div key={p.id} className="rounded-lg bg-slate-900/50 p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-semibold text-white">{p.name}</div>
+                          <div className="text-xs text-slate-400 flex items-center gap-1 mt-1">
+                            <MapPin className="h-3 w-3" />
+                            {[p.town, p.county].filter(Boolean).join(', ') || 'No location'}
                           </div>
-                          <Badge variant="secondary" className="capitalize">
-                            {p.property_type || 'residential'}
-                          </Badge>
                         </div>
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">Landlord:</span>{' '}
-                          <span className="font-medium">{p.landlord_company || p.landlord_name}</span>
-                        </div>
-                        <div className="flex gap-4 text-xs text-muted-foreground pt-1 border-t">
-                          <span>{p.houses_count} units</span>
-                          <span className="text-success">{p.occupied_count} occupied</span>
-                          <span>{p.houses_count - p.occupied_count} vacant</span>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        <Badge variant="outline" className="border-slate-600 text-slate-300 capitalize">
+                          {p.property_type || 'residential'}
+                        </Badge>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-slate-400">Landlord:</span>{' '}
+                        <span className="font-medium text-white">
+                          {p.landlord_company || p.landlord_name}
+                        </span>
+                      </div>
+                      <div className="flex gap-4 text-xs text-slate-400 pt-1 border-t border-slate-700">
+                        <span>{p.houses_count} units</span>
+                        <span className="text-success">{p.occupied_count} occupied</span>
+                        <span>{p.houses_count - p.occupied_count} vacant</span>
+                      </div>
+                    </div>
                   ))}
                 </div>
 
@@ -172,43 +174,47 @@ const PropertiesPage = () => {
                 <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Property</TableHead>
-                        <TableHead>Landlord</TableHead>
-                        <TableHead>Location</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead className="text-center">Units</TableHead>
-                        <TableHead className="text-center">Occupied</TableHead>
-                        <TableHead className="text-center">Vacant</TableHead>
-                        <TableHead>Added</TableHead>
+                      <TableRow className="border-slate-700 hover:bg-transparent">
+                        <TableHead className="text-slate-400">Property</TableHead>
+                        <TableHead className="text-slate-400">Landlord</TableHead>
+                        <TableHead className="text-slate-400">Location</TableHead>
+                        <TableHead className="text-slate-400">Type</TableHead>
+                        <TableHead className="text-center text-slate-400">Units</TableHead>
+                        <TableHead className="text-center text-slate-400">Occupied</TableHead>
+                        <TableHead className="text-center text-slate-400">Vacant</TableHead>
+                        <TableHead className="text-slate-400">Added</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filtered.map((p) => (
-                        <TableRow key={p.id}>
-                          <TableCell className="font-medium">{p.name}</TableCell>
+                        <TableRow key={p.id} className="border-slate-700">
+                          <TableCell className="font-medium text-white">{p.name}</TableCell>
                           <TableCell>
-                            <div className="text-sm">{p.landlord_company || p.landlord_name}</div>
+                            <div className="text-sm text-slate-200">
+                              {p.landlord_company || p.landlord_name}
+                            </div>
                             {p.landlord_company && (
-                              <div className="text-xs text-muted-foreground">{p.landlord_name}</div>
+                              <div className="text-xs text-slate-400">{p.landlord_name}</div>
                             )}
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="text-sm text-slate-400">
                             {[p.town, p.county].filter(Boolean).join(', ') || '—'}
                           </TableCell>
                           <TableCell>
-                            <Badge variant="secondary" className="capitalize">
+                            <Badge variant="outline" className="border-slate-600 text-slate-300 capitalize">
                               {p.property_type || 'residential'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-center font-medium">{p.houses_count}</TableCell>
+                          <TableCell className="text-center font-medium text-white">
+                            {p.houses_count}
+                          </TableCell>
                           <TableCell className="text-center text-success font-medium">
                             {p.occupied_count}
                           </TableCell>
                           <TableCell className="text-center text-warning font-medium">
                             {p.houses_count - p.occupied_count}
                           </TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
+                          <TableCell className="text-sm text-slate-400">
                             {formatDate(p.created_at)}
                           </TableCell>
                         </TableRow>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { formatDate } from '@/lib/dates';
 import { ROUTES } from '@/lib/routes';
+import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
 
 const StatCard = ({
   title,
@@ -189,10 +190,10 @@ const SuperAdminDashboard = () => {
                         variant="outline"
                         className={
                           landlord.account_status === 'active'
-                            ? 'border-green-500 text-green-400'
+                            ? STATUS_BADGE_CLASSES.success
                             : landlord.account_status === 'suspended'
-                            ? 'border-red-500 text-red-400'
-                            : 'border-yellow-500 text-yellow-400'
+                            ? STATUS_BADGE_CLASSES.destructive
+                            : STATUS_BADGE_CLASSES.warning
                         }
                       >
                         {landlord.account_status}

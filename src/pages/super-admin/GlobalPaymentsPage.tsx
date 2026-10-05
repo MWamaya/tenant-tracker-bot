@@ -19,6 +19,7 @@ import { Search, DollarSign, AlertTriangle, Upload } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
 import { PaymentStatementUploadDialog } from '@/components/payments/PaymentStatementUploadDialog';
+import { STATUS_BADGE_CLASSES } from '@/lib/adminStatusColors';
 
 interface Payment {
   id: string;
@@ -135,7 +136,7 @@ const GlobalPaymentsPage = () => {
                   {payment.mpesa_ref}
                 </Badge>
                 {(!payment.tenant_id || !payment.house_id) && (
-                  <Badge variant="outline" className="border-yellow-500 text-yellow-400">
+                  <Badge variant="outline" className={STATUS_BADGE_CLASSES.warning}>
                     Unmatched
                   </Badge>
                 )}
