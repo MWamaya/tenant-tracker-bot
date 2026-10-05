@@ -86,6 +86,13 @@ const GlobalPaymentsPage = () => {
     (p) => !p.tenant_id || !p.house_id
   );
 
+  // This page's whole point is cross-landlord visibility, so every row
+  // needs to say whose payment it is — reuses the upload dropdown's query
+  // rather than firing a second landlords fetch.
+  const landlordNameById = new Map(
+    (landlords || []).map((l) => [l.id, l.full_name || l.company_name || 'Unknown landlord'])
+  );
+
   const filteredPayments = (list: Payment[]) =>
     list.filter(
       (payment) =>
@@ -123,6 +130,9 @@ const GlobalPaymentsPage = () => {
               </div>
               <p className="text-sm text-slate-400 mt-1">
                 {payment.sender_name || 'Unknown'} • {payment.sender_phone || 'No phone'}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {landlordNameById.get(payment.landlord_id) || 'Unknown landlord'}
               </p>
             </div>
             <div className="text-right">

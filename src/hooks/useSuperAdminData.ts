@@ -65,6 +65,7 @@ export interface PlatformStats {
 export interface AuditLog {
   id: string;
   admin_id: string;
+  admin_name: string;
   action: string;
   entity_type: string;
   entity_id: string | null;
@@ -266,7 +267,18 @@ export const useAuditLogs = (limit = 50) => {
         .limit(limit);
 
       if (error) throw error;
-      return data || [];
+
+      const adminIds = [...new Set((data || []).map((l) => l.admin_id).filter(Boolean))];
+      const { data: admins } = adminIds.length
+        ? await supabase.from('profiles').select('id, full_name').in('id', adminIds)
+        : { data: [] as { id: string; full_name: string | null }[] };
+
+      const adminNameById = new Map((admins || []).map((a) => [a.id, a.full_name || 'Unknown admin']));
+
+      return (data || []).map((log) => ({
+        ...log,
+        admin_name: adminNameById.get(log.admin_id) || 'Unknown admin',
+      }));
     },
   });
 };
@@ -512,6 +524,23 @@ export const useOnboardingRequests = () => {
 
       if (error) throw error;
       return data || [];
+    },
+  });
+};
+
+// Hook to fetch the count of untriaged ("new") onboarding requests, for the
+// dashboard stat card — cheap exact count rather than fetching full rows.
+export const useNewOnboardingRequestsCount = () => {
+  return useQuery({
+    queryKey: ['onboarding-requests-new-count'],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('onboarding_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'new');
+
+      if (error) throw error;
+      return count || 0;
     },
   });
 };

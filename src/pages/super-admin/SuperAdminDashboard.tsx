@@ -1,4 +1,4 @@
-import { usePlatformStats, useLandlords } from '@/hooks/useSuperAdminData';
+import { usePlatformStats, useLandlords, useNewOnboardingRequestsCount } from '@/hooks/useSuperAdminData';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ import {
   AlertTriangle,
   Clock,
   Ban,
+  UserPlus,
 } from 'lucide-react';
 import { formatDate } from '@/lib/dates';
 import { ROUTES } from '@/lib/routes';
@@ -62,6 +63,7 @@ const StatCard = ({
 const SuperAdminDashboard = () => {
   const { data: stats, isLoading: statsLoading } = usePlatformStats();
   const { data: landlords, isLoading: landlordsLoading } = useLandlords();
+  const { data: newRequestsCount, isLoading: newRequestsLoading } = useNewOnboardingRequestsCount();
   const navigate = useNavigate();
 
   const recentLandlords = landlords?.slice(0, 5) || [];
@@ -76,7 +78,15 @@ const SuperAdminDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <StatCard
+            title="Onboarding Requests"
+            value={newRequestsCount || 0}
+            description="Awaiting triage"
+            icon={UserPlus}
+            loading={newRequestsLoading}
+            onClick={() => navigate(ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS)}
+          />
           <StatCard
             title="Total Landlords"
             value={stats?.totalLandlords || 0}

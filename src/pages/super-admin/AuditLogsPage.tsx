@@ -71,6 +71,7 @@ const AuditLogsPage = () => {
                           </Badge>
                           <span className="text-sm text-slate-400">on</span>
                           <span className="text-sm text-slate-300">{log.entity_type}</span>
+                          <span className="text-sm text-slate-500">by {log.admin_name}</span>
                         </div>
                         {log.new_values && (
                           <p className="text-xs text-slate-500 mt-1 font-mono">
