@@ -356,6 +356,162 @@ export const useUnmatchedPaymentCountsByLandlord = () => {
   });
 };
 
+// --- Landlord detail page data --------------------------------------------
+// Everything below is scoped to a single landlord_id for the admin's
+// per-landlord detail view. Tenant rows are deliberately never fetched here
+// beyond a bare count — their names/phones are the landlord's own data, not
+// something admin needs to see to manage the account.
+
+export interface LandlordProperty {
+  id: string;
+  name: string;
+  address: string | null;
+  county: string | null;
+  town: string | null;
+  property_type: string | null;
+  total_units: number | null;
+  created_at: string;
+}
+
+export const useLandlordProperties = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-properties', landlordId],
+    queryFn: async (): Promise<LandlordProperty[]> => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name, address, county, town, property_type, total_units, created_at')
+        .eq('landlord_id', landlordId as string)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!landlordId,
+  });
+
+export interface LandlordHouse {
+  id: string;
+  house_no: string;
+  status: string;
+  expected_rent: number;
+  property_id: string | null;
+  property_name: string | null;
+}
+
+export const useLandlordHouses = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-houses', landlordId],
+    queryFn: async (): Promise<LandlordHouse[]> => {
+      const [{ data: houses, error: housesError }, { data: properties, error: propertiesError }] =
+        await Promise.all([
+          supabase
+            .from('houses')
+            .select('id, house_no, status, expected_rent, property_id')
+            .eq('landlord_id', landlordId as string)
+            .order('house_no'),
+          supabase.from('properties').select('id, name').eq('landlord_id', landlordId as string),
+        ]);
+      if (housesError) throw housesError;
+      if (propertiesError) throw propertiesError;
+
+      const propertyNameById = new Map((properties ?? []).map((p) => [p.id, p.name]));
+      return (houses ?? []).map((h) => ({
+        ...h,
+        property_name: h.property_id ? propertyNameById.get(h.property_id) ?? null : null,
+      }));
+    },
+    enabled: !!landlordId,
+  });
+
+// Bare count only — no tenant names/phones. Those stay the landlord's own
+// data; admin just needs to know how many.
+export const useLandlordTenantCount = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-tenant-count', landlordId],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('tenants')
+        .select('*', { count: 'exact', head: true })
+        .eq('landlord_id', landlordId as string);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!landlordId,
+  });
+
+export interface LandlordRentSummary {
+  totalCollected: number;
+  paymentCount: number;
+}
+
+export const useLandlordRentSummary = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-rent-summary', landlordId],
+    queryFn: async (): Promise<LandlordRentSummary> => {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('landlord_id', landlordId as string);
+      if (error) throw error;
+      const rows = data ?? [];
+      return {
+        totalCollected: rows.reduce((sum, p) => sum + Number(p.amount), 0),
+        paymentCount: rows.length,
+      };
+    },
+    enabled: !!landlordId,
+  });
+
+export interface LandlordPlatformPayment {
+  id: string;
+  amount: number;
+  payment_reference: string | null;
+  payment_method: string | null;
+  status: string;
+  created_at: string;
+}
+
+export const useLandlordPlatformPayments = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-platform-payments', landlordId],
+    queryFn: async (): Promise<LandlordPlatformPayment[]> => {
+      const { data, error } = await supabase
+        .from('platform_revenue')
+        .select('id, amount, payment_reference, payment_method, status, created_at')
+        .eq('landlord_id', landlordId as string)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!landlordId,
+  });
+
+export const useLandlordAuditLog = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-audit-log', landlordId],
+    queryFn: async (): Promise<AuditLog[]> => {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('entity_id', landlordId as string)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+
+      const adminIds = [...new Set((data || []).map((l) => l.admin_id).filter(Boolean))];
+      const { data: admins } = adminIds.length
+        ? await supabase.from('profiles').select('id, full_name').in('id', adminIds)
+        : { data: [] as { id: string; full_name: string | null }[] };
+      const adminNameById = new Map((admins || []).map((a) => [a.id, a.full_name || 'Unknown admin']));
+
+      return (data || []).map((log) => ({
+        ...log,
+        admin_name: adminNameById.get(log.admin_id) || 'Unknown admin',
+      }));
+    },
+    enabled: !!landlordId,
+  });
+
 // Hook to fetch subscription plans
 export const useSubscriptionPlans = () => {
   return useQuery({

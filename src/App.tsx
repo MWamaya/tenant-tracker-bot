@@ -43,6 +43,7 @@ const Contact = lazy(() => import("./pages/legal/Contact"));
 const SuperAdminLogin = lazy(() => import("./pages/super-admin/SuperAdminLogin"));
 const SuperAdminDashboard = lazy(() => import("./pages/super-admin/SuperAdminDashboard"));
 const LandlordsPage = lazy(() => import("./pages/super-admin/LandlordsPage"));
+const LandlordDetailPage = lazy(() => import("./pages/super-admin/LandlordDetailPage"));
 const AuditLogsPage = lazy(() => import("./pages/super-admin/AuditLogsPage"));
 const GlobalPaymentsPage = lazy(() => import("./pages/super-admin/GlobalPaymentsPage"));
 const SettingsPage = lazy(() => import("./pages/super-admin/SettingsPage"));
@@ -158,6 +159,7 @@ const App = () => (
                       <Route path="login" element={<SuperAdminLogin />} />
                       <Route path="" element={<SuperAdminRoute><SuperAdminDashboard /></SuperAdminRoute>} />
                       <Route path="landlords" element={<SuperAdminRoute><LandlordsPage /></SuperAdminRoute>} />
+                      <Route path="landlords/detail" element={<SuperAdminRoute><LandlordDetailPage /></SuperAdminRoute>} />
                       <Route path="subscriptions" element={<Navigate to="/app/super-admin/settings?tab=subscriptions" replace />} />
                       <Route path="payments" element={<SuperAdminRoute><GlobalPaymentsPage /></SuperAdminRoute>} />
                       <Route path="audit-logs" element={<SuperAdminRoute><AuditLogsPage /></SuperAdminRoute>} />
