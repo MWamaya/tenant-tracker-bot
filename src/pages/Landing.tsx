@@ -19,6 +19,7 @@ import {
   Users,
   MessageSquare,
   ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
@@ -26,6 +27,7 @@ import heroImage from '@/assets/landing-hero.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { PUBLIC_PLANS } from '@/lib/plans';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const WITHOUT = [
   'Search through M-Pesa messages',
@@ -107,6 +109,33 @@ const FEATURES = [
   },
 ];
 
+const FAQS = [
+  {
+    question: 'Is my M-Pesa and tenant data safe?',
+    answer:
+      'Yes. Your rental and tenant data is kept separate per landlord account, and access is restricted to authorised users. We never sell your information — see our Privacy Policy for details.',
+  },
+  {
+    question: 'What happens if a payment fails to match a tenant?',
+    answer:
+      "Unmatched payments show up clearly on your dashboard so you can resolve them manually in a few clicks — nothing gets silently lost or misallocated.",
+  },
+  {
+    question: 'How do I pay, and can I cancel anytime?',
+    answer:
+      'Subscriptions are paid manually via M-Pesa — no card required, no auto-charging. You can cancel anytime by contacting support; cancelling just stops future renewals.',
+  },
+  {
+    question: 'Do my tenants need to do anything differently?',
+    answer:
+      'No. Tenants keep paying by M-Pesa or bank transfer exactly as they do today. KODI PAP matches and records the payment automatically on your side.',
+  },
+  {
+    question: 'How quickly is my account set up?',
+    answer:
+      "After you submit the Get Started form, our team sets up your account and reaches out — usually within one business day.",
+  },
+];
 
 /** Small uppercase label above a section heading. */
 const Kicker = ({
@@ -229,6 +258,7 @@ const DashboardMockup = () => (
 const Landing = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(true);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
   const plans = PUBLIC_PLANS;
 
   useEffect(() => {
@@ -236,6 +266,7 @@ const Landing = () => {
       const nearBottom =
         window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
       setShowScrollToBottom(!nearBottom);
+      setShowScrollToTop(window.scrollY > window.innerHeight * 0.75);
     };
     handleScroll();
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -626,6 +657,26 @@ const Landing = () => {
           </div>
         </section>
 
+        {/* FAQ */}
+        <section id="faq" className="px-4 sm:px-8 py-16 sm:py-24">
+          <Reveal className="text-center mb-10 sm:mb-14 max-w-xl mx-auto">
+            <Kicker>Questions</Kicker>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Frequently asked questions.
+            </h2>
+          </Reveal>
+          <Reveal className="max-w-2xl mx-auto">
+            <Accordion type="single" collapsible className="w-full">
+              {FAQS.map((faq) => (
+                <AccordionItem key={faq.question} value={faq.question}>
+                  <AccordionTrigger className="text-left text-foreground">{faq.question}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </Reveal>
+        </section>
+
         {/* Final CTA */}
         <section className="px-4 sm:px-8 py-16 sm:py-24 bg-gradient-to-br from-foreground to-primary">
           <Reveal className="max-w-3xl mx-auto text-center">
@@ -661,6 +712,24 @@ const Landing = () => {
             <Link to={ROUTES.CONTACT} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Contact & Support</Link>
           </div>
         </footer>
+
+        <div
+          className={`group fixed bottom-20 right-4 sm:right-8 z-40 transition-all duration-200 ${
+            showScrollToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
+          <span className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2.5 whitespace-nowrap rounded-full border bg-background/90 backdrop-blur-xl px-3 py-1.5 text-xs font-medium text-foreground shadow-lg opacity-0 scale-95 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100">
+            Scroll to top
+          </span>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label="Scroll to top"
+            className="flex items-center justify-center h-11 w-11 rounded-full border bg-background/90 backdrop-blur-xl shadow-lg text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ChevronUp className="h-5 w-5" />
+          </button>
+        </div>
 
         <div
           className={`group fixed bottom-6 right-4 sm:right-8 z-40 transition-all duration-200 ${

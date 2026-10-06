@@ -42,7 +42,7 @@ export const PUBLIC_PLANS: PublicPlan[] = [
     maxTenants: null,
     smsTokensIncluded: 2000,
     features: [
-      'All Professional features',
+      'All Pro features',
       'Unlimited properties',
       'Unlimited tenants',
       'API access',

@@ -2,7 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PUBLIC_PLANS } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CreditCard, LogOut, Phone, Mail, Building2, Users, MessageSquare } from 'lucide-react';
+import { Check, CreditCard, LogOut, Mail, Building2, Users, MessageSquare } from 'lucide-react';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { ROUTES } from '@/lib/routes';
@@ -121,12 +121,6 @@ const ChoosePlan = () => {
 
             <div className="rounded-lg border p-4 space-y-2">
               <div className="font-semibold text-sm">Need help?</div>
-              <a
-                href="tel:+254700000000"
-                className="flex items-center gap-2 text-sm text-primary hover:underline"
-              >
-                <Phone className="h-4 w-4" /> +254 700 000 000
-              </a>
               <a
                 href="mailto:support@kodipap.com"
                 className="flex items-center gap-2 text-sm text-primary hover:underline"

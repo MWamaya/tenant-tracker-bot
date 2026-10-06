@@ -1,7 +1,10 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { ArrowLeft } from "lucide-react";
 import { PageSeo } from "@/components/seo/PageSeo";
 import { ROUTES } from "@/lib/routes";
+import { Button } from "@/components/ui/button";
+import kodiPapLogo from "@/assets/kodi-pap-logo.png";
 
 const NotFound = () => {
   const location = useLocation();
@@ -18,13 +21,23 @@ const NotFound = () => {
         path="/404"
         noindex
       />
-    <main className="flex min-h-screen items-center justify-center bg-muted">
+    <main className="flex min-h-screen flex-col items-center justify-center px-4">
+      <Link to={ROUTES.LANDING} className="mb-10">
+        <img src={kodiPapLogo} alt="KODI PAP" className="h-8 w-auto" />
+      </Link>
       <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">404</h1>
-        <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
-        <Link to={ROUTES.LANDING} className="text-primary underline hover:text-primary/90">
-          Return to Home
-        </Link>
+        <p className="text-sm font-bold uppercase tracking-wider text-primary">404</p>
+        <h1 className="mt-2 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+          This page doesn't exist
+        </h1>
+        <p className="mt-3 text-muted-foreground">
+          The page you're looking for may have moved or never existed.
+        </p>
+        <Button asChild size="lg" className="mt-7 gap-2">
+          <Link to={ROUTES.LANDING}>
+            <ArrowLeft className="h-4 w-4" /> Back to home
+          </Link>
+        </Button>
       </div>
     </main>
     </>

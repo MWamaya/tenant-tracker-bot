@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-const SITE_URL = 'https://tenant-tracker-bot.lovable.app';
+const SITE_URL = 'https://kodipap.com';
 
 interface PageSeoProps {
   title: string;

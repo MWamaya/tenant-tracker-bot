@@ -71,12 +71,12 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '12. Governing law',
     paragraphs: [
-      'These Terms should identify the applicable governing law and dispute-resolution process for KODI PAP. <strong>[Confirm Kenyan governing law and dispute forum with counsel.]</strong>',
+      'These Terms are governed by the laws of Kenya. Disputes arising from these Terms will be subject to the exclusive jurisdiction of the courts of Kenya.',
     ],
   },
   {
     heading: '13. Contact',
-    paragraphs: ['<strong>[Legal entity name]</strong><br/>[Business address]<br/>[support email]'],
+    paragraphs: ['<strong>KODI PAP</strong><br/>Nairobi, Kenya<br/>support@kodipap.com'],
   },
 ];
 
@@ -86,7 +86,6 @@ const TermsOfUse = () => (
     description="The terms that govern your use of KODI PAP."
     path={ROUTES.TERMS_OF_USE}
     lastUpdated="5 October 2026"
-    notice="have these terms reviewed for KODI PAP's actual company structure, pricing, payment flows and applicable Kenyan law."
     sections={SECTIONS}
   />
 );
