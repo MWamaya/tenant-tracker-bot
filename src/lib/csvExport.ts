@@ -1,6 +1,10 @@
 export interface CsvColumn<T> {
   header: string;
   accessor: (row: T) => string | number;
+  /** Matches a DataTable column id, to filter the CSV by current column
+   * visibility. Optional for backwards compatibility; columns without an
+   * id are always included. */
+  id?: string;
 }
 
 const escapeCsvField = (value: string | number): string => {

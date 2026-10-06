@@ -23,7 +23,8 @@ import { PaymentStatementUploadDialog } from '@/components/payments/PaymentState
 import { DataTable } from '@/components/super-admin/DataTable';
 import { useTableViewState } from '@/hooks/useTableViewState';
 import type { CsvColumn } from '@/lib/csvExport';
-import { STATUS_BADGE_CLASSES, ADMIN_CARD } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 interface Payment {
   id: string;
@@ -41,11 +42,12 @@ interface Payment {
 const GlobalPaymentsPage = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'unmatched' ? 'unmatched' : 'all';
-  const [searchQuery, setSearchQuery] = useState('');
   const [uploadOpen, setUploadOpen] = useState(false);
   const [selectedLandlord, setSelectedLandlord] = useState<string>('');
   const allView = useTableViewState('super-admin-payments-all');
   const unmatchedView = useTableViewState('super-admin-payments-unmatched');
+  const searchQuery = allView.search;
+  const setSearchQuery = allView.setSearch;
 
   const { data: landlords } = useQuery({
     queryKey: ['all-landlords-for-upload'],
@@ -131,7 +133,7 @@ const GlobalPaymentsPage = () => {
         cell: ({ row }) => `KES ${row.original.amount.toLocaleString()}`,
       },
       {
-        id: 'Ref',
+        id: 'M-Pesa Ref',
         accessorKey: 'mpesa_ref',
         header: 'M-Pesa Ref',
         cell: ({ row }) => (
@@ -189,13 +191,14 @@ const GlobalPaymentsPage = () => {
   );
 
   const csvColumns: CsvColumn<Payment>[] = [
-    { header: 'Amount', accessor: (p) => p.amount },
-    { header: 'M-Pesa Ref', accessor: (p) => p.mpesa_ref },
-    { header: 'Sender Name', accessor: (p) => p.sender_name ?? '' },
-    { header: 'Sender Phone', accessor: (p) => p.sender_phone ?? '' },
-    { header: 'Landlord', accessor: (p) => landlordNameById.get(p.landlord_id) ?? 'Unknown landlord' },
-    { header: 'Date', accessor: (p) => p.payment_date },
+    { id: 'Amount', header: 'Amount', accessor: (p) => p.amount },
+    { id: 'M-Pesa Ref', header: 'M-Pesa Ref', accessor: (p) => p.mpesa_ref },
+    { id: 'Sender', header: 'Sender Name', accessor: (p) => p.sender_name ?? '' },
+    { id: 'Sender', header: 'Sender Phone', accessor: (p) => p.sender_phone ?? '' },
+    { id: 'Landlord', header: 'Landlord', accessor: (p) => landlordNameById.get(p.landlord_id) ?? 'Unknown landlord' },
+    { id: 'Date', header: 'Date', accessor: (p) => p.payment_date },
     {
+      id: 'Status',
       header: 'Status',
       accessor: (p) => (!p.tenant_id || !p.house_id ? 'Unmatched' : 'Matched'),
     },
@@ -296,7 +299,7 @@ const GlobalPaymentsPage = () => {
                     hasNextPage ? (
                       <Button
                         variant="outline"
-                        className="w-full border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]"
+                        className={cn("w-full border-[#E2E8F0] text-[#1E3A5F]", ADMIN_SURFACE_HOVER)}
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNextPage}
                       >
@@ -334,7 +337,7 @@ const GlobalPaymentsPage = () => {
                     hasNextPage ? (
                       <Button
                         variant="outline"
-                        className="w-full border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]"
+                        className={cn("w-full border-[#E2E8F0] text-[#1E3A5F]", ADMIN_SURFACE_HOVER)}
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNextPage}
                       >

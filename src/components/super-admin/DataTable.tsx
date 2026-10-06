@@ -75,6 +75,15 @@ export function DataTable<TData>({
     [table]
   );
 
+  const visibleColumnCount = table.getVisibleLeafColumns().length;
+
+  const handleExportCsv = () => {
+    const visibleIds = new Set(table.getVisibleLeafColumns().map((c) => c.id));
+    const exportColumns = csvColumns.filter((c) => !c.id || visibleIds.has(c.id));
+    const exportRows = table.getSortedRowModel().rows.map((r) => r.original);
+    downloadCsv(csvFilename, rowsToCsv(exportRows, exportColumns));
+  };
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-end gap-2">
@@ -101,7 +110,7 @@ export function DataTable<TData>({
           variant="outline"
           size="sm"
           className="gap-2 border-[#E2E8F0] text-[#1E3A5F]"
-          onClick={() => downloadCsv(csvFilename, rowsToCsv(data, csvColumns))}
+          onClick={handleExportCsv}
         >
           <Download className="h-4 w-4" />
           Export CSV
@@ -136,14 +145,14 @@ export function DataTable<TData>({
             {isLoading ? (
               Array.from({ length: loadingRowCount }).map((_, i) => (
                 <TableRow key={i}>
-                  <TableCell colSpan={columns.length}>
+                  <TableCell colSpan={visibleColumnCount}>
                     <Skeleton className="h-6 w-full bg-[#E2E8F0]" />
                   </TableCell>
                 </TableRow>
               ))
             ) : table.getRowModel().rows.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-8 text-[#64748B]">
+                <TableCell colSpan={visibleColumnCount} className="text-center py-8 text-[#64748B]">
                   {emptyMessage}
                 </TableCell>
               </TableRow>

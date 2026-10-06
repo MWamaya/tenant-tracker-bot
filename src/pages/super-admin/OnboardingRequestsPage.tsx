@@ -18,14 +18,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Phone, Mail, Check, X, PhoneCall, UserPlus, MoreVertical } from 'lucide-react';
+import { Search, Check, X, PhoneCall, UserPlus, MoreVertical } from 'lucide-react';
 import { formatDateTime } from '@/lib/dates';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
 import { DataTable } from '@/components/super-admin/DataTable';
 import { useTableViewState } from '@/hooks/useTableViewState';
 import type { CsvColumn } from '@/lib/csvExport';
-import { STATUS_BADGE_CLASSES, ADMIN_CARD } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
+import { cn } from '@/lib/utils';
 
 const STATUS_OPTIONS = ['new', 'contacted', 'converted', 'dismissed'];
 
@@ -84,7 +85,7 @@ const OnboardingRequestsPage = () => {
         accessorKey: 'plan',
         header: 'Plan',
         cell: ({ row }) => (
-          <Badge variant="outline" className="border-[#0F766E]/40 text-[#0F766E]">
+          <Badge variant="outline" className={STATUS_BADGE_CLASSES.info}>
             {row.original.plan}
           </Badge>
         ),
@@ -115,7 +116,7 @@ const OnboardingRequestsPage = () => {
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button type="button" className="p-1.5 rounded hover:bg-[#F1F5F9]">
+                <button type="button" className={cn("p-1.5 rounded", ADMIN_SURFACE_HOVER)}>
                   <MoreVertical className="h-4 w-4 text-[#64748B]" />
                 </button>
               </DropdownMenuTrigger>
@@ -154,12 +155,12 @@ const OnboardingRequestsPage = () => {
   );
 
   const csvColumns: CsvColumn<OnboardingRequest>[] = [
-    { header: 'Name', accessor: (r) => r.full_name },
-    { header: 'Email', accessor: (r) => r.email },
-    { header: 'Phone', accessor: (r) => r.phone },
-    { header: 'Plan', accessor: (r) => r.plan },
-    { header: 'Status', accessor: (r) => r.status },
-    { header: 'Created', accessor: (r) => r.created_at },
+    { id: 'Name', header: 'Name', accessor: (r) => r.full_name },
+    { id: 'Email', header: 'Email', accessor: (r) => r.email },
+    { id: 'Phone', header: 'Phone', accessor: (r) => r.phone },
+    { id: 'Plan', header: 'Plan', accessor: (r) => r.plan },
+    { id: 'Status', header: 'Status', accessor: (r) => r.status },
+    { id: 'Created', header: 'Created', accessor: (r) => r.created_at },
   ];
 
   return (

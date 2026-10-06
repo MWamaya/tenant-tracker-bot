@@ -39,7 +39,7 @@ import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDia
 import { DataTable } from '@/components/super-admin/DataTable';
 import { useTableViewState } from '@/hooks/useTableViewState';
 import type { CsvColumn } from '@/lib/csvExport';
-import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
 const LandlordsPage = () => {
@@ -303,13 +303,13 @@ const LandlordsPage = () => {
   );
 
   const csvColumns: CsvColumn<LandlordProfile>[] = [
-    { header: 'Name', accessor: (r) => r.full_name ?? '' },
+    { id: 'Landlord', header: 'Name', accessor: (r) => r.full_name ?? '' },
     { header: 'Company', accessor: (r) => r.company_name ?? '' },
-    { header: 'Phone', accessor: (r) => r.phone ?? '' },
-    { header: 'Status', accessor: (r) => r.account_status },
-    { header: 'Subscription', accessor: (r) => r.subscription?.plan_name ?? '' },
-    { header: 'SMS Balance', accessor: (r) => r.sms_token_balance },
-    { header: 'Joined', accessor: (r) => r.created_at },
+    { id: 'Phone', header: 'Phone', accessor: (r) => r.phone ?? '' },
+    { id: 'Status', header: 'Status', accessor: (r) => r.account_status },
+    { id: 'Subscription', header: 'Subscription', accessor: (r) => r.subscription?.plan_name ?? '' },
+    { id: 'SMS Balance', header: 'SMS Balance', accessor: (r) => r.sms_token_balance },
+    { id: 'Joined', header: 'Joined', accessor: (r) => r.created_at },
   ];
 
   return (
@@ -318,19 +318,19 @@ const LandlordsPage = () => {
       {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
-            <Link to={ROUTES.SUPER_ADMIN_ROOT} className="text-sm text-primary hover:text-primary/80 flex items-center gap-1 mb-1">
+            <Link to={ROUTES.SUPER_ADMIN_ROOT} className="text-sm text-[#1E3A5F] hover:text-[#1E3A5F]/80 flex items-center gap-1 mb-1">
               ← Back to Dashboard
             </Link>
             <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">Landlord Management</h1>
             <p className="text-[#64748B]">Manage landlord accounts and subscriptions</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button asChild variant="outline" className="border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]">
+            <Button asChild variant="outline" className={cn("border-[#E2E8F0] text-[#1E3A5F]", ADMIN_SURFACE_HOVER)}>
               <Link to={ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS}>
                 View Onboarding Requests
               </Link>
             </Button>
-            <Button className="bg-primary hover:bg-primary/90" onClick={() => setAddLandlordOpen(true)}>
+            <Button className="bg-[#1E3A5F] hover:bg-[#1E3A5F]/90" onClick={() => setAddLandlordOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />
               Add Landlord
             </Button>
@@ -508,7 +508,7 @@ const LandlordsPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogType(null)} className="border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]">
+            <Button variant="outline" onClick={() => setDialogType(null)} className={cn("border-[#E2E8F0] text-[#1E3A5F]", ADMIN_SURFACE_HOVER)}>
               Cancel
             </Button>
             <Button onClick={handleAssignSubscription} disabled={!subscriptionData.planId}>
@@ -538,7 +538,7 @@ const LandlordsPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogType(null)} className="border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]">
+            <Button variant="outline" onClick={() => setDialogType(null)} className={cn("border-[#E2E8F0] text-[#1E3A5F]", ADMIN_SURFACE_HOVER)}>
               Cancel
             </Button>
             <Button
@@ -578,7 +578,7 @@ const LandlordsPage = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogType(null)} className="border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]">
+            <Button variant="outline" onClick={() => setDialogType(null)} className={cn("border-[#E2E8F0] text-[#1E3A5F]", ADMIN_SURFACE_HOVER)}>
               Cancel
             </Button>
             <Button
