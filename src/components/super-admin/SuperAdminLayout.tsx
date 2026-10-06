@@ -19,6 +19,7 @@ import {
   UserPlus,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
+import SuperAdminTopbar from './SuperAdminTopbar';
 
 interface SuperAdminLayoutProps {
   children: ReactNode;
@@ -137,7 +138,8 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
 
         {/* Main Content */}
         <main className="flex-1 min-h-screen">
-          <div className="p-4 lg:p-8 max-w-[1400px] mx-auto">
+          <SuperAdminTopbar />
+          <div className="p-4 lg:p-8">
             {children}
           </div>
         </main>

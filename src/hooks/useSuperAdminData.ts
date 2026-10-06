@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { format, subMonths, startOfMonth } from 'date-fns';
 
 export interface OnboardingRequest {
   id: string;
@@ -60,6 +61,16 @@ export interface PlatformStats {
   smsTokensUsed: number;
   expiringSubscriptions: number;
   unmatchedPayments: number;
+}
+
+export interface MonthlyTrendPoint {
+  month: string;
+  label: string;
+  landlordSignups: number;
+  rentCollected: number;
+  newProperties: number;
+  newTenants: number;
+  newOnboardingRequests: number;
 }
 
 export interface AuditLog {
@@ -187,6 +198,90 @@ export const usePlatformStats = () => {
         expiringSubscriptions: expiringCount || 0,
         unmatchedPayments: unmatchedCount || 0,
       };
+    },
+  });
+};
+
+// Hook to fetch landlord-growth and rent-collected trends for the last 6
+// months, for the Platform Overview charts.
+export const usePlatformTrends = () => {
+  return useQuery({
+    queryKey: ['platform-trends'],
+    queryFn: async (): Promise<MonthlyTrendPoint[]> => {
+      const superAdminIds = await fetchSuperAdminIds();
+      const rangeStart = startOfMonth(subMonths(new Date(), 5));
+
+      const [
+        { data: profiles, error: profilesError },
+        { data: payments, error: paymentsError },
+        { data: houses, error: housesError },
+        { data: tenants, error: tenantsError },
+        { data: onboardingRequests, error: onboardingError },
+      ] = await Promise.all([
+        supabase.from('profiles').select('id, created_at').gte('created_at', rangeStart.toISOString()),
+        supabase.from('payments').select('amount, payment_date').gte('payment_date', rangeStart.toISOString()),
+        supabase.from('houses').select('created_at').gte('created_at', rangeStart.toISOString()),
+        supabase.from('tenants').select('created_at').gte('created_at', rangeStart.toISOString()),
+        supabase.from('onboarding_requests').select('created_at').gte('created_at', rangeStart.toISOString()),
+      ]);
+
+      if (profilesError) throw profilesError;
+      if (paymentsError) throw paymentsError;
+      if (housesError) throw housesError;
+      if (tenantsError) throw tenantsError;
+      if (onboardingError) throw onboardingError;
+
+      const months = Array.from({ length: 6 }, (_, i) => startOfMonth(subMonths(new Date(), 5 - i)));
+      const points = new Map<string, MonthlyTrendPoint>(
+        months.map((m) => {
+          const key = format(m, 'yyyy-MM');
+          return [
+            key,
+            {
+              month: key,
+              label: format(m, 'MMM'),
+              landlordSignups: 0,
+              rentCollected: 0,
+              newProperties: 0,
+              newTenants: 0,
+              newOnboardingRequests: 0,
+            },
+          ];
+        })
+      );
+
+      for (const p of profiles ?? []) {
+        if (superAdminIds.has(p.id)) continue;
+        const key = format(new Date(p.created_at), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.landlordSignups += 1;
+      }
+
+      for (const h of houses ?? []) {
+        const key = format(new Date(h.created_at), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.newProperties += 1;
+      }
+
+      for (const t of tenants ?? []) {
+        const key = format(new Date(t.created_at), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.newTenants += 1;
+      }
+
+      for (const o of onboardingRequests ?? []) {
+        const key = format(new Date(o.created_at), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.newOnboardingRequests += 1;
+      }
+
+      for (const p of payments ?? []) {
+        const key = format(new Date(p.payment_date), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.rentCollected += Number(p.amount);
+      }
+
+      return Array.from(points.values());
     },
   });
 };
