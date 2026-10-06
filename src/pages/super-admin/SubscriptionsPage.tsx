@@ -19,7 +19,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Check, Building, Users, MessageSquare, Pencil } from 'lucide-react';
-import { STATUS_BADGE_CLASSES, ADMIN_CARD } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
 const EditPlanDialog = ({
@@ -84,59 +84,54 @@ const EditPlanDialog = ({
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label >Price (KES / {plan?.duration_days} days)</Label>
+            <Label>Price (KES / {plan?.duration_days} days)</Label>
             <Input
               type="number"
               min="0"
-              className=""
               value={price}
               onChange={(e) => setPrice(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label >Description</Label>
+            <Label>Description</Label>
             <Input
-              className=""
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label >Max Properties</Label>
+              <Label>Max Properties</Label>
               <Input
                 type="number"
                 min="0"
                 placeholder="Unlimited"
-                className=""
                 value={maxProperties}
                 onChange={(e) => setMaxProperties(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label >Max Tenants</Label>
+              <Label>Max Tenants</Label>
               <Input
                 type="number"
                 min="0"
                 placeholder="Unlimited"
-                className=""
                 value={maxTenants}
                 onChange={(e) => setMaxTenants(e.target.value)}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label >SMS Tokens Included</Label>
+            <Label>SMS Tokens Included</Label>
             <Input
               type="number"
               min="0"
-              className=""
               value={smsTokens}
               onChange={(e) => setSmsTokens(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label >Features (one per line)</Label>
+            <Label>Features (one per line)</Label>
             <Textarea
               className="min-h-[100px]"
               value={features}
@@ -144,12 +139,12 @@ const EditPlanDialog = ({
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label >Active</Label>
+            <Label>Active</Label>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className={cn("border-[#E2E8F0] text-[#1E3A5F]", ADMIN_SURFACE_HOVER)}>
             Cancel
           </Button>
           <Button
@@ -201,7 +196,7 @@ const SubscriptionsPage = () => {
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9]"
+                        className={cn("h-7 w-7 text-[#64748B] hover:text-[#0F172A]", ADMIN_SURFACE_HOVER)}
                         onClick={() => setEditingPlan(plan)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
@@ -249,7 +244,7 @@ const SubscriptionsPage = () => {
                   <div className="space-y-2 pt-4 border-t border-[#E2E8F0]">
                     {plan.features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2 text-sm text-[#0F172A]">
-                        <Check className="h-4 w-4 text-green-400" />
+                        <Check className="h-4 w-4 text-green-600" />
                         <span>{feature}</span>
                       </div>
                     ))}
