@@ -44,16 +44,16 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0a0f1d]">
+    <div className="flex flex-col h-full bg-[#0F172A]">
       {/* Logo */}
-      <div className="p-4 border-b border-white/[0.06]">
+      <div className="p-4 border-b border-white/10">
         <Link to={ROUTES.SUPER_ADMIN_ROOT} className="flex items-center gap-3" onClick={onNavigate}>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center shadow-[0_0_20px_-4px] shadow-primary/30">
-            <Shield className="h-5 w-5 text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-[#0F766E]/20 border border-[#0F766E]/30 flex items-center justify-center">
+            <Shield className="h-5 w-5 text-[#2DD4BF]" />
           </div>
           <div>
             <h1 className="font-semibold tracking-tight text-white">Kodipap</h1>
-            <p className="text-xs text-slate-500">Super Admin</p>
+            <p className="text-xs text-slate-400">Super Admin</p>
           </div>
         </Link>
       </div>
@@ -71,17 +71,17 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
                 className={cn(
                   'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
                   isActive
-                    ? 'bg-primary/15 text-white'
+                    ? 'bg-[#CCFBF1]/10 text-white'
                     : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-100'
                 )}
               >
                 {isActive && (
-                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-primary shadow-[0_0_8px] shadow-primary" />
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-[#2DD4BF]" />
                 )}
                 <item.icon
                   className={cn(
                     'h-[18px] w-[18px] shrink-0 transition-colors',
-                    isActive ? 'text-primary' : 'text-slate-500 group-hover:text-slate-300'
+                    isActive ? 'text-[#2DD4BF]' : 'text-slate-500 group-hover:text-slate-300'
                   )}
                 />
                 {item.label}
@@ -92,7 +92,7 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-4 border-t border-white/[0.06]">
+      <div className="p-4 border-t border-white/10">
         <Button
           variant="ghost"
           className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/[0.04]"
@@ -110,11 +110,11 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#0b1220] bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(120,119,198,0.08),transparent)]">
+    <div className="min-h-screen bg-[#F8FAFC]">
       {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-50 flex items-center justify-between p-4 bg-[#0a0f1d]/95 backdrop-blur border-b border-white/[0.06]">
+      <header className="lg:hidden sticky top-0 z-50 flex items-center justify-between p-4 bg-[#0F172A] border-b border-white/10">
         <div className="flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
+          <Shield className="h-6 w-6 text-[#2DD4BF]" />
           <span className="font-semibold tracking-tight text-white">Super Admin</span>
         </div>
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -123,7 +123,7 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72 bg-[#0a0f1d] border-white/[0.06]">
+          <SheetContent side="left" className="p-0 w-72 bg-[#0F172A] border-white/10">
             <NavContent onNavigate={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
@@ -131,7 +131,7 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex w-64 h-screen sticky top-0 flex-col bg-[#0a0f1d] border-r border-white/[0.06]">
+        <aside className="hidden lg:flex w-64 h-screen sticky top-0 flex-col bg-[#0F172A] border-r border-white/10">
           <NavContent />
         </aside>
 
