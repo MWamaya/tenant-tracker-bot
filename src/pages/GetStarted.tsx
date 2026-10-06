@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -6,30 +6,11 @@ import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { supabase } from '@/integrations/supabase/client';
+import { PUBLIC_PLANS } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
-
-const PLANS = [
-  {
-    name: 'Starter',
-    price: 'KES 500',
-    features: ['Up to 10 houses', 'Manual payment entry', 'Basic reports', 'Email support'],
-  },
-  {
-    name: 'Pro',
-    price: 'KES 1,500',
-    features: ['Up to 50 houses', 'M-Pesa & bank auto-sync', 'SMS reminders (100 tokens)', 'Priority support'],
-    highlighted: true,
-  },
-  {
-    name: 'Premium',
-    price: 'KES 3,500',
-    features: ['Unlimited houses', 'All Pro features', 'SMS reminders (500 tokens)', 'Dedicated manager'],
-  },
-];
-const PLAN_NAMES = PLANS.map((p) => p.name);
 
 const requestSchema = z.object({
   fullName: z.string().trim().min(1, 'Enter your full name').max(200),
@@ -41,14 +22,22 @@ const requestSchema = z.object({
 const GetStarted = () => {
   const [searchParams] = useSearchParams();
   const preselected = searchParams.get('plan');
+  const plans = PUBLIC_PLANS;
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [plan, setPlan] = useState(PLAN_NAMES.includes(preselected || '') ? preselected! : '');
+  const [plan, setPlan] = useState('');
   const [website, setWebsite] = useState(''); // honeypot
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  // Preselect from ?plan= only if it names a real plan.
+  useEffect(() => {
+    if (!plan && preselected && plans.some((p) => p.name === preselected)) {
+      setPlan(preselected);
+    }
+  }, [plan, preselected, plans]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,7 +154,7 @@ const GetStarted = () => {
               <div className="space-y-2">
                 <Label>Plan</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {PLANS.map((p) => {
+                  {plans.map((p) => {
                     const selected = plan === p.name;
                     return (
                       <button
@@ -188,8 +177,12 @@ const GetStarted = () => {
                           {selected && <Check className="h-4 w-4 text-primary" />}
                         </div>
                         <div className="mt-1 text-sm text-muted-foreground">
-                          {p.price}
+                          KES {p.price.toLocaleString()}
                           <span className="text-xs"> /month</span>
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {p.maxProperties === null ? 'Unlimited' : p.maxProperties} properties ·{' '}
+                          {p.maxTenants === null ? 'Unlimited' : p.maxTenants} tenants
                         </div>
                         <ul className="mt-2 space-y-1">
                           {p.features.slice(0, 2).map((f) => (

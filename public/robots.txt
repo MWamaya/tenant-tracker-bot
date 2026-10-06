@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /app
 
-Sitemap: https://tenant-tracker-bot.lovable.app/sitemap.xml
+Sitemap: https://kodipap.com/sitemap.xml

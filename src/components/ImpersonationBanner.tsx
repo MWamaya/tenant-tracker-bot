@@ -1,5 +1,6 @@
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ShieldAlert, X } from 'lucide-react';
 
 export const ImpersonationBanner = () => {
@@ -13,12 +14,17 @@ export const ImpersonationBanner = () => {
         <div className="flex items-center gap-2 min-w-0">
           <ShieldAlert className="h-4 w-4 flex-shrink-0" />
           <span className="font-medium truncate">
-            Super Admin View — managing as{' '}
+            Super Admin View — {impersonating.viewOnly ? 'viewing' : 'managing'} as{' '}
             <span className="font-bold">{impersonating.name}</span>
             {impersonating.company && (
               <span className="opacity-80"> ({impersonating.company})</span>
             )}
           </span>
+          {impersonating.viewOnly && (
+            <Badge variant="secondary" className="shrink-0 bg-white/15 text-destructive-foreground border-0">
+              Read-only
+            </Badge>
+          )}
         </div>
         <Button
           size="sm"

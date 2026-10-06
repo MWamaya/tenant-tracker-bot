@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle, LogOut, Phone, Mail, CreditCard } from 'lucide-react';
+import { AlertCircle, LogOut, Mail, CreditCard } from 'lucide-react';
 
 const AccountSuspended = () => {
   const { signOut } = useAuth();
@@ -40,12 +40,6 @@ const AccountSuspended = () => {
 
           <div className="rounded-lg border p-4 space-y-2">
             <div className="font-semibold text-sm">Need help?</div>
-            <a
-              href="tel:+254700000000"
-              className="flex items-center gap-2 text-sm text-primary hover:underline"
-            >
-              <Phone className="h-4 w-4" /> +254 700 000 000
-            </a>
             <a
               href="mailto:support@kodipap.com"
               className="flex items-center gap-2 text-sm text-primary hover:underline"

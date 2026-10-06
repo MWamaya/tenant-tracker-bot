@@ -7,6 +7,7 @@ import { clearMatchedEmailLogs } from '@/lib/syncPayments';
 import { autoTagDeposits } from '@/lib/depositAutoTag';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -130,6 +131,7 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
   const [fileName, setFileName] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
+  const { viewOnly } = useImpersonation();
 
   const reset = () => {
     setRows([]);
@@ -338,6 +340,7 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
 
     setImporting(true);
     try {
+      assertWritable(viewOnly);
       // Build inserts using match info captured during parse. Rows with
       // split=true are expanded into one insert per house with an equal
       // share and a suffixed M-Pesa reference (-S2, -S3…).

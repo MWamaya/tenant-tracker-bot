@@ -180,15 +180,15 @@ const Contact = () => {
           <div className="mt-12 pt-8 border-t grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
             <div>
               <h2 className="font-semibold text-foreground">General support</h2>
-              <p className="mt-1 text-muted-foreground">[support email]</p>
+              <p className="mt-1 text-muted-foreground">support@kodipap.com</p>
             </div>
             <div>
               <h2 className="font-semibold text-foreground">Privacy & data requests</h2>
-              <p className="mt-1 text-muted-foreground">[privacy email]</p>
+              <p className="mt-1 text-muted-foreground">support@kodipap.com</p>
             </div>
             <div className="sm:col-span-2">
               <h2 className="font-semibold text-foreground">Business address</h2>
-              <p className="mt-1 text-muted-foreground">[legal/business address]</p>
+              <p className="mt-1 text-muted-foreground">Nairobi, Kenya</p>
             </div>
           </div>
         </div>

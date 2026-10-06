@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { useEffectiveLandlordId, useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface EmailLog {
@@ -83,6 +83,7 @@ export const parsePaymentMessage = (message: string) => {
 
 export const useEmailLogs = () => {
   const landlordId = useEffectiveLandlordId();
+  const { viewOnly } = useImpersonation();
   const queryClient = useQueryClient();
 
   const emailLogsQuery = useQuery({
@@ -104,6 +105,7 @@ export const useEmailLogs = () => {
 
   const addEmailLog = useMutation({
     mutationFn: async (emailLog: EmailLogInsert) => {
+      assertWritable(viewOnly);
       if (!landlordId) throw new Error('No landlord context');
 
       const parsed = parsePaymentMessage(emailLog.raw_message);
@@ -142,6 +144,7 @@ export const useEmailLogs = () => {
 
   const updateEmailLog = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: EmailLogUpdate }) => {
+      assertWritable(viewOnly);
       const { data: updated, error } = await supabase
         .from('email_logs')
         .update(data)
@@ -163,6 +166,7 @@ export const useEmailLogs = () => {
 
   const processEmailLog = useMutation({
     mutationFn: async (emailLog: EmailLog) => {
+      assertWritable(viewOnly);
       if (!landlordId) throw new Error('No landlord context');
       if (!emailLog.parsed_amount || !emailLog.parsed_mpesa_ref) {
         throw new Error('Missing required payment details');

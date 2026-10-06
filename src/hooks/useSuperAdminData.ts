@@ -1,6 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { format, subMonths, startOfMonth } from 'date-fns';
 
 export interface OnboardingRequest {
   id: string;
@@ -62,9 +63,20 @@ export interface PlatformStats {
   unmatchedPayments: number;
 }
 
+export interface MonthlyTrendPoint {
+  month: string;
+  label: string;
+  landlordSignups: number;
+  rentCollected: number;
+  newProperties: number;
+  newTenants: number;
+  newOnboardingRequests: number;
+}
+
 export interface AuditLog {
   id: string;
   admin_id: string;
+  admin_name: string;
   action: string;
   entity_type: string;
   entity_id: string | null;
@@ -190,6 +202,90 @@ export const usePlatformStats = () => {
   });
 };
 
+// Hook to fetch landlord-growth and rent-collected trends for the last 6
+// months, for the Platform Overview charts.
+export const usePlatformTrends = () => {
+  return useQuery({
+    queryKey: ['platform-trends'],
+    queryFn: async (): Promise<MonthlyTrendPoint[]> => {
+      const superAdminIds = await fetchSuperAdminIds();
+      const rangeStart = startOfMonth(subMonths(new Date(), 5));
+
+      const [
+        { data: profiles, error: profilesError },
+        { data: payments, error: paymentsError },
+        { data: houses, error: housesError },
+        { data: tenants, error: tenantsError },
+        { data: onboardingRequests, error: onboardingError },
+      ] = await Promise.all([
+        supabase.from('profiles').select('id, created_at').gte('created_at', rangeStart.toISOString()),
+        supabase.from('payments').select('amount, payment_date').gte('payment_date', rangeStart.toISOString()),
+        supabase.from('houses').select('created_at').gte('created_at', rangeStart.toISOString()),
+        supabase.from('tenants').select('created_at').gte('created_at', rangeStart.toISOString()),
+        supabase.from('onboarding_requests').select('created_at').gte('created_at', rangeStart.toISOString()),
+      ]);
+
+      if (profilesError) throw profilesError;
+      if (paymentsError) throw paymentsError;
+      if (housesError) throw housesError;
+      if (tenantsError) throw tenantsError;
+      if (onboardingError) throw onboardingError;
+
+      const months = Array.from({ length: 6 }, (_, i) => startOfMonth(subMonths(new Date(), 5 - i)));
+      const points = new Map<string, MonthlyTrendPoint>(
+        months.map((m) => {
+          const key = format(m, 'yyyy-MM');
+          return [
+            key,
+            {
+              month: key,
+              label: format(m, 'MMM'),
+              landlordSignups: 0,
+              rentCollected: 0,
+              newProperties: 0,
+              newTenants: 0,
+              newOnboardingRequests: 0,
+            },
+          ];
+        })
+      );
+
+      for (const p of profiles ?? []) {
+        if (superAdminIds.has(p.id)) continue;
+        const key = format(new Date(p.created_at), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.landlordSignups += 1;
+      }
+
+      for (const h of houses ?? []) {
+        const key = format(new Date(h.created_at), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.newProperties += 1;
+      }
+
+      for (const t of tenants ?? []) {
+        const key = format(new Date(t.created_at), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.newTenants += 1;
+      }
+
+      for (const o of onboardingRequests ?? []) {
+        const key = format(new Date(o.created_at), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.newOnboardingRequests += 1;
+      }
+
+      for (const p of payments ?? []) {
+        const key = format(new Date(p.payment_date), 'yyyy-MM');
+        const point = points.get(key);
+        if (point) point.rentCollected += Number(p.amount);
+      }
+
+      return Array.from(points.values());
+    },
+  });
+};
+
 // Hook to fetch all landlords
 export const useLandlords = () => {
   return useQuery({
@@ -235,6 +331,187 @@ export const useLandlords = () => {
   });
 };
 
+// Hook to fetch, per landlord, how many of their rent payments are
+// unmatched (no tenant/house link). This is the landlord's own reconciling
+// job (they have a Reconciliation page for it) — admin just needs enough
+// visibility to tell who has a backlog, surfaced on the Landlords table
+// rather than as a platform-wide "needs attention" queue.
+export const useUnmatchedPaymentCountsByLandlord = () => {
+  return useQuery({
+    queryKey: ['unmatched-payment-counts-by-landlord'],
+    queryFn: async (): Promise<Map<string, number>> => {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('landlord_id')
+        .or('tenant_id.is.null,house_id.is.null');
+
+      if (error) throw error;
+
+      const counts = new Map<string, number>();
+      for (const p of data ?? []) {
+        counts.set(p.landlord_id, (counts.get(p.landlord_id) || 0) + 1);
+      }
+      return counts;
+    },
+  });
+};
+
+// --- Landlord detail page data --------------------------------------------
+// Everything below is scoped to a single landlord_id for the admin's
+// per-landlord detail view. Tenant rows are deliberately never fetched here
+// beyond a bare count — their names/phones are the landlord's own data, not
+// something admin needs to see to manage the account.
+
+export interface LandlordProperty {
+  id: string;
+  name: string;
+  address: string | null;
+  county: string | null;
+  town: string | null;
+  property_type: string | null;
+  total_units: number | null;
+  created_at: string;
+}
+
+export const useLandlordProperties = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-properties', landlordId],
+    queryFn: async (): Promise<LandlordProperty[]> => {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('id, name, address, county, town, property_type, total_units, created_at')
+        .eq('landlord_id', landlordId as string)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!landlordId,
+  });
+
+export interface LandlordHouse {
+  id: string;
+  house_no: string;
+  status: string;
+  expected_rent: number;
+  property_id: string | null;
+  property_name: string | null;
+}
+
+export const useLandlordHouses = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-houses', landlordId],
+    queryFn: async (): Promise<LandlordHouse[]> => {
+      const [{ data: houses, error: housesError }, { data: properties, error: propertiesError }] =
+        await Promise.all([
+          supabase
+            .from('houses')
+            .select('id, house_no, status, expected_rent, property_id')
+            .eq('landlord_id', landlordId as string)
+            .order('house_no'),
+          supabase.from('properties').select('id, name').eq('landlord_id', landlordId as string),
+        ]);
+      if (housesError) throw housesError;
+      if (propertiesError) throw propertiesError;
+
+      const propertyNameById = new Map((properties ?? []).map((p) => [p.id, p.name]));
+      return (houses ?? []).map((h) => ({
+        ...h,
+        property_name: h.property_id ? propertyNameById.get(h.property_id) ?? null : null,
+      }));
+    },
+    enabled: !!landlordId,
+  });
+
+// Bare count only — no tenant names/phones. Those stay the landlord's own
+// data; admin just needs to know how many.
+export const useLandlordTenantCount = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-tenant-count', landlordId],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('tenants')
+        .select('*', { count: 'exact', head: true })
+        .eq('landlord_id', landlordId as string);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!landlordId,
+  });
+
+export interface LandlordRentSummary {
+  totalCollected: number;
+  paymentCount: number;
+}
+
+export const useLandlordRentSummary = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-rent-summary', landlordId],
+    queryFn: async (): Promise<LandlordRentSummary> => {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('amount')
+        .eq('landlord_id', landlordId as string);
+      if (error) throw error;
+      const rows = data ?? [];
+      return {
+        totalCollected: rows.reduce((sum, p) => sum + Number(p.amount), 0),
+        paymentCount: rows.length,
+      };
+    },
+    enabled: !!landlordId,
+  });
+
+export interface LandlordPlatformPayment {
+  id: string;
+  amount: number;
+  payment_reference: string | null;
+  payment_method: string | null;
+  status: string;
+  created_at: string;
+}
+
+export const useLandlordPlatformPayments = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-platform-payments', landlordId],
+    queryFn: async (): Promise<LandlordPlatformPayment[]> => {
+      const { data, error } = await supabase
+        .from('platform_revenue')
+        .select('id, amount, payment_reference, payment_method, status, created_at')
+        .eq('landlord_id', landlordId as string)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!landlordId,
+  });
+
+export const useLandlordAuditLog = (landlordId: string | null) =>
+  useQuery({
+    queryKey: ['landlord-audit-log', landlordId],
+    queryFn: async (): Promise<AuditLog[]> => {
+      const { data, error } = await supabase
+        .from('audit_logs')
+        .select('*')
+        .eq('entity_id', landlordId as string)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      if (error) throw error;
+
+      const adminIds = [...new Set((data || []).map((l) => l.admin_id).filter(Boolean))];
+      const { data: admins } = adminIds.length
+        ? await supabase.from('profiles').select('id, full_name').in('id', adminIds)
+        : { data: [] as { id: string; full_name: string | null }[] };
+      const adminNameById = new Map((admins || []).map((a) => [a.id, a.full_name || 'Unknown admin']));
+
+      return (data || []).map((log) => ({
+        ...log,
+        admin_name: adminNameById.get(log.admin_id) || 'Unknown admin',
+      }));
+    },
+    enabled: !!landlordId,
+  });
+
 // Hook to fetch subscription plans
 export const useSubscriptionPlans = () => {
   return useQuery({
@@ -255,19 +532,37 @@ export const useSubscriptionPlans = () => {
 };
 
 // Hook to fetch audit logs
-export const useAuditLogs = (limit = 50) => {
-  return useQuery({
-    queryKey: ['audit-logs', limit],
-    queryFn: async (): Promise<AuditLog[]> => {
+const AUDIT_LOG_PAGE_SIZE = 50;
+
+// Paginated (not a fixed cap) so Audit Logs can actually be browsed past
+// the most recent page instead of silently losing older entries.
+export const useAuditLogs = () => {
+  return useInfiniteQuery({
+    queryKey: ['audit-logs'],
+    queryFn: async ({ pageParam }): Promise<AuditLog[]> => {
       const { data, error } = await supabase
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .range(pageParam, pageParam + AUDIT_LOG_PAGE_SIZE - 1);
 
       if (error) throw error;
-      return data || [];
+
+      const adminIds = [...new Set((data || []).map((l) => l.admin_id).filter(Boolean))];
+      const { data: admins } = adminIds.length
+        ? await supabase.from('profiles').select('id, full_name').in('id', adminIds)
+        : { data: [] as { id: string; full_name: string | null }[] };
+
+      const adminNameById = new Map((admins || []).map((a) => [a.id, a.full_name || 'Unknown admin']));
+
+      return (data || []).map((log) => ({
+        ...log,
+        admin_name: adminNameById.get(log.admin_id) || 'Unknown admin',
+      }));
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === AUDIT_LOG_PAGE_SIZE ? allPages.length * AUDIT_LOG_PAGE_SIZE : undefined,
   });
 };
 
@@ -341,24 +636,14 @@ export const useAllocateSmsTokens = () => {
 
   return useMutation({
     mutationFn: async ({ landlordId, amount, description }: { landlordId: string; amount: number; description?: string }) => {
-      // Get current balance
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('sms_token_balance')
-        .eq('id', landlordId)
-        .single();
+      // Atomic increment — avoids the read-then-write race of fetching the
+      // balance in JS and writing back old+amount.
+      const { data: newBalance, error: incrementError } = await supabase.rpc('increment_sms_balance', {
+        p_landlord_id: landlordId,
+        p_amount: amount,
+      });
 
-      if (profileError) throw profileError;
-
-      const newBalance = (profile?.sms_token_balance || 0) + amount;
-
-      // Update balance
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ sms_token_balance: newBalance })
-        .eq('id', landlordId);
-
-      if (updateError) throw updateError;
+      if (incrementError) throw incrementError;
 
       // Record transaction
       const { error: transactionError } = await supabase
@@ -418,6 +703,18 @@ export const useAssignSubscription = () => {
       const endDate = new Date();
       endDate.setDate(endDate.getDate() + plan.duration_days);
 
+      // A landlord should only ever have one active subscription — cancel
+      // any existing one first, otherwise two "active" rows can coexist and
+      // which plan shows up (e.g. in useLandlords' subscriptionMap) becomes
+      // whichever row the query happens to return last.
+      const { error: cancelError } = await supabase
+        .from('landlord_subscriptions')
+        .update({ status: 'cancelled' })
+        .eq('landlord_id', landlordId)
+        .eq('status', 'active');
+
+      if (cancelError) throw cancelError;
+
       // Create subscription
       const { data: subscription, error: subError } = await supabase
         .from('landlord_subscriptions')
@@ -436,27 +733,23 @@ export const useAssignSubscription = () => {
       if (subError) throw subError;
 
       // Update landlord status to active
-      await supabase
+      const { error: statusError } = await supabase
         .from('profiles')
         .update({ account_status: 'active' })
         .eq('id', landlordId);
 
+      if (statusError) throw statusError;
+
       // Add SMS tokens if included in plan
       if (plan.sms_tokens_included > 0) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('sms_token_balance')
-          .eq('id', landlordId)
-          .single();
+        const { data: newBalance, error: incrementError } = await supabase.rpc('increment_sms_balance', {
+          p_landlord_id: landlordId,
+          p_amount: plan.sms_tokens_included,
+        });
 
-        const newBalance = (profile?.sms_token_balance || 0) + plan.sms_tokens_included;
+        if (incrementError) throw incrementError;
 
-        await supabase
-          .from('profiles')
-          .update({ sms_token_balance: newBalance })
-          .eq('id', landlordId);
-
-        await supabase.from('sms_transactions').insert({
+        const { error: smsTxError } = await supabase.from('sms_transactions').insert({
           landlord_id: landlordId,
           transaction_type: 'credit',
           amount: plan.sms_tokens_included,
@@ -464,11 +757,13 @@ export const useAssignSubscription = () => {
           description: `SMS tokens from ${plan.name} subscription`,
           created_by: (await supabase.auth.getUser()).data.user?.id,
         });
+
+        if (smsTxError) throw smsTxError;
       }
 
       // Record platform revenue
       if (amountPaid && amountPaid > 0) {
-        await supabase.from('platform_revenue').insert({
+        const { error: revenueError } = await supabase.from('platform_revenue').insert({
           landlord_id: landlordId,
           subscription_id: subscription.id,
           amount: amountPaid,
@@ -476,6 +771,8 @@ export const useAssignSubscription = () => {
           payment_reference: paymentReference,
           status: 'completed',
         });
+
+        if (revenueError) throw revenueError;
       }
 
       // Log the action
@@ -514,6 +811,60 @@ export const useOnboardingRequests = () => {
   });
 };
 
+// Hook to fetch the count of untriaged ("new") onboarding requests, for the
+// dashboard stat card — cheap exact count rather than fetching full rows.
+export const useNewOnboardingRequestsCount = () => {
+  return useQuery({
+    queryKey: ['onboarding-requests-new-count'],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('onboarding_requests')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'new');
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
+// Hook to fetch the platform-wide count of bank-email parses that failed
+// (email_logs.status === 'failed'), for the dashboard's Needs Attention
+// widget. Independent useQuery (not folded into a combined hook) so one
+// signal failing doesn't blank the others on the dashboard.
+export const useFailedEmailLogsCount = () => {
+  return useQuery({
+    queryKey: ['needs-attention-failed-email-logs-count'],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('email_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'failed');
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
+// Hook to fetch the platform-wide count of webhook deliveries that never
+// finished processing (webhooks_log.processed === false), for the
+// dashboard's Needs Attention widget.
+export const useUnprocessedWebhooksCount = () => {
+  return useQuery({
+    queryKey: ['needs-attention-unprocessed-webhooks-count'],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('webhooks_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('processed', false);
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
 // Mutation to update an onboarding request's triage status
 export const useUpdateOnboardingStatus = () => {
   const queryClient = useQueryClient();
@@ -541,6 +892,246 @@ export const useUpdateOnboardingStatus = () => {
     },
     onError: (error) => {
       toast.error(`Failed to update request: ${error.message}`);
+    },
+  });
+};
+
+// Mutation to create a landlord account from the admin UI (blank "Add
+// Landlord" form, or "Create account" on an onboarding request). Goes
+// through the admin-create-landlord edge function since creating an auth
+// user requires the Admin API (service role), not something the client
+// SDK can do directly.
+export const useCreateLandlordAccount = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (params: {
+      fullName: string;
+      email: string;
+      phone?: string;
+      companyName?: string;
+      onboardingRequestId?: string;
+    }) => {
+      const { data, error } = await supabase.functions.invoke('admin-create-landlord', {
+        body: params,
+      });
+
+      if (error) throw error;
+      if (data && 'error' in data) throw new Error(data.error);
+      return data as { ok: true; landlordId: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['landlords'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['onboarding-requests-new-count'] });
+      toast.success('Landlord account created — they’ve been emailed an invite to set a password.');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create landlord: ${error.message}`);
+    },
+  });
+};
+
+// Mutation to edit a subscription plan's price/features/limits. Name is
+// deliberately not editable here — the public site (Landing, GetStarted,
+// ChoosePlan) matches plans by exact name, so renaming one in place would
+// silently break that match rather than updating it.
+export const useUpdateSubscriptionPlan = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      planId,
+      price,
+      description,
+      maxProperties,
+      maxTenants,
+      smsTokensIncluded,
+      features,
+      isActive,
+    }: {
+      planId: string;
+      price: number;
+      description: string;
+      maxProperties: number | null;
+      maxTenants: number | null;
+      smsTokensIncluded: number;
+      features: string[];
+      isActive: boolean;
+    }) => {
+      const { error } = await supabase
+        .from('subscription_plans')
+        .update({
+          price,
+          description,
+          max_properties: maxProperties,
+          max_tenants: maxTenants,
+          sms_tokens_included: smsTokensIncluded,
+          features,
+          is_active: isActive,
+        })
+        .eq('id', planId);
+
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'UPDATE_SUBSCRIPTION_PLAN',
+        entity_type: 'subscription_plan',
+        entity_id: planId,
+        new_values: { price, is_active: isActive },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+      // Also read by the public site (Landing, GetStarted, ChoosePlan).
+      queryClient.invalidateQueries({ queryKey: ['public-subscription-plans'] });
+      toast.success('Plan updated');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update plan: ${error.message}`);
+    },
+  });
+};
+
+// --- Two-factor auth (own account) -----------------------------------------
+
+export interface TwoFactorSettings {
+  enabled: boolean;
+  method: 'email' | 'sms';
+}
+
+export const useTwoFactorSettings = () => {
+  return useQuery({
+    queryKey: ['super-admin-two-factor-settings'],
+    queryFn: async (): Promise<TwoFactorSettings> => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return { enabled: false, method: 'email' };
+
+      const { data, error } = await supabase
+        .from('super_admin_two_factor')
+        .select('enabled, method')
+        .eq('user_id', userData.user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return {
+        enabled: data?.enabled ?? false,
+        method: (data?.method as 'email' | 'sms') ?? 'email',
+      };
+    },
+  });
+};
+
+export const useUpdateTwoFactorSettings = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (settings: TwoFactorSettings) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Not signed in');
+
+      const { error } = await supabase.from('super_admin_two_factor').upsert({
+        user_id: userData.user.id,
+        enabled: settings.enabled,
+        method: settings.method,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin-two-factor-settings'] });
+      toast.success('Two-factor authentication updated');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update: ${error.message}`);
+    },
+  });
+};
+
+// --- Super admin management --------------------------------------------
+
+export interface SuperAdminUser {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  created_at: string;
+}
+
+export const useSuperAdmins = () => {
+  return useQuery({
+    queryKey: ['super-admins-list'],
+    queryFn: async (): Promise<SuperAdminUser[]> => {
+      const { data: roleRows, error: roleError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'SUPER_ADMIN');
+
+      if (roleError) throw roleError;
+      const ids = (roleRows || []).map((r) => r.user_id);
+      if (ids.length === 0) return [];
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, created_at')
+        .in('id', ids);
+
+      if (profilesError) throw profilesError;
+      return (profiles || []).sort((a, b) => a.created_at.localeCompare(b.created_at));
+    },
+  });
+};
+
+export const useCreateSuperAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ fullName, email }: { fullName: string; email: string }) => {
+      const { data, error } = await supabase.functions.invoke('admin-create-superadmin', {
+        body: { fullName, email },
+      });
+      if (error) throw error;
+      if (data && 'error' in data) throw new Error(data.error);
+      return data as { ok: true; userId: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super-admins-list'] });
+      toast.success('Admin invited — they’ve been emailed a link to set a password.');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to invite admin: ${error.message}`);
+    },
+  });
+};
+
+export const useRevokeSuperAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'SUPER_ADMIN');
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'REVOKE_SUPER_ADMIN',
+        entity_type: 'profile',
+        entity_id: userId,
+        new_values: {},
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super-admins-list'] });
+      toast.success('Admin access revoked');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to revoke access: ${error.message}`);
     },
   });
 };

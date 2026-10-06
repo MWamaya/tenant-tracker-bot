@@ -1377,6 +1377,60 @@ export type Database = {
         }
         Relationships: []
       }
+      super_admin_otp_codes: {
+        Row: {
+          attempt_count: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          method: string
+          user_id: string
+        }
+        Insert: {
+          attempt_count?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          method: string
+          user_id: string
+        }
+        Update: {
+          attempt_count?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          method?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      super_admin_two_factor: {
+        Row: {
+          enabled: boolean
+          method: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          method?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          method?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       system_settings: {
         Row: {
           created_at: string
@@ -1612,6 +1666,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_sms_balance: {
+        Args: { p_amount: number; p_landlord_id: string }
+        Returns: number
       }
     }
     Enums: {

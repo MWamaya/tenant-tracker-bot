@@ -8,8 +8,6 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   Users,
-  CreditCard,
-  MessageSquare,
   Settings,
   FileText,
   LogOut,
@@ -17,10 +15,10 @@ import {
   Shield,
   Building,
   DollarSign,
-  Mail,
   UserPlus,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
+import SuperAdminTopbar from './SuperAdminTopbar';
 
 interface SuperAdminLayoutProps {
   children: ReactNode;
@@ -30,14 +28,8 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: ROUTES.SUPER_ADMIN_ROOT },
   { icon: UserPlus, label: 'Onboarding Requests', path: ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS },
   { icon: Users, label: 'Landlords', path: ROUTES.SUPER_ADMIN_LANDLORDS },
-  { icon: CreditCard, label: 'Subscriptions', path: ROUTES.SUPER_ADMIN_SUBSCRIPTIONS },
-  // SMS Management and the second Email Logs entry below don't correspond
-  // to any defined route today (pre-existing dead links) — renamed for
-  // consistency only, not added to ROUTES since nothing routes them.
-  { icon: MessageSquare, label: 'SMS Management', path: '/app/super-admin/sms' },
   { icon: DollarSign, label: 'Payments', path: ROUTES.SUPER_ADMIN_PAYMENTS },
   { icon: Building, label: 'Properties', path: ROUTES.SUPER_ADMIN_PROPERTIES },
-  { icon: Mail, label: 'Email Logs', path: '/app/super-admin/email-logs' },
   { icon: FileText, label: 'Audit Logs', path: ROUTES.SUPER_ADMIN_AUDIT_LOGS },
   { icon: Settings, label: 'Settings', path: ROUTES.SUPER_ADMIN_SETTINGS },
 ];
@@ -51,15 +43,15 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[#0F172A]">
       {/* Logo */}
-      <div className="p-4 border-b border-slate-700">
-        <Link to={ROUTES.SUPER_ADMIN_ROOT} className="flex items-center gap-2" onClick={onNavigate}>
-          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-            <Shield className="h-6 w-6 text-primary" />
+      <div className="p-4 border-b border-white/10">
+        <Link to={ROUTES.SUPER_ADMIN_ROOT} className="flex items-center gap-3" onClick={onNavigate}>
+          <div className="w-10 h-10 rounded-xl bg-[#0F766E]/20 border border-[#0F766E]/30 flex items-center justify-center">
+            <Shield className="h-5 w-5 text-[#2DD4BF]" />
           </div>
           <div>
-            <h1 className="font-bold text-white">Kodipap</h1>
+            <h1 className="font-semibold tracking-tight text-white">Kodipap</h1>
             <p className="text-xs text-slate-400">Super Admin</p>
           </div>
         </Link>
@@ -67,7 +59,7 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
 
       {/* Navigation */}
       <ScrollArea className="flex-1 py-4">
-        <nav className="space-y-1 px-3">
+        <nav className="space-y-0.5 px-3">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -76,13 +68,21 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
                 to={item.path}
                 onClick={onNavigate}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+                  'group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150',
                   isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-[#CCFBF1]/10 text-white'
+                    : 'text-slate-400 hover:bg-white/[0.04] hover:text-slate-100'
                 )}
               >
-                <item.icon className="h-5 w-5" />
+                {isActive && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 rounded-full bg-[#2DD4BF]" />
+                )}
+                <item.icon
+                  className={cn(
+                    'h-[18px] w-[18px] shrink-0 transition-colors',
+                    isActive ? 'text-[#2DD4BF]' : 'text-slate-500 group-hover:text-slate-300'
+                  )}
+                />
                 {item.label}
               </Link>
             );
@@ -91,13 +91,13 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-700">
+      <div className="p-4 border-t border-white/10">
         <Button
           variant="ghost"
-          className="w-full justify-start text-slate-300 hover:text-white hover:bg-slate-800"
+          className="w-full justify-start rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/10"
           onClick={handleSignOut}
         >
-          <LogOut className="h-5 w-5 mr-3" />
+          <LogOut className="h-[18px] w-[18px] mr-3" />
           Sign Out
         </Button>
       </div>
@@ -109,12 +109,12 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-900">
+    <div className="min-h-screen bg-[#F8FAFC]">
       {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-50 flex items-center justify-between p-4 bg-slate-800 border-b border-slate-700">
+      <header className="lg:hidden sticky top-0 z-50 flex items-center justify-between p-4 bg-[#0F172A] border-b border-white/10">
         <div className="flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
-          <span className="font-bold text-white">Super Admin</span>
+          <Shield className="h-6 w-6 text-[#2DD4BF]" />
+          <span className="font-semibold tracking-tight text-white">Super Admin</span>
         </div>
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetTrigger asChild>
@@ -122,7 +122,7 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72 bg-slate-900 border-slate-700">
+          <SheetContent side="left" className="p-0 w-72 bg-[#0F172A] border-white/10">
             <NavContent onNavigate={() => setMobileOpen(false)} />
           </SheetContent>
         </Sheet>
@@ -130,12 +130,13 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
 
       <div className="flex">
         {/* Desktop Sidebar */}
-        <aside className="hidden lg:flex w-64 h-screen sticky top-0 flex-col bg-slate-900 border-r border-slate-700">
+        <aside className="hidden lg:flex w-64 h-screen sticky top-0 flex-col bg-[#0F172A] border-r border-white/10">
           <NavContent />
         </aside>
 
         {/* Main Content */}
         <main className="flex-1 min-h-screen">
+          <SuperAdminTopbar />
           <div className="p-4 lg:p-8">
             {children}
           </div>

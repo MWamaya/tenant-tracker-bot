@@ -25,7 +25,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { useEffectiveLandlordId, useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
@@ -52,6 +52,7 @@ interface ReportRecipient {
 
 const Settings = () => {
   const landlordId = useEffectiveLandlordId();
+  const { viewOnly } = useImpersonation();
   const queryClient = useQueryClient();
   const [inboundEmail, setInboundEmail] = useState<string | null>(null);
   const [reportDay, setReportDay] = useState<string>('5');
@@ -89,6 +90,7 @@ const Settings = () => {
 
   const saveRecipient = useMutation({
     mutationFn: async () => {
+      assertWritable(viewOnly);
       if (!landlordId) throw new Error('Not signed in');
       const email = recipientForm.email.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('Enter a valid email');
@@ -117,6 +119,7 @@ const Settings = () => {
 
   const deleteRecipient = useMutation({
     mutationFn: async (id: string) => {
+      assertWritable(viewOnly);
       const { error } = await supabase.from('report_recipients').delete().eq('id', id);
       if (error) throw error;
     },

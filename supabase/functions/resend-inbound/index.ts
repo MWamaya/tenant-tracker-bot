@@ -69,7 +69,22 @@ Deno.serve(async (req) => {
     .select()
     .single();
 
+  // Marks the base webhooks_log row processed — used on every exit path
+  // below that isn't itself a distinct, actionable failure. Resend fires
+  // several event types (delivered, bounced, opened, ...) at this same
+  // endpoint besides "email.received", and duplicate/malformed deliveries
+  // happen in normal operation; none of those need admin follow-up, so
+  // they shouldn't pile up in the unprocessed count.
+  const markBaseLogProcessed = async (errorMessage?: string) => {
+    if (!webhookLog?.id) return;
+    await supabase
+      .from('webhooks_log')
+      .update({ processed: true, ...(errorMessage ? { error_message: errorMessage } : {}) })
+      .eq('id', webhookLog.id);
+  };
+
   if (payload.type !== 'email.received') {
+    await markBaseLogProcessed();
     return jsonResponse({ received: true });
   }
 
@@ -77,6 +92,7 @@ Deno.serve(async (req) => {
   const toAddress = payload.data?.to?.[0]?.toLowerCase();
 
   if (!emailId || !toAddress) {
+    await markBaseLogProcessed('email.received payload missing email_id or to address');
     return jsonResponse({ received: true });
   }
 
@@ -87,6 +103,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (existingLog) {
+    await markBaseLogProcessed();
     return jsonResponse({ received: true, duplicate: true });
   }
 
@@ -97,6 +114,10 @@ Deno.serve(async (req) => {
     .maybeSingle();
 
   if (!landlord) {
+    // The dedicated row below is the actionable one (stays unprocessed —
+    // someone's forwarding bank emails to an address no landlord owns).
+    // The base row above already did its job logging the raw delivery.
+    await markBaseLogProcessed();
     await supabase.from('webhooks_log').insert({
       webhook_type: 'resend_inbound_unmatched_recipient',
       endpoint: req.url,
@@ -111,6 +132,7 @@ Deno.serve(async (req) => {
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   if (!resendApiKey) {
     console.error('RESEND_API_KEY not configured');
+    await markBaseLogProcessed('RESEND_API_KEY not configured');
     return jsonResponse({ received: true });
   }
 
@@ -119,7 +141,9 @@ Deno.serve(async (req) => {
   });
 
   if (!emailResponse.ok) {
-    console.error('Failed to fetch email from Resend:', await emailResponse.text());
+    const fetchError = await emailResponse.text();
+    console.error('Failed to fetch email from Resend:', fetchError);
+    await markBaseLogProcessed(`Failed to fetch email from Resend: ${fetchError.slice(0, 500)}`);
     return jsonResponse({ received: true });
   }
 
@@ -129,9 +153,7 @@ Deno.serve(async (req) => {
   const originalFrom = extractForwardedFrom(text);
   const parsed = parseBankEmail(text, originalFrom);
 
-  if (webhookLog?.id) {
-    await supabase.from('webhooks_log').update({ processed: true }).eq('id', webhookLog.id);
-  }
+  await markBaseLogProcessed();
 
   if (!parsed) {
     await supabase.from('email_logs').insert({

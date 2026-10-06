@@ -26,7 +26,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     heading: '5. Contact',
-    paragraphs: ['[privacy email]'],
+    paragraphs: ['support@kodipap.com'],
   },
 ];
 

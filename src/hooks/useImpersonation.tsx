@@ -10,6 +10,10 @@ interface ImpersonatedLandlord {
   id: string;
   name: string;
   company: string | null;
+  /** When true, mutation hooks reject writes — see assertWritable(). Used
+   * when an admin opens a landlord's account from the super-admin side:
+   * they're looking, not acting on the landlord's behalf. */
+  viewOnly?: boolean;
 }
 
 interface ImpersonationContextType {
@@ -17,7 +21,16 @@ interface ImpersonationContextType {
   startImpersonation: (landlord: ImpersonatedLandlord) => Promise<void>;
   stopImpersonation: () => Promise<void>;
   effectiveLandlordId: string | null;
+  viewOnly: boolean;
 }
+
+/** Thrown by mutation hooks when called during a view-only impersonation
+ * session, so it surfaces through each hook's existing onError → toast. */
+export const assertWritable = (viewOnly: boolean) => {
+  if (viewOnly) {
+    throw new Error("You're viewing this account in read-only mode — changes are disabled");
+  }
+};
 
 const ImpersonationContext = createContext<ImpersonationContextType | undefined>(undefined);
 
@@ -61,12 +74,14 @@ export const ImpersonationProvider = ({ children }: { children: ReactNode }) => 
         action: 'START_IMPERSONATION',
         entity_type: 'profile',
         entity_id: landlord.id,
-        new_values: { landlord_name: landlord.name },
+        new_values: { landlord_name: landlord.name, view_only: !!landlord.viewOnly },
       });
 
       // Refetch all landlord-scoped data
       queryClient.invalidateQueries();
-      toast.success(`Now viewing as ${landlord.name}`);
+      toast.success(
+        landlord.viewOnly ? `Now viewing as ${landlord.name} (read-only)` : `Now viewing as ${landlord.name}`
+      );
     },
     [user, queryClient],
   );
@@ -90,7 +105,13 @@ export const ImpersonationProvider = ({ children }: { children: ReactNode }) => 
 
   return (
     <ImpersonationContext.Provider
-      value={{ impersonating, startImpersonation, stopImpersonation, effectiveLandlordId }}
+      value={{
+        impersonating,
+        startImpersonation,
+        stopImpersonation,
+        effectiveLandlordId,
+        viewOnly: impersonating?.viewOnly ?? false,
+      }}
     >
       {children}
     </ImpersonationContext.Provider>

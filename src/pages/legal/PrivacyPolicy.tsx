@@ -5,7 +5,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '1. Who we are',
     paragraphs: [
-      'KODI PAP is a rental-management platform for landlords and property managers in Kenya. For privacy questions, contact <strong>[privacy email]</strong>.',
+      'KODI PAP is a rental-management platform for landlords and property managers in Kenya. For privacy questions, contact <strong>support@kodipap.com</strong>.',
     ],
   },
   {
@@ -59,7 +59,7 @@ const SECTIONS: LegalSection[] = [
   {
     heading: '10. Complaints and contact',
     paragraphs: [
-      'Contact us first at <strong>[privacy email]</strong>. You may also have the right to complain to the Office of the Data Protection Commissioner (ODPC) in Kenya.',
+      'Contact us first at <strong>support@kodipap.com</strong>. You may also have the right to complain to the Office of the Data Protection Commissioner (ODPC) in Kenya.',
     ],
   },
   {
@@ -76,7 +76,6 @@ const PrivacyPolicy = () => (
     description="How KODI PAP collects, uses and protects your information."
     path={ROUTES.PRIVACY_POLICY}
     lastUpdated="5 October 2026"
-    notice="replace the bracketed fields with KODI PAP's legal entity name, address, privacy contact and actual data practices."
     sections={SECTIONS}
   />
 );

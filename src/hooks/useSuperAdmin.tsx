@@ -16,6 +16,8 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   const checkSuperAdmin = async (): Promise<boolean> => {
+    setLoading(true);
+
     // Fetch the current authenticated user directly to avoid stale context state
     // right after a fresh signIn (the useAuth context may not have updated yet).
     const { data: { user: currentUser } } = await supabase.auth.getUser();

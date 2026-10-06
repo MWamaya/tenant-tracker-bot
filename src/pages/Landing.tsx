@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,12 +16,18 @@ import {
   Menu,
   RefreshCw,
   Landmark,
+  Users,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
 import heroImage from '@/assets/landing-hero.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
+import { PUBLIC_PLANS } from '@/lib/plans';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const WITHOUT = [
   'Search through M-Pesa messages',
@@ -69,6 +75,7 @@ const SHOWCASE_POINTS = [
   'Understand income and occupancy',
 ];
 
+
 const FEATURES = [
   {
     icon: RefreshCw,
@@ -102,30 +109,43 @@ const FEATURES = [
   },
 ];
 
-const PRICING_PLANS = [
+const FAQS = [
   {
-    name: 'Starter',
-    price: 'KES 500',
-    features: ['Up to 10 houses', 'Manual payment entry', 'Basic reports', 'Email support'],
-    highlighted: false,
+    question: 'Is my M-Pesa and tenant data safe?',
+    answer:
+      'Yes. Your rental and tenant data is kept separate per landlord account, and access is restricted to authorised users. We never sell your information — see our Privacy Policy for details.',
   },
   {
-    name: 'Pro',
-    price: 'KES 1,500',
-    features: ['Up to 50 houses', 'M-Pesa & bank auto-sync', 'SMS reminders (100 tokens)', 'Priority support'],
-    highlighted: true,
+    question: 'What happens if a payment fails to match a tenant?',
+    answer:
+      "Unmatched payments show up clearly on your dashboard so you can resolve them manually in a few clicks — nothing gets silently lost or misallocated.",
   },
   {
-    name: 'Premium',
-    price: 'KES 3,500',
-    features: ['Unlimited houses', 'All Pro features', 'SMS reminders (500 tokens)', 'Dedicated manager'],
-    highlighted: false,
+    question: 'How do I pay, and can I cancel anytime?',
+    answer:
+      'Subscriptions are paid manually via M-Pesa — no card required, no auto-charging. You can cancel anytime by contacting support; cancelling just stops future renewals.',
+  },
+  {
+    question: 'Do my tenants need to do anything differently?',
+    answer:
+      'No. Tenants keep paying by M-Pesa or bank transfer exactly as they do today. KODI PAP matches and records the payment automatically on your side.',
+  },
+  {
+    question: 'How quickly is my account set up?',
+    answer:
+      "After you submit the Get Started form, our team sets up your account and reaches out — usually within one business day.",
   },
 ];
 
 /** Small uppercase label above a section heading. */
-const Kicker = ({ children }: { children: React.ReactNode }) => (
-  <div className="text-xs font-bold uppercase tracking-wider text-primary mb-2.5">{children}</div>
+const Kicker = ({
+  children,
+  className = 'text-primary',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${className}`}>{children}</div>
 );
 
 /** Section wrapper that fades/slides up the first time it scrolls into view. */
@@ -159,7 +179,7 @@ const DashboardMockup = () => (
       <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
       <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
       <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
-      <span className="ml-2 text-xs text-muted-foreground">app.kodipap.co.ke</span>
+      <span className="ml-2 text-xs text-muted-foreground">app.kodipap.com</span>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] min-h-[340px] sm:min-h-[390px]">
       <aside className="hidden sm:block bg-muted/40 border-r px-3 py-4 text-xs">
@@ -237,6 +257,21 @@ const DashboardMockup = () => (
 
 const Landing = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(true);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const plans = PUBLIC_PLANS;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const nearBottom =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
+      setShowScrollToBottom(!nearBottom);
+      setShowScrollToTop(window.scrollY > window.innerHeight * 0.75);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <>
@@ -247,14 +282,16 @@ const Landing = () => {
       />
       <div className="min-h-screen">
         {/* Fixed nav — pill on desktop, full-width bar on mobile (logo far left, hamburger far right) */}
-        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex sm:justify-center">
+        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex sm:justify-center pointer-events-none">
           <nav
-            className={`w-full sm:w-fit border bg-background/70 backdrop-blur-xl shadow-lg transition-[border-radius] duration-200 ${
+            className={`pointer-events-auto w-full sm:w-fit border bg-background/70 backdrop-blur-xl shadow-lg transition-[border-radius] duration-200 ${
               menuOpen ? 'rounded-2xl' : 'rounded-2xl sm:rounded-full'
             }`}
           >
             <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 px-3 sm:px-2 py-2 sm:py-1.5">
-              <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto sm:ml-1.5 sm:mr-1" />
+              <Link to={ROUTES.LANDING} className="sm:ml-1.5 sm:mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto" />
+              </Link>
 
               <div className="hidden sm:flex items-center gap-1">
                 <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -266,15 +303,9 @@ const Landing = () => {
                 <a href="#pricing" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Pricing
                 </a>
-                <a href="#proof" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Why KODI PAP
-                </a>
-                <Link to={ROUTES.AUTH} className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Log in
-                </Link>
                 <Button asChild size="sm" className="rounded-full gap-1.5">
                   <Link to={ROUTES.GET_STARTED}>
-                    Get started <ArrowRight className="h-3.5 w-3.5" />
+                    Sign up <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
               </div>
@@ -303,7 +334,6 @@ const Landing = () => {
                     { href: '#how', label: 'How it works' },
                     { href: '#features', label: 'Features' },
                     { href: '#pricing', label: 'Pricing' },
-                    { href: '#proof', label: 'Why KODI PAP' },
                   ].map((item) => (
                     <a
                       key={item.href}
@@ -314,16 +344,9 @@ const Landing = () => {
                       {item.label}
                     </a>
                   ))}
-                  <Link
-                    to={ROUTES.AUTH}
-                    onClick={() => setMenuOpen(false)}
-                    className="px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    Log in
-                  </Link>
                   <Button asChild size="sm" className="mt-1 w-full rounded-full">
                     <Link to={ROUTES.GET_STARTED} onClick={() => setMenuOpen(false)}>
-                      Get started
+                      Sign up
                     </Link>
                   </Button>
                 </div>
@@ -346,11 +369,21 @@ const Landing = () => {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
           </div>
 
+          <Button
+            asChild
+            size="sm"
+            className="absolute top-20 right-4 sm:top-6 sm:right-8 z-10 gap-1.5 shadow-lg"
+          >
+            <Link to={ROUTES.AUTH}>
+              Log in <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
+
           <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-6xl mx-auto w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
               <div className="animate-slide-up">
                 <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-3 py-1 text-xs font-bold">
-                  Built for Kenyan landlords
+                  🇰🇪 Built for Kenyan landlords
                 </span>
 
                 <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[0.98] text-foreground drop-shadow-sm">
@@ -376,7 +409,7 @@ const Landing = () => {
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-foreground/80 drop-shadow-sm">
-                  <span className="font-semibold text-foreground">Kenya-first</span>
+                  <span className="font-semibold text-foreground">🇰🇪 Kenya-first</span>
                   <span className="flex items-center gap-1"><Smartphone className="h-3.5 w-3.5 text-success" /> M-Pesa</span>
                   <span className="flex items-center gap-1"><Landmark className="h-3.5 w-3.5 text-success" /> Bank payments</span>
                   <span className="flex items-center gap-1"><Bell className="h-3.5 w-3.5 text-success" /> Automated reminders</span>
@@ -395,7 +428,7 @@ const Landing = () => {
         <section id="proof" className="px-4 sm:px-8 py-16 sm:py-24 bg-foreground text-background">
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
-              <Kicker>A better way to collect rent</Kicker>
+              <Kicker className="text-success">A better way to collect rent</Kicker>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Less chasing. More control.</h2>
               <p className="mt-3 text-background/70 max-w-xl mx-auto">
                 Replace M-Pesa screenshots, WhatsApp messages and spreadsheets with one clear
@@ -570,42 +603,78 @@ const Landing = () => {
           </Reveal>
 
           <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            {PRICING_PLANS.map((plan, i) => (
-              <Reveal key={plan.name} delay={i * 100}>
-                <div
-                  className={`relative h-full rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
-                    plan.highlighted ? 'border-primary shadow-lg sm:scale-105' : ''
-                  }`}
-                >
-                  {plan.highlighted && (
-                    <div className="absolute -top-3 left-6 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full">
-                      Most Popular
+            {plans.map((plan, i) => (
+                  <Reveal key={plan.name} delay={i * 100}>
+                    <div
+                      className={`relative h-full rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                        plan.highlighted ? 'border-primary shadow-lg sm:scale-105' : ''
+                      }`}
+                    >
+                      {plan.highlighted && (
+                        <div className="absolute -top-3 left-6 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide px-3 py-1 rounded-full">
+                          Most Popular
+                        </div>
+                      )}
+                      <h3 className="font-semibold text-foreground">{plan.name}</h3>
+                      <div className="mt-3">
+                        <span className="text-3xl font-bold tracking-tight text-foreground">
+                          KES {plan.price.toLocaleString()}
+                        </span>
+                        <span className="text-sm text-muted-foreground"> / month</span>
+                      </div>
+                      <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>{plan.maxProperties === null ? 'Unlimited' : plan.maxProperties} properties</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>{plan.maxTenants === null ? 'Unlimited' : plan.maxTenants} tenants</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>{plan.smsTokensIncluded} SMS tokens</span>
+                        </div>
+                      </div>
+                      <ul className="mt-5 space-y-2.5 flex-1 pt-4 border-t">
+                        {plan.features.map((f) => (
+                          <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                            <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <Button
+                        asChild
+                        className="mt-6 w-full transition-transform hover:scale-[1.02]"
+                        variant={plan.highlighted ? 'default' : 'outline'}
+                      >
+                        <Link to={`${ROUTES.GET_STARTED}?plan=${encodeURIComponent(plan.name)}`}>Choose {plan.name}</Link>
+                      </Button>
                     </div>
-                  )}
-                  <h3 className="font-semibold text-foreground">{plan.name}</h3>
-                  <div className="mt-3">
-                    <span className="text-3xl font-bold tracking-tight text-foreground">{plan.price}</span>
-                    <span className="text-sm text-muted-foreground"> / month</span>
-                  </div>
-                  <ul className="mt-5 space-y-2.5 flex-1">
-                    {plan.features.map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
-                        <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    asChild
-                    className="mt-6 w-full transition-transform hover:scale-[1.02]"
-                    variant={plan.highlighted ? 'default' : 'outline'}
-                  >
-                    <Link to={`${ROUTES.GET_STARTED}?plan=${encodeURIComponent(plan.name)}`}>Choose {plan.name}</Link>
-                  </Button>
-                </div>
-              </Reveal>
-            ))}
+                  </Reveal>
+                ))}
           </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="faq" className="px-4 sm:px-8 py-16 sm:py-24">
+          <Reveal className="text-center mb-10 sm:mb-14 max-w-xl mx-auto">
+            <Kicker>Questions</Kicker>
+            <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+              Frequently asked questions.
+            </h2>
+          </Reveal>
+          <Reveal className="max-w-2xl mx-auto">
+            <Accordion type="single" collapsible className="w-full">
+              {FAQS.map((faq) => (
+                <AccordionItem key={faq.question} value={faq.question}>
+                  <AccordionTrigger className="text-left text-foreground">{faq.question}</AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground">{faq.answer}</AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </Reveal>
         </section>
 
         {/* Final CTA */}
@@ -628,7 +697,7 @@ const Landing = () => {
         {/* Footer */}
         <footer className="px-4 sm:px-8 py-8 max-w-5xl mx-auto text-xs text-muted-foreground">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span>© {new Date().getFullYear()} KODI PAP. Built for Kenyan landlords.</span>
+            <span>© {new Date().getFullYear()} KODI PAP. Built for Kenyan landlords. 🇰🇪</span>
             <div className="flex items-center gap-5">
               <a href="#features" className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Features</a>
               <a href="#pricing" className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Pricing</a>
@@ -643,6 +712,42 @@ const Landing = () => {
             <Link to={ROUTES.CONTACT} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Contact & Support</Link>
           </div>
         </footer>
+
+        <div
+          className={`group fixed bottom-20 right-4 sm:right-8 z-40 transition-all duration-200 ${
+            showScrollToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
+          <span className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2.5 whitespace-nowrap rounded-full border bg-background/90 backdrop-blur-xl px-3 py-1.5 text-xs font-medium text-foreground shadow-lg opacity-0 scale-95 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100">
+            Scroll to top
+          </span>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            aria-label="Scroll to top"
+            className="flex items-center justify-center h-11 w-11 rounded-full border bg-background/90 backdrop-blur-xl shadow-lg text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <ChevronUp className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div
+          className={`group fixed bottom-6 right-4 sm:right-8 z-40 transition-all duration-200 ${
+            showScrollToBottom ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
+          <span className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2.5 whitespace-nowrap rounded-full border bg-background/90 backdrop-blur-xl px-3 py-1.5 text-xs font-medium text-foreground shadow-lg opacity-0 scale-95 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100">
+            Scroll to bottom
+          </span>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
+            aria-label="Scroll to bottom"
+            className="flex items-center justify-center h-11 w-11 rounded-full border bg-background/90 backdrop-blur-xl shadow-lg text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring animate-dance group-hover:animate-none"
+          >
+            <ChevronDown className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </>
   );

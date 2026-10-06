@@ -25,6 +25,7 @@ export const ROUTES = {
   SUPER_ADMIN_ROOT: '/app/super-admin',
   SUPER_ADMIN_LOGIN: '/app/super-admin/login',
   SUPER_ADMIN_LANDLORDS: '/app/super-admin/landlords',
+  SUPER_ADMIN_LANDLORD_DETAIL: '/app/super-admin/landlords/detail',
   SUPER_ADMIN_SUBSCRIPTIONS: '/app/super-admin/subscriptions',
   SUPER_ADMIN_PAYMENTS: '/app/super-admin/payments',
   SUPER_ADMIN_AUDIT_LOGS: '/app/super-admin/audit-logs',

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { useEffectiveLandlordId, useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface Balance {
@@ -26,6 +26,7 @@ export interface BalanceWithHouse extends Balance {
 
 export const useBalances = () => {
   const landlordId = useEffectiveLandlordId();
+  const { viewOnly } = useImpersonation();
   const queryClient = useQueryClient();
 
   const balancesQuery = useQuery({
@@ -54,6 +55,7 @@ export const useBalances = () => {
 
   const calculateMonthlyBalance = useMutation({
     mutationFn: async ({ houseId, month }: { houseId: string; month: string }) => {
+      assertWritable(viewOnly);
       if (!landlordId) throw new Error('No landlord context');
 
       const { data: house, error: houseError } = await supabase
