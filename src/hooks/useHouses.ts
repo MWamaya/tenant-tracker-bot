@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { useEffectiveLandlordId, useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface House {
@@ -43,6 +43,7 @@ export interface HouseUpdate {
 
 export const useHouses = (propertyId?: string | null) => {
   const landlordId = useEffectiveLandlordId();
+  const { viewOnly } = useImpersonation();
   const queryClient = useQueryClient();
 
   const housesQuery = useQuery({
@@ -76,6 +77,7 @@ export const useHouses = (propertyId?: string | null) => {
 
   const addHouse = useMutation({
     mutationFn: async (house: HouseInsert) => {
+      assertWritable(viewOnly);
       if (!landlordId) throw new Error('No landlord context');
 
       const { data, error } = await supabase
@@ -107,6 +109,7 @@ export const useHouses = (propertyId?: string | null) => {
 
   const updateHouse = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: HouseUpdate }) => {
+      assertWritable(viewOnly);
       const { data: updated, error } = await supabase
         .from('houses')
         .update(data)
@@ -129,6 +132,7 @@ export const useHouses = (propertyId?: string | null) => {
 
   const deleteHouse = useMutation({
     mutationFn: async (id: string) => {
+      assertWritable(viewOnly);
       const { error } = await supabase
         .from('houses')
         .delete()

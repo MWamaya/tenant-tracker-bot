@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { useEffectiveLandlordId, useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 // A queue item is either an existing payment with a missing house/tenant
@@ -23,6 +23,7 @@ export interface ReconciliationItem {
 
 export const useReconciliation = () => {
   const landlordId = useEffectiveLandlordId();
+  const { viewOnly } = useImpersonation();
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -83,6 +84,7 @@ export const useReconciliation = () => {
 
   const assign = useMutation({
     mutationFn: async ({ item, houseId }: { item: ReconciliationItem; houseId: string }) => {
+      assertWritable(viewOnly);
       const { data, error } = await supabase.functions.invoke('reconcile-payment', {
         body: { type: item.source === 'payment' ? 'payment' : 'email_log', id: item.id, houseId },
       });
@@ -105,6 +107,7 @@ export const useReconciliation = () => {
 
   const dismiss = useMutation({
     mutationFn: async (item: ReconciliationItem) => {
+      assertWritable(viewOnly);
       const { error } =
         item.source === 'payment'
           ? await supabase.from('payments').update({ reconciliation_dismissed: true }).eq('id', item.id)

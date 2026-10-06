@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { toast } from 'sonner';
 import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { useLandlords, useUpdateLandlordStatus, useUnmatchedPaymentCountsByLandlord } from '@/hooks/useSuperAdminData';
@@ -48,6 +47,18 @@ const LandlordsPage = () => {
       company: landlord.company_name,
     });
     navigate(destination);
+  };
+
+  // Separate from handleLoginAs: this is for admins checking in on an
+  // account, not acting on the landlord's behalf, so it's read-only.
+  const handleImpersonate = async (landlord: LandlordProfile) => {
+    await startImpersonation({
+      id: landlord.id,
+      name: landlord.full_name || 'Unknown Landlord',
+      company: landlord.company_name,
+      viewOnly: true,
+    });
+    navigate(ROUTES.DASHBOARD);
   };
 
   const viewLandlord = (landlord: LandlordProfile) => {
@@ -206,7 +217,7 @@ const LandlordsPage = () => {
                       Activate Account
                     </DropdownMenuItem>
                   )}
-                  <DropdownMenuItem onClick={() => toast.info('Impersonation from here is coming soon')}>
+                  <DropdownMenuItem onClick={() => handleImpersonate(landlord)}>
                     <LogIn className="h-4 w-4 mr-2" />
                     Impersonate Landlord
                   </DropdownMenuItem>
@@ -217,7 +228,7 @@ const LandlordsPage = () => {
         },
       },
     ],
-    [handleStatusChange, unmatchedCounts, viewLandlord, handleLoginAs]
+    [handleStatusChange, unmatchedCounts, viewLandlord, handleLoginAs, handleImpersonate]
   );
 
   const csvColumns: CsvColumn<LandlordProfile>[] = [

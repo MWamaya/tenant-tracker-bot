@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { toast } from 'sonner';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import {
   useLandlords,
@@ -118,12 +117,6 @@ const getStatusBadgeColor = (status: string) => {
   }
 };
 
-const houseStatusBadge = (status: string) => {
-  if (status === 'occupied') return STATUS_BADGE_CLASSES.success;
-  if (status === 'vacant') return STATUS_BADGE_CLASSES.neutral;
-  return STATUS_BADGE_CLASSES.warning;
-};
-
 const LandlordDetailPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -161,8 +154,18 @@ const LandlordDetailPage = () => {
     await updateStatus.mutateAsync({ landlordId: landlord.id, status: newStatus });
   };
 
-  const handleImpersonate = () => {
-    toast.info('Impersonation from here is coming soon');
+  // Read-only: for admins checking in on an account, not acting on the
+  // landlord's behalf. "Open Reconciliation" below stays full-access since
+  // that's an admin actively helping the landlord match a payment.
+  const handleImpersonate = async () => {
+    if (!landlord) return;
+    await startImpersonation({
+      id: landlord.id,
+      name: landlord.full_name || 'Unknown Landlord',
+      company: landlord.company_name,
+      viewOnly: true,
+    });
+    navigate(ROUTES.DASHBOARD);
   };
 
   const handleOpenReconciliation = async () => {
@@ -427,7 +430,7 @@ const LandlordDetailPage = () => {
           </Card>
         </div>
 
-        {/* Properties & Houses */}
+        {/* Properties & Houses — counts only, not every house/tenant */}
         <Card className={ADMIN_CARD}>
           <CardHeader>
             <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">Properties & Houses</CardTitle>
@@ -437,36 +440,44 @@ const LandlordDetailPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {housesLoading ? (
+            {propertiesLoading || housesLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full bg-[#E2E8F0]" />
+                  <Skeleton key={i} className="h-14 w-full bg-[#E2E8F0]" />
                 ))}
               </div>
-            ) : !houses || houses.length === 0 ? (
-              <p className="text-[#64748B] text-sm py-4 text-center">No houses yet</p>
+            ) : !properties || properties.length === 0 ? (
+              <p className="text-[#64748B] text-sm py-4 text-center">No properties yet</p>
             ) : (
               <div className="space-y-2">
-                {houses.map((house) => (
-                  <div
-                    key={house.id}
-                    className={cn('flex items-center justify-between p-3', ADMIN_SURFACE)}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Home className="h-4 w-4 text-[#64748B] shrink-0" />
-                      <div className="min-w-0">
-                        <p className="font-medium text-[#0F172A] truncate">{house.house_no}</p>
-                        <p className="text-xs text-[#64748B] truncate">{house.property_name || 'No property'}</p>
+                {properties.map((property) => {
+                  const propertyHouses = houses?.filter((h) => h.property_id === property.id) ?? [];
+                  const occupied = propertyHouses.filter((h) => h.status === 'occupied').length;
+                  const vacant = propertyHouses.filter((h) => h.status === 'vacant').length;
+                  const expectedRent = propertyHouses.reduce((sum, h) => sum + h.expected_rent, 0);
+                  return (
+                    <div key={property.id} className={cn('flex items-center justify-between p-3', ADMIN_SURFACE)}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <Building2 className="h-4 w-4 text-[#64748B] shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium text-[#0F172A] truncate">{property.name}</p>
+                          <p className="text-xs text-[#64748B] truncate">
+                            {[property.town, property.county].filter(Boolean).join(', ') || 'No location set'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 shrink-0 text-sm">
+                        <span className="text-[#0F172A]">KES {expectedRent.toLocaleString()} expected</span>
+                        <Badge variant="outline" className={STATUS_BADGE_CLASSES.success}>
+                          {occupied} occupied
+                        </Badge>
+                        <Badge variant="outline" className={STATUS_BADGE_CLASSES.neutral}>
+                          {vacant} vacant
+                        </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <span className="text-sm text-[#0F172A]">KES {house.expected_rent.toLocaleString()}</span>
-                      <Badge variant="outline" className={houseStatusBadge(house.status)}>
-                        {house.status}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>

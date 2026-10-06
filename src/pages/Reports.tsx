@@ -54,13 +54,14 @@ import {
 } from 'recharts';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { useEffectiveLandlordId, useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 const Reports = () => {
   const { payments } = usePayments();
   const { properties } = useProperties();
   const landlordId = useEffectiveLandlordId();
+  const { viewOnly } = useImpersonation();
   const queryClient = useQueryClient();
   const currentMonth = format(new Date(), 'yyyy-MM');
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
@@ -138,6 +139,7 @@ const Reports = () => {
 
   const addExpense = useMutation({
     mutationFn: async () => {
+      assertWritable(viewOnly);
       if (!landlordId) throw new Error('Not signed in');
       const amt = Number(expenseForm.amount);
       if (!expenseForm.category.trim()) throw new Error('Category is required');
@@ -169,6 +171,7 @@ const Reports = () => {
 
   const deleteExpense = useMutation({
     mutationFn: async (id: string) => {
+      assertWritable(viewOnly);
       const { error } = await supabase.from('expenses').delete().eq('id', id);
       if (error) throw error;
     },
@@ -181,6 +184,7 @@ const Reports = () => {
 
   const addRecurring = useMutation({
     mutationFn: async () => {
+      assertWritable(viewOnly);
       if (!landlordId) throw new Error('Not signed in');
       const amt = Number(recurringForm.amount);
       const day = Number(recurringForm.day_of_month);
@@ -208,6 +212,7 @@ const Reports = () => {
 
   const toggleRecurring = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      assertWritable(viewOnly);
       const { error } = await supabase.from('recurring_expenses').update({ active }).eq('id', id);
       if (error) throw error;
     },
@@ -217,6 +222,7 @@ const Reports = () => {
 
   const deleteRecurring = useMutation({
     mutationFn: async (id: string) => {
+      assertWritable(viewOnly);
       const { error } = await supabase.from('recurring_expenses').delete().eq('id', id);
       if (error) throw error;
     },

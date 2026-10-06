@@ -26,6 +26,7 @@ import { Trash2, Loader2, Split, PiggyBank } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDateTime } from '@/lib/dates';
 import { toast } from 'sonner';
+import { useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import type { PaymentWithDetails } from '@/hooks/usePayments';
 
 interface Props {
@@ -68,6 +69,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
   // once the deposit is fully covered (not just "any deposit row exists").
   const [depositRemaining, setDepositRemaining] = useState(0);
   const queryClient = useQueryClient();
+  const { viewOnly } = useImpersonation();
 
   useEffect(() => {
     let cancelled = false;
@@ -150,6 +152,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
 
   const deletePayment = useMutation({
     mutationFn: async (id: string) => {
+      assertWritable(viewOnly);
       if (!payment) throw new Error('No payment');
       // Remove dependent email_logs first (FK-less but referenced by payment_id)
       await supabase.from('email_logs').delete().eq('payment_id', id);
@@ -174,6 +177,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
 
   const splitPayment = useMutation({
     mutationFn: async () => {
+      assertWritable(viewOnly);
       if (!payment) throw new Error('No payment');
       const total = Number(payment.amount);
       const parts = siblings.length + 1;
@@ -226,6 +230,7 @@ export const PaymentDetailDialog = ({ payment, open, onOpenChange }: Props) => {
 
   const markDeposit = useMutation({
     mutationFn: async () => {
+      assertWritable(viewOnly);
       if (!payment || !payment.house_id || !payment.houses) throw new Error('No payment');
       const depositAmount = Math.min(Number(payment.amount), depositRemaining);
       const rentPortion = Number(payment.amount) - depositAmount;

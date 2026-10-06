@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useEffectiveLandlordId } from '@/hooks/useImpersonation';
+import { useEffectiveLandlordId, useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
 export interface Tenant {
@@ -43,6 +43,7 @@ export interface TenantUpdate {
 
 export const useTenants = () => {
   const landlordId = useEffectiveLandlordId();
+  const { viewOnly } = useImpersonation();
   const queryClient = useQueryClient();
 
   const tenantsQuery = useQuery({
@@ -73,6 +74,7 @@ export const useTenants = () => {
 
   const addTenant = useMutation({
     mutationFn: async (tenant: TenantInsert) => {
+      assertWritable(viewOnly);
       if (!landlordId) throw new Error('No landlord context');
 
       const { data, error } = await supabase
@@ -124,6 +126,7 @@ export const useTenants = () => {
 
   const updateTenant = useMutation({
     mutationFn: async ({ id, data, previousHouseId }: { id: string; data: TenantUpdate; previousHouseId?: string | null }) => {
+      assertWritable(viewOnly);
       const { data: updated, error } = await supabase
         .from('tenants')
         .update(data)
@@ -190,6 +193,7 @@ export const useTenants = () => {
 
   const deleteTenant = useMutation({
     mutationFn: async ({ id, houseId }: { id: string; houseId?: string | null }) => {
+      assertWritable(viewOnly);
       if (houseId) {
         // Close out the tenancy record before the tenants row disappears,
         // so historical reports still know this house was occupied — and by
