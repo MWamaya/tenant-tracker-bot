@@ -58,48 +58,44 @@ export const CreateLandlordDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-slate-800 border-slate-700 text-white">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Add Landlord</DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-[#64748B]">
             Creates the account and emails them an invite to set a password. No subscription is
             assigned yet — do that afterwards from the Landlords list.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-slate-200">Full Name</Label>
+            <Label>Full Name</Label>
             <Input
-              className="bg-slate-900/50 border-slate-600"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder="Jane Wanjiru"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-200">Email</Label>
+            <Label>Email</Label>
             <Input
               type="email"
-              className="bg-slate-900/50 border-slate-600"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="jane@example.com"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-200">Phone (Optional)</Label>
+            <Label>Phone (Optional)</Label>
             <Input
               type="tel"
-              className="bg-slate-900/50 border-slate-600"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="07xx xxx xxx"
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-200">Company Name (Optional)</Label>
+            <Label>Company Name (Optional)</Label>
             <Input
-              className="bg-slate-900/50 border-slate-600"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="Abc Properties"
@@ -107,7 +103,7 @@ export const CreateLandlordDialog = ({
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-transparent border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]">
             Cancel
           </Button>
           <Button
