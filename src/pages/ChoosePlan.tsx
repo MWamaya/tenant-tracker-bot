@@ -1,8 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
-import { usePublicPlans } from '@/hooks/usePublicPlans';
+import { PUBLIC_PLANS } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Check, CreditCard, LogOut, Phone, Mail } from 'lucide-react';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
@@ -10,7 +9,7 @@ import { ROUTES } from '@/lib/routes';
 
 const ChoosePlan = () => {
   const { signOut } = useAuth();
-  const { data: plans = [], isLoading: plansLoading } = usePublicPlans();
+  const plans = PUBLIC_PLANS;
 
   return (
     <>
@@ -32,22 +31,7 @@ const ChoosePlan = () => {
         </div>
 
         <div className="grid gap-4 sm:gap-6 md:grid-cols-3 mb-8">
-          {plansLoading
-            ? Array.from({ length: 3 }).map((_, i) => (
-                <Card key={i} className="border-border/60">
-                  <CardHeader>
-                    <Skeleton className="h-5 w-20" />
-                    <Skeleton className="h-4 w-full mt-2" />
-                    <Skeleton className="h-8 w-28 mt-2" />
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-10 w-full" />
-                  </CardContent>
-                </Card>
-              ))
-            : plans.map((plan) => (
+          {plans.map((plan) => (
                 <Card
                   key={plan.name}
                   className={

@@ -6,11 +6,10 @@ import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { supabase } from '@/integrations/supabase/client';
-import { usePublicPlans } from '@/hooks/usePublicPlans';
+import { PUBLIC_PLANS } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Skeleton } from '@/components/ui/skeleton';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 
 const requestSchema = z.object({
@@ -23,7 +22,7 @@ const requestSchema = z.object({
 const GetStarted = () => {
   const [searchParams] = useSearchParams();
   const preselected = searchParams.get('plan');
-  const { data: plans = [], isLoading: plansLoading } = usePublicPlans();
+  const plans = PUBLIC_PLANS;
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -33,8 +32,7 @@ const GetStarted = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // Preselect from ?plan= once the real plan list has loaded, so we only
-  // ever preselect a plan that actually exists.
+  // Preselect from ?plan= only if it names a real plan.
   useEffect(() => {
     if (!plan && preselected && plans.some((p) => p.name === preselected)) {
       setPlan(preselected);
@@ -156,51 +154,42 @@ const GetStarted = () => {
               <div className="space-y-2">
                 <Label>Plan</Label>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  {plansLoading
-                    ? Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="rounded-xl border border-input p-4">
-                          <Skeleton className="h-4 w-16" />
-                          <Skeleton className="h-4 w-20 mt-2" />
-                          <Skeleton className="h-3 w-full mt-3" />
-                          <Skeleton className="h-3 w-3/4 mt-1.5" />
+                  {plans.map((p) => {
+                    const selected = plan === p.name;
+                    return (
+                      <button
+                        key={p.name}
+                        type="button"
+                        onClick={() => setPlan(p.name)}
+                        className={`relative text-left rounded-xl border p-4 transition-colors ${
+                          selected
+                            ? 'border-primary bg-primary/5 ring-2 ring-primary'
+                            : 'border-input hover:border-primary/50'
+                        }`}
+                      >
+                        {p.highlighted && (
+                          <span className="absolute -top-2.5 left-4 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">
+                            Popular
+                          </span>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-foreground">{p.name}</span>
+                          {selected && <Check className="h-4 w-4 text-primary" />}
                         </div>
-                      ))
-                    : plans.map((p) => {
-                        const selected = plan === p.name;
-                        return (
-                          <button
-                            key={p.name}
-                            type="button"
-                            onClick={() => setPlan(p.name)}
-                            className={`relative text-left rounded-xl border p-4 transition-colors ${
-                              selected
-                                ? 'border-primary bg-primary/5 ring-2 ring-primary'
-                                : 'border-input hover:border-primary/50'
-                            }`}
-                          >
-                            {p.highlighted && (
-                              <span className="absolute -top-2.5 left-4 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full">
-                                Popular
-                              </span>
-                            )}
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold text-foreground">{p.name}</span>
-                              {selected && <Check className="h-4 w-4 text-primary" />}
-                            </div>
-                            <div className="mt-1 text-sm text-muted-foreground">
-                              KES {p.price.toLocaleString()}
-                              <span className="text-xs"> /month</span>
-                            </div>
-                            <ul className="mt-2 space-y-1">
-                              {p.features.slice(0, 2).map((f) => (
-                                <li key={f} className="text-xs text-muted-foreground">
-                                  {f}
-                                </li>
-                              ))}
-                            </ul>
-                          </button>
-                        );
-                      })}
+                        <div className="mt-1 text-sm text-muted-foreground">
+                          KES {p.price.toLocaleString()}
+                          <span className="text-xs"> /month</span>
+                        </div>
+                        <ul className="mt-2 space-y-1">
+                          {p.features.slice(0, 2).map((f) => (
+                            <li key={f} className="text-xs text-muted-foreground">
+                              {f}
+                            </li>
+                          ))}
+                        </ul>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

@@ -19,11 +19,10 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
-import { usePublicPlans } from '@/hooks/usePublicPlans';
 import heroImage from '@/assets/landing-hero.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
-import { Skeleton } from '@/components/ui/skeleton';
+import { PUBLIC_PLANS } from '@/lib/plans';
 
 const WITHOUT = [
   'Search through M-Pesa messages',
@@ -71,6 +70,7 @@ const SHOWCASE_POINTS = [
   'Understand income and occupancy',
 ];
 
+
 const FEATURES = [
   {
     icon: RefreshCw,
@@ -106,8 +106,14 @@ const FEATURES = [
 
 
 /** Small uppercase label above a section heading. */
-const Kicker = ({ children }: { children: React.ReactNode }) => (
-  <div className="text-xs font-bold uppercase tracking-wider text-primary mb-2.5">{children}</div>
+const Kicker = ({
+  children,
+  className = 'text-primary',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) => (
+  <div className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${className}`}>{children}</div>
 );
 
 /** Section wrapper that fades/slides up the first time it scrolls into view. */
@@ -141,7 +147,7 @@ const DashboardMockup = () => (
       <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
       <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
       <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
-      <span className="ml-2 text-xs text-muted-foreground">app.kodipap.co.ke</span>
+      <span className="ml-2 text-xs text-muted-foreground">app.kodipap.com</span>
     </div>
     <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] min-h-[340px] sm:min-h-[390px]">
       <aside className="hidden sm:block bg-muted/40 border-r px-3 py-4 text-xs">
@@ -219,7 +225,7 @@ const DashboardMockup = () => (
 
 const Landing = () => {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data: plans = [], isLoading: plansLoading } = usePublicPlans();
+  const plans = PUBLIC_PLANS;
 
   return (
     <>
@@ -248,9 +254,6 @@ const Landing = () => {
                 </a>
                 <a href="#pricing" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Pricing
-                </a>
-                <a href="#proof" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Why KODI PAP
                 </a>
                 <Link to={ROUTES.AUTH} className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Log in
@@ -286,7 +289,6 @@ const Landing = () => {
                     { href: '#how', label: 'How it works' },
                     { href: '#features', label: 'Features' },
                     { href: '#pricing', label: 'Pricing' },
-                    { href: '#proof', label: 'Why KODI PAP' },
                   ].map((item) => (
                     <a
                       key={item.href}
@@ -328,6 +330,16 @@ const Landing = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
           </div>
+
+          <Button
+            asChild
+            size="sm"
+            className="absolute top-20 right-4 sm:top-6 sm:right-8 z-10 gap-1.5 shadow-lg"
+          >
+            <Link to={ROUTES.GET_STARTED}>
+              Sign up <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </Button>
 
           <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-6xl mx-auto w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
@@ -378,7 +390,7 @@ const Landing = () => {
         <section id="proof" className="px-4 sm:px-8 py-16 sm:py-24 bg-foreground text-background">
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
-              <Kicker>A better way to collect rent</Kicker>
+              <Kicker className="text-success">A better way to collect rent</Kicker>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">Less chasing. More control.</h2>
               <p className="mt-3 text-background/70 max-w-xl mx-auto">
                 Replace M-Pesa screenshots, WhatsApp messages and spreadsheets with one clear
@@ -553,18 +565,7 @@ const Landing = () => {
           </Reveal>
 
           <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            {plansLoading
-              ? Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="h-full rounded-2xl border bg-card p-6 shadow-sm">
-                    <Skeleton className="h-5 w-20" />
-                    <Skeleton className="h-8 w-28 mt-3" />
-                    <Skeleton className="h-4 w-full mt-5" />
-                    <Skeleton className="h-4 w-full mt-2.5" />
-                    <Skeleton className="h-4 w-3/4 mt-2.5" />
-                    <Skeleton className="h-10 w-full mt-6" />
-                  </div>
-                ))
-              : plans.map((plan, i) => (
+            {plans.map((plan, i) => (
                   <Reveal key={plan.name} delay={i * 100}>
                     <div
                       className={`relative h-full rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
