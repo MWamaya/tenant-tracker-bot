@@ -30,18 +30,18 @@ const AuditLogsPage = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Audit Logs</h1>
-          <p className="text-slate-400">Track all Super Admin actions on the platform</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">Audit Logs</h1>
+          <p className="text-[#64748B]">Track all Super Admin actions on the platform</p>
         </div>
 
         {/* Logs List */}
         <Card className={ADMIN_CARD}>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
+            <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
               <FileText className="h-5 w-5" />
               Activity Log
             </CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardDescription className="text-[#64748B]">
               Showing the last 100 admin actions
             </CardDescription>
           </CardHeader>
@@ -49,34 +49,34 @@ const AuditLogsPage = () => {
             {isLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-16 w-full bg-white/[0.06]" />
+                  <Skeleton key={i} className="h-16 w-full bg-[#E2E8F0]" />
                 ))}
               </div>
             ) : logs?.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="h-12 w-12 text-slate-700 mx-auto mb-4" />
-                <p className="text-slate-400">No audit logs recorded yet</p>
+                <FileText className="h-12 w-12 text-[#CBD5E1] mx-auto mb-4" />
+                <p className="text-[#64748B]">No audit logs recorded yet</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {logs?.map((log) => (
                   <div
                     key={log.id}
-                    className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4", ADMIN_SURFACE, "hover:bg-white/[0.06] transition-colors duration-150")}
+                    className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4", ADMIN_SURFACE, "hover:bg-[#E2E8F0] transition-colors duration-150")}
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-2 h-2 rounded-full bg-primary mt-2" />
+                      <div className="w-2 h-2 rounded-full bg-[#0F766E] mt-2" />
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <Badge variant="outline" className={getActionColor(log.action)}>
                             {log.action.replace(/_/g, ' ')}
                           </Badge>
-                          <span className="text-sm text-slate-400">on</span>
-                          <span className="text-sm text-slate-300">{log.entity_type}</span>
-                          <span className="text-sm text-slate-500">by {log.admin_name}</span>
+                          <span className="text-sm text-[#64748B]">on</span>
+                          <span className="text-sm text-[#0F172A]">{log.entity_type}</span>
+                          <span className="text-sm text-[#64748B]">by {log.admin_name}</span>
                         </div>
                         {log.new_values && (
-                          <p className="text-xs text-slate-500 mt-1 font-mono">
+                          <p className="text-xs text-[#64748B] mt-1 font-mono">
                             {JSON.stringify(log.new_values).substring(0, 100)}
                             {JSON.stringify(log.new_values).length > 100 && '...'}
                           </p>
@@ -84,10 +84,10 @@ const AuditLogsPage = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm text-slate-300">
+                      <p className="text-sm text-[#0F172A]">
                         {formatDate(log.created_at)}
                       </p>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-[#64748B]">
                         {format(new Date(log.created_at), 'HH:mm:ss')}
                       </p>
                     </div>
