@@ -1,19 +1,22 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { supabase } from '@/integrations/supabase/client';
+import { useLandlords } from '@/hooks/useSuperAdminData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Search, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
 import { DataTable } from '@/components/super-admin/DataTable';
 import { useTableViewState } from '@/hooks/useTableViewState';
 import type { CsvColumn } from '@/lib/csvExport';
-import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
+import { ROUTES } from '@/lib/routes';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
 interface PlatformPayment {
@@ -35,9 +38,11 @@ const statusBadgeClass = (status: string) => {
 };
 
 const GlobalPaymentsPage = () => {
+  const navigate = useNavigate();
   const view = useTableViewState('super-admin-platform-payments');
   const searchQuery = view.search;
   const setSearchQuery = view.setSearch;
+  const { data: allLandlords } = useLandlords();
 
   const { data: landlords } = useQuery({
     queryKey: ['all-landlords-for-payments'],
@@ -76,6 +81,22 @@ const GlobalPaymentsPage = () => {
   });
 
   const payments = paymentPages?.pages.flat() || [];
+
+  // Independent of the paginated list above (which may not include every
+  // payment) — just the distinct landlord_ids that have ever paid, so
+  // "comped" below is accurate even past page 1.
+  const { data: paidLandlordIds } = useQuery({
+    queryKey: ['platform-revenue-landlord-ids'],
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase.from('platform_revenue').select('landlord_id');
+      if (error) throw error;
+      return new Set((data || []).map((r) => r.landlord_id));
+    },
+  });
+
+  const compedLandlords = (allLandlords || []).filter(
+    (l) => l.subscription && l.subscription.plan_name !== 'Free Trial' && !paidLandlordIds?.has(l.id)
+  );
 
   const landlordNameById = new Map(
     (landlords || []).map((l) => [l.id, l.full_name || l.company_name || 'Unknown landlord'])
@@ -168,6 +189,36 @@ const GlobalPaymentsPage = () => {
             Subscription payments landlords have made to Kodipap — not their tenants' rent
           </p>
         </div>
+
+        {/* Comped subscriptions */}
+        {paidLandlordIds && compedLandlords.length > 0 && (
+          <Card className={ADMIN_CARD}>
+            <CardHeader>
+              <CardTitle className="text-sm font-medium text-[#64748B] flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                {compedLandlords.length} active subscription{compedLandlords.length === 1 ? '' : 's'} with no payment on record
+              </CardTitle>
+              <CardDescription className="text-[#64748B]">
+                Paid plans assigned without an amount entered — intentional comps, or ones worth double-checking
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {compedLandlords.map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => navigate(`${ROUTES.SUPER_ADMIN_LANDLORD_DETAIL}?landlord=${l.id}`)}
+                  className={cn('w-full flex items-center justify-between p-3 text-left', ADMIN_SURFACE, ADMIN_SURFACE_HOVER)}
+                >
+                  <span className="text-sm text-[#0F172A]">{l.full_name || l.company_name || 'Unknown landlord'}</span>
+                  <Badge variant="outline" className="border-warning/40 text-warning">
+                    {l.subscription?.plan_name}
+                  </Badge>
+                </button>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Search */}
         <Card className={ADMIN_CARD}>

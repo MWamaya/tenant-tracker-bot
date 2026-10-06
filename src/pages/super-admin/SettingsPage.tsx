@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -40,7 +40,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Settings, Mail, MessageSquare, Shield, Clock, User, CreditCard, UserPlus, Trash2, Users, KeyRound } from 'lucide-react';
+import { Settings, MessageSquare, Shield, Clock, User, CreditCard, UserPlus, Trash2, Users, KeyRound } from 'lucide-react';
 import { formatDate } from '@/lib/dates';
 import { ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
@@ -160,7 +160,7 @@ const useSystemSettings = () => {
   });
 
   const updateSetting = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: boolean }) => {
+    mutationFn: async ({ key, value }: { key: string; value: boolean | number }) => {
       const { error } = await supabase
         .from('system_settings')
         .update({ setting_value: value })
@@ -189,144 +189,138 @@ const useSystemSettings = () => {
   return { settings, isLoading, updateSetting, getSetting };
 };
 
-const getSettingIcon = (key: string) => {
-  if (key.includes('email') || key.includes('bank')) return Mail;
-  if (key.includes('sms')) return MessageSquare;
-  if (key.includes('grace') || key.includes('duration')) return Clock;
-  return Settings;
-};
-
 const GeneralTab = () => {
-  const { settings, isLoading, updateSetting, getSetting } = useSystemSettings();
+  const { isLoading, updateSetting, getSetting } = useSystemSettings();
+  const savedGracePeriod = Number(getSetting('subscription_grace_period_days') ?? 7);
+  const [gracePeriodInput, setGracePeriodInput] = useState<string>(String(savedGracePeriod));
+
+  // Keep the field in sync once the real value loads/changes elsewhere,
+  // but don't clobber what the admin is actively typing.
+  useEffect(() => {
+    setGracePeriodInput(String(savedGracePeriod));
+  }, [savedGracePeriod]);
+
+  const handleSaveGracePeriod = () => {
+    const parsed = parseInt(gracePeriodInput, 10);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      toast.error('Enter a valid number of days');
+      return;
+    }
+    updateSetting.mutate({ key: 'subscription_grace_period_days', value: parsed });
+  };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className={ADMIN_CARD}>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            General Settings
-          </CardTitle>
-          <CardDescription className="text-[#64748B]">Basic platform configuration</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-12 w-full bg-[#E2E8F0]" />
-              ))}
+    <Card className={cn(ADMIN_CARD, 'max-w-xl')}>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
+          <Settings className="h-5 w-5" />
+          General Settings
+        </CardTitle>
+        <CardDescription className="text-[#64748B]">Basic platform configuration</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-12 w-full bg-[#E2E8F0]" />
+            ))}
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Maintenance Mode</Label>
+                <p className="text-sm text-[#64748B]">Put the platform in maintenance mode</p>
+              </div>
+              <Switch
+                checked={getSetting('maintenance_mode') === true}
+                disabled={updateSetting.isPending}
+                onCheckedChange={(checked) => updateSetting.mutate({ key: 'maintenance_mode', value: checked })}
+              />
             </div>
-          ) : (
-            <>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Maintenance Mode</Label>
-                  <p className="text-sm text-[#64748B]">Put the platform in maintenance mode</p>
-                </div>
-                <Switch
-                  checked={getSetting('maintenance_mode') === true}
-                  disabled={updateSetting.isPending}
-                  onCheckedChange={(checked) => updateSetting.mutate({ key: 'maintenance_mode', value: checked })}
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Bank Email Parsing</Label>
+                <p className="text-sm text-[#64748B]">Enable automatic bank email parsing</p>
+              </div>
+              <Switch
+                checked={getSetting('bank_email_parsing_enabled') === true}
+                disabled={updateSetting.isPending}
+                onCheckedChange={(checked) =>
+                  updateSetting.mutate({ key: 'bank_email_parsing_enabled', value: checked })
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <Label>Grace Period (Days)</Label>
+                <p className="text-sm text-[#64748B]">Days after subscription expiry before suspension</p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Input
+                  type="number"
+                  min="0"
+                  className="w-20"
+                  value={gracePeriodInput}
+                  onChange={(e) => setGracePeriodInput(e.target.value)}
                 />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className={cn('border-[#E2E8F0] text-[#1E3A5F]', ADMIN_SURFACE_HOVER)}
+                  disabled={updateSetting.isPending || gracePeriodInput === String(savedGracePeriod)}
+                  onClick={handleSaveGracePeriod}
+                >
+                  Save
+                </Button>
               </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Bank Email Parsing</Label>
-                  <p className="text-sm text-[#64748B]">Enable automatic bank email parsing</p>
-                </div>
-                <Switch
-                  checked={getSetting('bank_email_parsing_enabled') === true}
-                  disabled={updateSetting.isPending}
-                  onCheckedChange={(checked) =>
-                    updateSetting.mutate({ key: 'bank_email_parsing_enabled', value: checked })
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>Grace Period (Days)</Label>
-                  <p className="text-sm text-[#64748B]">Days after subscription expiry before suspension</p>
-                </div>
-                <span className="text-[#0F172A] font-medium">
-                  {String(getSetting('subscription_grace_period_days') ?? 7)} days
-                </span>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className={ADMIN_CARD}>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">All Settings</CardTitle>
-          <CardDescription className="text-[#64748B]">Complete list of system configuration</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-10 w-full bg-[#E2E8F0]" />
-              ))}
             </div>
-          ) : (
-            <div className="space-y-3">
-              {settings?.map((setting) => {
-                const Icon = getSettingIcon(setting.setting_key);
-                return (
-                  <div
-                    key={setting.id}
-                    className={cn('flex items-center justify-between p-3', ADMIN_SURFACE, ADMIN_SURFACE_HOVER)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Icon className="h-4 w-4 text-[#0F766E]" />
-                      <div>
-                        <p className="text-sm font-medium text-[#0F172A]">
-                          {setting.setting_key.replace(/_/g, ' ')}
-                        </p>
-                        {setting.description && (
-                          <p className="text-xs text-[#64748B]">{setting.description}</p>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-sm text-[#0F172A] font-mono">
-                      {setting.is_sensitive ? '••••••' : String(JSON.stringify(setting.setting_value))}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
   );
+};
+
+const SMS_PROVIDER_LABELS: Record<string, string> = {
+  africas_talking: "Africa's Talking",
 };
 
 const SmsTab = () => {
   const { isLoading, getSetting } = useSystemSettings();
+  const providerKey = getSetting('default_sms_provider') as string | undefined;
+  const providerLabel = providerKey ? SMS_PROVIDER_LABELS[providerKey] || providerKey.replace(/_/g, ' ') : null;
 
   return (
     <Card className={cn(ADMIN_CARD, 'max-w-xl')}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
           <MessageSquare className="h-5 w-5" />
-          Africa's Talking (SMS)
+          SMS
         </CardTitle>
         <CardDescription className="text-[#64748B]">SMS provider and messaging settings</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4">
         {isLoading ? (
           <Skeleton className="h-12 w-full bg-[#E2E8F0]" />
         ) : (
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label>Default SMS Provider</Label>
-              <p className="text-sm text-[#64748B]">Primary SMS gateway for notifications</p>
+          <>
+            <div className={cn('p-4 flex items-start gap-2', ADMIN_SURFACE)}>
+              <Clock className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+              <p className="text-sm text-[#0F172A]">
+                No SMS provider is connected yet. {providerLabel ? `${providerLabel} is the planned provider, ` : ''}
+                but SMS tokens, reminders, and balances recorded elsewhere don't actually send a text until this is wired up.
+              </p>
             </div>
-            <span className="text-[#0F172A] font-medium capitalize">
-              {(getSetting('default_sms_provider') as string)?.replace(/_/g, ' ') || 'Not configured'}
-            </span>
-          </div>
+            <div className="space-y-2 opacity-50 pointer-events-none">
+              <Label>API Key</Label>
+              <Input disabled placeholder="Not connected" />
+            </div>
+            <div className="space-y-2 opacity-50 pointer-events-none">
+              <Label>Username</Label>
+              <Input disabled placeholder="Not connected" />
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

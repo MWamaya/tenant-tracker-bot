@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { useLandlords, useUpdateLandlordStatus, useUnmatchedPaymentCountsByLandlord } from '@/hooks/useSuperAdminData';
@@ -34,6 +34,8 @@ import { cn } from '@/lib/utils';
 
 const LandlordsPage = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const planFilter = searchParams.get('plan');
   const [addLandlordOpen, setAddLandlordOpen] = useState(false);
   const { startImpersonation } = useImpersonation();
   const { data: landlords, isLoading } = useLandlords();
@@ -82,8 +84,17 @@ const LandlordsPage = () => {
       landlord.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       landlord.phone?.includes(searchQuery);
     const matchesStatus = statusFilter === 'all' || landlord.account_status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesPlan =
+      !planFilter ||
+      (planFilter === '__none__' ? !landlord.subscription : landlord.subscription?.plan_name === planFilter);
+    return matchesSearch && matchesStatus && matchesPlan;
   });
+
+  const clearPlanFilter = () => {
+    const next = new URLSearchParams(searchParams);
+    next.delete('plan');
+    setSearchParams(next, { replace: true });
+  };
 
   const handleStatusChange = async (landlordId: string, newStatus: string) => {
     await updateStatus.mutateAsync({ landlordId, status: newStatus });
@@ -295,6 +306,16 @@ const LandlordsPage = () => {
                 </SelectContent>
               </Select>
             </div>
+            {planFilter && (
+              <div className="flex items-center gap-2 mt-3">
+                <Badge variant="outline" className="border-[#0F766E]/40 text-[#0F766E] gap-1.5">
+                  Plan: {planFilter === '__none__' ? 'No plan' : planFilter}
+                  <button type="button" onClick={clearPlanFilter} className="hover:opacity-70">
+                    ×
+                  </button>
+                </Badge>
+              </div>
+            )}
           </CardContent>
         </Card>
 

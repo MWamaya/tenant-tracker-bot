@@ -139,7 +139,7 @@ const OnboardingRequestsPage = () => {
                     Mark converted
                   </DropdownMenuItem>
                 )}
-                {request.status !== 'dismissed' && (
+                {request.status !== 'dismissed' && request.status !== 'converted' && (
                   <DropdownMenuItem onClick={() => handleStatusChange(request.id, 'dismissed')}>
                     <X className="h-4 w-4 mr-2 text-red-600" />
                     Dismiss

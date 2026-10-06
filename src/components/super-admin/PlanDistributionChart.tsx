@@ -1,8 +1,10 @@
+import { useNavigate } from 'react-router-dom';
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CircleAlert } from 'lucide-react';
 import { ADMIN_CARD } from '@/lib/adminStatusColors';
+import { ROUTES } from '@/lib/routes';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 
 // Fixed hue order (never cycled/reassigned by sort) — first 4 slots of the
@@ -19,6 +21,7 @@ const PlanDistributionChart = ({
   loading?: boolean;
   error?: boolean;
 }) => {
+  const navigate = useNavigate();
   const counts = new Map<string, number>();
   for (const l of landlords ?? []) {
     const plan = l.subscription?.plan_name || 'No plan';
@@ -31,6 +34,12 @@ const PlanDistributionChart = ({
     ...top.map(([name, value], i) => ({ name, value, color: SERIES_COLORS[i] })),
     ...(rest > 0 ? [{ name: 'Other', value: rest, color: OTHER_COLOR }] : []),
   ];
+
+  const handleSliceClick = (planName: string) => {
+    if (planName === 'Other') return;
+    const plan = planName === 'No plan' ? '__none__' : planName;
+    navigate(`${ROUTES.SUPER_ADMIN_LANDLORDS}?plan=${encodeURIComponent(plan)}`);
+  };
 
   return (
     <Card className={ADMIN_CARD}>
@@ -50,7 +59,17 @@ const PlanDistributionChart = ({
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value">
+              <Pie
+                data={data}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={80}
+                paddingAngle={3}
+                dataKey="value"
+                onClick={(entry) => handleSliceClick(entry.name)}
+                className="cursor-pointer"
+              >
                 {data.map((entry) => (
                   <Cell key={entry.name} fill={entry.color} stroke="#fff" strokeWidth={2} />
                 ))}

@@ -384,6 +384,15 @@ const LandlordDetailPage = () => {
                   {landlord.subscription?.end_date && (
                     <p className="text-xs text-[#64748B]">Renews/expires {formatDate(landlord.subscription.end_date)}</p>
                   )}
+                  {landlord.subscription &&
+                    landlord.subscription.plan_name !== 'Free Trial' &&
+                    !platformPaymentsLoading &&
+                    (platformPayments?.length ?? 0) === 0 && (
+                      <p className="text-xs text-warning flex items-center gap-1 mt-1">
+                        <AlertTriangle className="h-3 w-3 shrink-0" />
+                        No payment on record for this plan
+                      </p>
+                    )}
                 </div>
                 <Button
                   size="sm"
@@ -575,7 +584,17 @@ const LandlordDetailPage = () => {
               <Label>Subscription Plan</Label>
               <Select
                 value={subscriptionData.planId}
-                onValueChange={(value) => setSubscriptionData({ ...subscriptionData, planId: value })}
+                onValueChange={(value) => {
+                  const plan = plans?.find((p) => p.id === value);
+                  setSubscriptionData({
+                    ...subscriptionData,
+                    planId: value,
+                    // Pre-fill with the plan's price so comping a landlord is
+                    // something admin has to deliberately clear, not a side
+                    // effect of leaving a field blank.
+                    amountPaid: plan ? String(plan.price) : subscriptionData.amountPaid,
+                  });
+                }}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a plan" />
@@ -605,6 +624,12 @@ const LandlordDetailPage = () => {
                 onChange={(e) => setSubscriptionData({ ...subscriptionData, amountPaid: e.target.value })}
                 placeholder="Amount in KES"
               />
+              {(!subscriptionData.amountPaid || parseFloat(subscriptionData.amountPaid) <= 0) && (
+                <p className="text-xs text-warning flex items-center gap-1.5">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                  No amount means no payment record — this plan will be free for this landlord.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>

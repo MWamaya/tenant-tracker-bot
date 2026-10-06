@@ -136,13 +136,15 @@ const SuperAdminDashboard = () => {
   // 6-month trend data the charts below use — no extra query.
   const lastMonth = trends?.at(-1);
   const prevMonth = trends?.at(-2);
+  const currentCalendarMonth = new Date().toISOString().slice(0, 7);
+  const lastMonthInProgress = lastMonth?.month === currentCalendarMonth;
   const rentDelta =
     lastMonth && prevMonth && prevMonth.rentCollected > 0
       ? {
           value: lastMonth.rentCollected - prevMonth.rentCollected,
           label: `${lastMonth.rentCollected >= prevMonth.rentCollected ? '+' : ''}${Math.round(
             ((lastMonth.rentCollected - prevMonth.rentCollected) / prevMonth.rentCollected) * 100
-          )}% vs last month`,
+          )}% vs last month${lastMonthInProgress ? ' (month in progress)' : ''}`,
         }
       : undefined;
   const landlordDelta = lastMonth
@@ -275,7 +277,11 @@ const SuperAdminDashboard = () => {
                 {recentLandlords.map((landlord) => (
                   <div
                     key={landlord.id}
-                    className={cn('flex items-center justify-between p-3', ADMIN_SURFACE, ADMIN_SURFACE_HOVER)}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => navigate(`${ROUTES.SUPER_ADMIN_LANDLORD_DETAIL}?landlord=${landlord.id}`)}
+                    onKeyDown={(e) => e.key === 'Enter' && navigate(`${ROUTES.SUPER_ADMIN_LANDLORD_DETAIL}?landlord=${landlord.id}`)}
+                    className={cn('flex items-center justify-between p-3 cursor-pointer', ADMIN_SURFACE, ADMIN_SURFACE_HOVER)}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-[#CCFBF1] border border-[#0F766E]/20 flex items-center justify-center">

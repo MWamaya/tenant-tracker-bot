@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { format, subMonths, startOfMonth } from 'date-fns';
@@ -532,15 +532,19 @@ export const useSubscriptionPlans = () => {
 };
 
 // Hook to fetch audit logs
-export const useAuditLogs = (limit = 50) => {
-  return useQuery({
-    queryKey: ['audit-logs', limit],
-    queryFn: async (): Promise<AuditLog[]> => {
+const AUDIT_LOG_PAGE_SIZE = 50;
+
+// Paginated (not a fixed cap) so Audit Logs can actually be browsed past
+// the most recent page instead of silently losing older entries.
+export const useAuditLogs = () => {
+  return useInfiniteQuery({
+    queryKey: ['audit-logs'],
+    queryFn: async ({ pageParam }): Promise<AuditLog[]> => {
       const { data, error } = await supabase
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(limit);
+        .range(pageParam, pageParam + AUDIT_LOG_PAGE_SIZE - 1);
 
       if (error) throw error;
 
@@ -556,6 +560,9 @@ export const useAuditLogs = (limit = 50) => {
         admin_name: adminNameById.get(log.admin_id) || 'Unknown admin',
       }));
     },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === AUDIT_LOG_PAGE_SIZE ? allPages.length * AUDIT_LOG_PAGE_SIZE : undefined,
   });
 };
 
