@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +16,9 @@ import {
   Menu,
   RefreshCw,
   Landmark,
+  Users,
+  MessageSquare,
+  ChevronDown,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
@@ -225,7 +228,19 @@ const DashboardMockup = () => (
 
 const Landing = () => {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(true);
   const plans = PUBLIC_PLANS;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const nearBottom =
+        window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 200;
+      setShowScrollToBottom(!nearBottom);
+    };
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <>
@@ -236,14 +251,16 @@ const Landing = () => {
       />
       <div className="min-h-screen">
         {/* Fixed nav — pill on desktop, full-width bar on mobile (logo far left, hamburger far right) */}
-        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex sm:justify-center">
+        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex sm:justify-center pointer-events-none">
           <nav
-            className={`w-full sm:w-fit border bg-background/70 backdrop-blur-xl shadow-lg transition-[border-radius] duration-200 ${
+            className={`pointer-events-auto w-full sm:w-fit border bg-background/70 backdrop-blur-xl shadow-lg transition-[border-radius] duration-200 ${
               menuOpen ? 'rounded-2xl' : 'rounded-2xl sm:rounded-full'
             }`}
           >
             <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 px-3 sm:px-2 py-2 sm:py-1.5">
-              <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto sm:ml-1.5 sm:mr-1" />
+              <Link to={ROUTES.LANDING} className="sm:ml-1.5 sm:mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto" />
+              </Link>
 
               <div className="hidden sm:flex items-center gap-1">
                 <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -255,12 +272,9 @@ const Landing = () => {
                 <a href="#pricing" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   Pricing
                 </a>
-                <Link to={ROUTES.AUTH} className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Log in
-                </Link>
                 <Button asChild size="sm" className="rounded-full gap-1.5">
                   <Link to={ROUTES.GET_STARTED}>
-                    Get started <ArrowRight className="h-3.5 w-3.5" />
+                    Sign up <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </Button>
               </div>
@@ -299,16 +313,9 @@ const Landing = () => {
                       {item.label}
                     </a>
                   ))}
-                  <Link
-                    to={ROUTES.AUTH}
-                    onClick={() => setMenuOpen(false)}
-                    className="px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  >
-                    Log in
-                  </Link>
                   <Button asChild size="sm" className="mt-1 w-full rounded-full">
                     <Link to={ROUTES.GET_STARTED} onClick={() => setMenuOpen(false)}>
-                      Get started
+                      Sign up
                     </Link>
                   </Button>
                 </div>
@@ -336,8 +343,8 @@ const Landing = () => {
             size="sm"
             className="absolute top-20 right-4 sm:top-6 sm:right-8 z-10 gap-1.5 shadow-lg"
           >
-            <Link to={ROUTES.GET_STARTED}>
-              Sign up <ArrowRight className="h-3.5 w-3.5" />
+            <Link to={ROUTES.AUTH}>
+              Log in <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </Button>
 
@@ -584,7 +591,21 @@ const Landing = () => {
                         </span>
                         <span className="text-sm text-muted-foreground"> / month</span>
                       </div>
-                      <ul className="mt-5 space-y-2.5 flex-1">
+                      <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>{plan.maxProperties === null ? 'Unlimited' : plan.maxProperties} properties</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Users className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>{plan.maxTenants === null ? 'Unlimited' : plan.maxTenants} tenants</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-3.5 w-3.5 text-primary shrink-0" />
+                          <span>{plan.smsTokensIncluded} SMS tokens</span>
+                        </div>
+                      </div>
+                      <ul className="mt-5 space-y-2.5 flex-1 pt-4 border-t">
                         {plan.features.map((f) => (
                           <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
                             <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
@@ -640,6 +661,24 @@ const Landing = () => {
             <Link to={ROUTES.CONTACT} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Contact & Support</Link>
           </div>
         </footer>
+
+        <div
+          className={`group fixed bottom-6 right-4 sm:right-8 z-40 transition-all duration-200 ${
+            showScrollToBottom ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
+          }`}
+        >
+          <span className="pointer-events-none absolute right-full top-1/2 -translate-y-1/2 mr-2.5 whitespace-nowrap rounded-full border bg-background/90 backdrop-blur-xl px-3 py-1.5 text-xs font-medium text-foreground shadow-lg opacity-0 scale-95 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100">
+            Scroll to bottom
+          </span>
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'smooth' })}
+            aria-label="Scroll to bottom"
+            className="flex items-center justify-center h-11 w-11 rounded-full border bg-background/90 backdrop-blur-xl shadow-lg text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring animate-dance group-hover:animate-none"
+          >
+            <ChevronDown className="h-5 w-5" />
+          </button>
+        </div>
       </div>
     </>
   );

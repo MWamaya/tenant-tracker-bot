@@ -2,7 +2,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { PUBLIC_PLANS } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CreditCard, LogOut, Phone, Mail } from 'lucide-react';
+import { Check, CreditCard, LogOut, Phone, Mail, Building2, Users, MessageSquare } from 'lucide-react';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { ROUTES } from '@/lib/routes';
@@ -54,7 +54,21 @@ const ChoosePlan = () => {
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <ul className="space-y-2">
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-primary shrink-0" />
+                        <span>{plan.maxProperties === null ? 'Unlimited' : plan.maxProperties} properties</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4 text-primary shrink-0" />
+                        <span>{plan.maxTenants === null ? 'Unlimited' : plan.maxTenants} tenants</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-primary shrink-0" />
+                        <span>{plan.smsTokensIncluded} SMS tokens</span>
+                      </div>
+                    </div>
+                    <ul className="space-y-2 pt-2 border-t">
                       {plan.features.map((f) => (
                         <li key={f} className="flex items-start gap-2 text-sm">
                           <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />

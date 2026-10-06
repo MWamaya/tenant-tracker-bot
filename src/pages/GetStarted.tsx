@@ -180,6 +180,10 @@ const GetStarted = () => {
                           KES {p.price.toLocaleString()}
                           <span className="text-xs"> /month</span>
                         </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          {p.maxProperties === null ? 'Unlimited' : p.maxProperties} properties ·{' '}
+                          {p.maxTenants === null ? 'Unlimited' : p.maxTenants} tenants
+                        </div>
                         <ul className="mt-2 space-y-1">
                           {p.features.slice(0, 2).map((f) => (
                             <li key={f} className="text-xs text-muted-foreground">
