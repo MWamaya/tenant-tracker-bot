@@ -26,6 +26,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { ArrowUpDown, Columns3, Download } from 'lucide-react';
 import { CsvColumn, downloadCsv, rowsToCsv } from '@/lib/csvExport';
+import { cn } from '@/lib/utils';
 
 export interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
@@ -40,6 +41,10 @@ export interface DataTableProps<TData> {
   loadingRowCount?: number;
   emptyMessage: string;
   footer?: React.ReactNode;
+  /** When set, rows are clickable and navigate/act via this handler. Put
+   * `onClick={(e) => e.stopPropagation()}` on any interactive cell content
+   * (buttons, menus) that shouldn't also trigger the row click. */
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData>({
@@ -55,6 +60,7 @@ export function DataTable<TData>({
   loadingRowCount = 5,
   emptyMessage,
   footer,
+  onRowClick,
 }: DataTableProps<TData>) {
   const table = useReactTable({
     data,
@@ -158,7 +164,11 @@ export function DataTable<TData>({
               </TableRow>
             ) : (
               table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow
+                  key={row.id}
+                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
+                  className={cn(onRowClick && 'cursor-pointer')}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

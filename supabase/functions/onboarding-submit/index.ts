@@ -4,6 +4,7 @@
 // super admin can follow up and onboard the client.
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/supabase.ts';
+import { renderEmailLayout } from '../_shared/emailLayout.ts';
 
 const SUPPORT_EMAIL = 'support@kodipap.com';
 const NAME_MAX = 200;
@@ -89,14 +90,19 @@ Deno.serve(async (req) => {
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   if (resendApiKey) {
-    const html = `
-      <h2>New onboarding request</h2>
-      <p><strong>Name:</strong> ${escapeHtml(fullName)}</p>
-      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-      <p><strong>Phone:</strong> ${escapeHtml(phone)}</p>
-      <p><strong>Plan:</strong> ${escapeHtml(plan)}</p>
-      <p>Review and follow up from Super Admin → Onboarding Requests.</p>
-    `;
+    const html = renderEmailLayout({
+      preheader: `New onboarding request from ${fullName} (${plan})`,
+      bodyHtml: `
+        <h2 style="margin:0 0 16px;font-size:18px;color:#0F172A;">New onboarding request</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;">
+          <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;width:90px;">Name</td><td style="padding:10px 16px;color:#0F172A;font-weight:600;">${escapeHtml(fullName)}</td></tr>
+          <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;">Email</td><td style="padding:10px 16px;color:#0F172A;">${escapeHtml(email)}</td></tr>
+          <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;">Phone</td><td style="padding:10px 16px;color:#0F172A;">${escapeHtml(phone)}</td></tr>
+          <tr><td style="padding:10px 16px;color:#64748B;">Plan</td><td style="padding:10px 16px;"><span style="background-color:#0F766E1A;border:1px solid #0F766E40;color:#0F766E;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">${escapeHtml(plan)}</span></td></tr>
+        </table>
+        <p style="margin:20px 0 0;color:#64748B;font-size:13px;">Review and follow up from Super Admin → Onboarding Requests.</p>
+      `,
+    });
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',

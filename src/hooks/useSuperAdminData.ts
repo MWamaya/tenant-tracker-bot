@@ -987,3 +987,144 @@ export const useUpdateSubscriptionPlan = () => {
     },
   });
 };
+
+// --- Two-factor auth (own account) -----------------------------------------
+
+export interface TwoFactorSettings {
+  enabled: boolean;
+  method: 'email' | 'sms';
+}
+
+export const useTwoFactorSettings = () => {
+  return useQuery({
+    queryKey: ['super-admin-two-factor-settings'],
+    queryFn: async (): Promise<TwoFactorSettings> => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) return { enabled: false, method: 'email' };
+
+      const { data, error } = await supabase
+        .from('super_admin_two_factor')
+        .select('enabled, method')
+        .eq('user_id', userData.user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return {
+        enabled: data?.enabled ?? false,
+        method: (data?.method as 'email' | 'sms') ?? 'email',
+      };
+    },
+  });
+};
+
+export const useUpdateTwoFactorSettings = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (settings: TwoFactorSettings) => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData.user) throw new Error('Not signed in');
+
+      const { error } = await supabase.from('super_admin_two_factor').upsert({
+        user_id: userData.user.id,
+        enabled: settings.enabled,
+        method: settings.method,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super-admin-two-factor-settings'] });
+      toast.success('Two-factor authentication updated');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to update: ${error.message}`);
+    },
+  });
+};
+
+// --- Super admin management --------------------------------------------
+
+export interface SuperAdminUser {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  created_at: string;
+}
+
+export const useSuperAdmins = () => {
+  return useQuery({
+    queryKey: ['super-admins-list'],
+    queryFn: async (): Promise<SuperAdminUser[]> => {
+      const { data: roleRows, error: roleError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'SUPER_ADMIN');
+
+      if (roleError) throw roleError;
+      const ids = (roleRows || []).map((r) => r.user_id);
+      if (ids.length === 0) return [];
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, created_at')
+        .in('id', ids);
+
+      if (profilesError) throw profilesError;
+      return (profiles || []).sort((a, b) => a.created_at.localeCompare(b.created_at));
+    },
+  });
+};
+
+export const useCreateSuperAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ fullName, email }: { fullName: string; email: string }) => {
+      const { data, error } = await supabase.functions.invoke('admin-create-superadmin', {
+        body: { fullName, email },
+      });
+      if (error) throw error;
+      if (data && 'error' in data) throw new Error(data.error);
+      return data as { ok: true; userId: string };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super-admins-list'] });
+      toast.success('Admin invited — they’ve been emailed a link to set a password.');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to invite admin: ${error.message}`);
+    },
+  });
+};
+
+export const useRevokeSuperAdmin = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'SUPER_ADMIN');
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'REVOKE_SUPER_ADMIN',
+        entity_type: 'profile',
+        entity_id: userId,
+        new_values: {},
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['super-admins-list'] });
+      toast.success('Admin access revoked');
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to revoke access: ${error.message}`);
+    },
+  });
+};

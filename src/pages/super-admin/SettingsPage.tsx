@@ -6,14 +6,42 @@ import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import SubscriptionPlansManager from '@/components/super-admin/SubscriptionPlansManager';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import {
+  useTwoFactorSettings,
+  useUpdateTwoFactorSettings,
+  useSuperAdmins,
+  useCreateSuperAdmin,
+  useRevokeSuperAdmin,
+} from '@/hooks/useSuperAdminData';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Mail, MessageSquare, Shield, Clock, User, CreditCard } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Settings, Mail, MessageSquare, Shield, Clock, User, CreditCard, UserPlus, Trash2, Users, KeyRound } from 'lucide-react';
+import { formatDate } from '@/lib/dates';
 import { ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
@@ -55,58 +83,62 @@ const ProfileTab = () => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <Card className={ADMIN_CARD}>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Account
-          </CardTitle>
-          <CardDescription className="text-[#64748B]">Your super admin account</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label className="text-[#64748B]">Name</Label>
-            <p className="text-[#0F172A]">{fullName}</p>
-          </div>
-          <div>
-            <Label className="text-[#64748B]">Email</Label>
-            <p className="text-[#0F172A]">{user?.email}</p>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className={ADMIN_CARD}>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Account
+            </CardTitle>
+            <CardDescription className="text-[#64748B]">Your super admin account</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label className="text-[#64748B]">Name</Label>
+              <p className="text-[#0F172A]">{fullName}</p>
+            </div>
+            <div>
+              <Label className="text-[#64748B]">Email</Label>
+              <p className="text-[#0F172A]">{user?.email}</p>
+            </div>
+          </CardContent>
+        </Card>
 
-      <Card className={ADMIN_CARD}>
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">Change Password</CardTitle>
-          <CardDescription className="text-[#64748B]">Update your login password</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>New Password</Label>
-            <Input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="At least 6 characters"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Confirm Password</Label>
-            <Input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-            />
-          </div>
-          <Button
-            onClick={handleChangePassword}
-            disabled={submitting || !newPassword || !confirmPassword}
-          >
-            {submitting ? 'Updating…' : 'Update Password'}
-          </Button>
-        </CardContent>
-      </Card>
+        <Card className={ADMIN_CARD}>
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">Change Password</CardTitle>
+            <CardDescription className="text-[#64748B]">Update your login password</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label>New Password</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="At least 6 characters"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirm Password</Label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            <Button
+              onClick={handleChangePassword}
+              disabled={submitting || !newPassword || !confirmPassword}
+            >
+              {submitting ? 'Updating…' : 'Update Password'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <TwoFactorCard />
     </div>
   );
 };
@@ -301,39 +333,250 @@ const SmsTab = () => {
   );
 };
 
+const TwoFactorCard = () => {
+  const { data: settings, isLoading } = useTwoFactorSettings();
+  const updateSettings = useUpdateTwoFactorSettings();
+
+  return (
+    <Card className={cn(ADMIN_CARD, 'max-w-xl')}>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
+          <KeyRound className="h-5 w-5" />
+          Two-Factor Authentication
+        </CardTitle>
+        <CardDescription className="text-[#64748B]">
+          Require a 6-digit code at login, on top of your password. Off by default.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <Skeleton className="h-12 w-full bg-[#E2E8F0]" />
+        ) : (
+          <>
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Enable two-factor authentication</Label>
+                <p className="text-sm text-[#64748B]">You'll be asked for a code every time you sign in</p>
+              </div>
+              <Switch
+                checked={settings?.enabled ?? false}
+                disabled={updateSettings.isPending}
+                onCheckedChange={(checked) =>
+                  updateSettings.mutate({ enabled: checked, method: settings?.method ?? 'email' })
+                }
+              />
+            </div>
+            {settings?.enabled && (
+              <div className="space-y-2 pt-2 border-t border-[#E2E8F0]">
+                <Label>Delivery method</Label>
+                <Select
+                  value={settings.method}
+                  onValueChange={(value: 'email' | 'sms') =>
+                    updateSettings.mutate({ enabled: true, method: value })
+                  }
+                >
+                  <SelectTrigger className="w-full sm:w-64">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="sms" disabled>
+                      SMS (coming soon)
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 const SecurityTab = () => (
-  <Card className={cn(ADMIN_CARD, 'max-w-xl')}>
-    <CardHeader>
-      <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
-        <Shield className="h-5 w-5" />
-        Security
-      </CardTitle>
-      <CardDescription className="text-[#64748B]">Security and access control settings</CardDescription>
-    </CardHeader>
-    <CardContent>
-      <div className="space-y-4">
-        <div className={cn('p-4', ADMIN_SURFACE)}>
-          <div className="flex items-center gap-2 text-green-600">
-            <div className="w-2 h-2 rounded-full bg-green-600" />
-            <span className="text-sm font-medium">RLS Enabled</span>
+  <div className="space-y-6">
+    <Card className={cn(ADMIN_CARD, 'max-w-xl')}>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          Security
+        </CardTitle>
+        <CardDescription className="text-[#64748B]">Security and access control settings</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className={cn('p-4', ADMIN_SURFACE)}>
+            <div className="flex items-center gap-2 text-green-600">
+              <div className="w-2 h-2 rounded-full bg-green-600" />
+              <span className="text-sm font-medium">RLS Enabled</span>
+            </div>
+            <p className="text-xs text-[#64748B] mt-1">Row Level Security is active on all tables</p>
           </div>
-          <p className="text-xs text-[#64748B] mt-1">Row Level Security is active on all tables</p>
-        </div>
-        <div className={cn('p-4', ADMIN_SURFACE)}>
-          <div className="flex items-center gap-2 text-green-600">
-            <div className="w-2 h-2 rounded-full bg-green-600" />
-            <span className="text-sm font-medium">RBAC Active</span>
+          <div className={cn('p-4', ADMIN_SURFACE)}>
+            <div className="flex items-center gap-2 text-green-600">
+              <div className="w-2 h-2 rounded-full bg-green-600" />
+              <span className="text-sm font-medium">RBAC Active</span>
+            </div>
+            <p className="text-xs text-[#64748B] mt-1">Role-based access control is enforced</p>
           </div>
-          <p className="text-xs text-[#64748B] mt-1">Role-based access control is enforced</p>
         </div>
-      </div>
-    </CardContent>
-  </Card>
+      </CardContent>
+    </Card>
+  </div>
 );
+
+const AdminsTab = () => {
+  const { user } = useAuth();
+  const { data: admins, isLoading } = useSuperAdmins();
+  const createAdmin = useCreateSuperAdmin();
+  const revokeAdmin = useRevokeSuperAdmin();
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [revokeTarget, setRevokeTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const handleInvite = async () => {
+    if (!fullName.trim() || !email.trim()) return;
+    await createAdmin.mutateAsync({ fullName: fullName.trim(), email: email.trim() });
+    setInviteOpen(false);
+    setFullName('');
+    setEmail('');
+  };
+
+  return (
+    <Card className={ADMIN_CARD}>
+      <CardHeader className="flex flex-row items-start justify-between gap-4">
+        <div>
+          <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Super Admins
+          </CardTitle>
+          <CardDescription className="text-[#64748B]">
+            People with full platform administration access
+          </CardDescription>
+        </div>
+        <Button onClick={() => setInviteOpen(true)} className="gap-2 shrink-0">
+          <UserPlus className="h-4 w-4" />
+          Add Super Admin
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2].map((i) => (
+              <Skeleton key={i} className="h-14 w-full bg-[#E2E8F0]" />
+            ))}
+          </div>
+        ) : !admins || admins.length === 0 ? (
+          <p className="text-[#64748B] text-sm py-4 text-center">No super admins found</p>
+        ) : (
+          <div className="space-y-2">
+            {admins.map((admin) => {
+              const isSelf = admin.id === user?.id;
+              return (
+                <div key={admin.id} className={cn('flex items-center justify-between p-3', ADMIN_SURFACE)}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-9 h-9 shrink-0 rounded-full bg-[#CCFBF1] border border-[#0F766E]/20 flex items-center justify-center">
+                      <span className="text-[#0F766E] font-semibold text-sm">{admin.full_name?.[0] || 'A'}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-[#0F172A] truncate">{admin.full_name || 'Unnamed admin'}</p>
+                        {isSelf && (
+                          <Badge variant="outline" className="border-[#0F766E]/40 text-[#0F766E] text-[10px]">
+                            You
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-[#64748B] truncate">{admin.email}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-xs text-[#64748B] hidden sm:inline">Joined {formatDate(admin.created_at)}</span>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={isSelf}
+                      title={isSelf ? "You can't revoke your own access" : undefined}
+                      className="border-destructive/40 text-destructive hover:bg-destructive/5 disabled:opacity-40"
+                      onClick={() => setRevokeTarget({ id: admin.id, name: admin.full_name || admin.email || 'this admin' })}
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                      Revoke
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Super Admin</DialogTitle>
+            <DialogDescription className="text-[#64748B]">
+              They'll be emailed a link to set their own password.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Full Name</Label>
+              <Input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="e.g., Jane Wanjiru" />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="e.g., jane@kodipap.com"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteOpen(false)} className={cn('border-[#E2E8F0] text-[#1E3A5F]', ADMIN_SURFACE_HOVER)}>
+              Cancel
+            </Button>
+            <Button onClick={handleInvite} disabled={createAdmin.isPending || !fullName.trim() || !email.trim()}>
+              {createAdmin.isPending ? 'Sending invite…' : 'Send Invite'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={!!revokeTarget} onOpenChange={(open) => !open && setRevokeTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Revoke admin access?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {revokeTarget?.name} will immediately lose all super admin access to the platform.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={async () => {
+                if (!revokeTarget) return;
+                await revokeAdmin.mutateAsync(revokeTarget.id);
+                setRevokeTarget(null);
+              }}
+            >
+              Revoke Access
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </Card>
+  );
+};
 
 const SettingsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const validTabs = ['profile', 'general', 'sms', 'security', 'subscriptions'];
+  const validTabs = ['profile', 'general', 'sms', 'security', 'admins', 'subscriptions'];
   const initialTab = validTabs.includes(searchParams.get('tab') || '') ? searchParams.get('tab')! : 'profile';
 
   return (
@@ -366,6 +609,10 @@ const SettingsPage = () => {
               <Shield className="h-3.5 w-3.5" />
               Security
             </TabsTrigger>
+            <TabsTrigger value="admins" className="gap-1.5">
+              <Users className="h-3.5 w-3.5" />
+              Admins
+            </TabsTrigger>
             <TabsTrigger value="subscriptions" className="gap-1.5">
               <CreditCard className="h-3.5 w-3.5" />
               Subscriptions
@@ -383,6 +630,9 @@ const SettingsPage = () => {
           </TabsContent>
           <TabsContent value="security" className="mt-6">
             <SecurityTab />
+          </TabsContent>
+          <TabsContent value="admins" className="mt-6">
+            <AdminsTab />
           </TabsContent>
           <TabsContent value="subscriptions" className="mt-6">
             <SubscriptionPlansManager />

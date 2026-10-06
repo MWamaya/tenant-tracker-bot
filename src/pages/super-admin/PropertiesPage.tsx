@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { supabase } from '@/integrations/supabase/client';
+import { ROUTES } from '@/lib/routes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -79,8 +81,13 @@ const useAllProperties = () => {
 };
 
 const PropertiesPage = () => {
+  const navigate = useNavigate();
   const { data: properties, isLoading } = useAllProperties();
   const [searchQuery, setSearchQuery] = useState('');
+
+  const viewOwner = (landlordId: string) => {
+    navigate(`${ROUTES.SUPER_ADMIN_LANDLORD_DETAIL}?landlord=${landlordId}`);
+  };
 
   const filtered = (properties || []).filter((p) => {
     const q = searchQuery.toLowerCase();
@@ -144,7 +151,14 @@ const PropertiesPage = () => {
                 {/* Mobile cards */}
                 <div className="md:hidden space-y-3">
                   {filtered.map((p) => (
-                    <div key={p.id} className={cn(ADMIN_SURFACE, "p-4 space-y-2")}>
+                    <div
+                      key={p.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => viewOwner(p.landlord_id)}
+                      onKeyDown={(e) => e.key === 'Enter' && viewOwner(p.landlord_id)}
+                      className={cn(ADMIN_SURFACE, ADMIN_SURFACE_HOVER, "p-4 space-y-2 cursor-pointer")}
+                    >
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <div className="font-semibold text-[#0F172A]">{p.name}</div>
@@ -189,7 +203,11 @@ const PropertiesPage = () => {
                     </TableHeader>
                     <TableBody>
                       {filtered.map((p) => (
-                        <TableRow key={p.id} className={cn("border-[#E2E8F0]", ADMIN_SURFACE_HOVER)}>
+                        <TableRow
+                          key={p.id}
+                          onClick={() => viewOwner(p.landlord_id)}
+                          className={cn("border-[#E2E8F0] cursor-pointer", ADMIN_SURFACE_HOVER)}
+                        >
                           <TableCell className="font-medium text-[#0F172A]">{p.name}</TableCell>
                           <TableCell>
                             <div className="text-sm text-[#0F172A]">

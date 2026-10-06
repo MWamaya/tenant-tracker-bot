@@ -189,7 +189,7 @@ const LandlordsPage = () => {
         cell: ({ row }) => {
           const landlord = row.original;
           return (
-            <div className="flex items-center justify-end gap-1">
+            <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
               <Button
                 size="sm"
                 variant="outline"
@@ -318,6 +318,7 @@ const LandlordsPage = () => {
               csvFilename="kodipap-landlords.csv"
               isLoading={isLoading}
               emptyMessage="No landlords found"
+              onRowClick={viewLandlord}
             />
           </CardContent>
         </Card>

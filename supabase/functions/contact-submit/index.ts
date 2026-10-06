@@ -4,6 +4,7 @@
 // with reply-to set to the submitter so replying goes straight to them.
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/supabase.ts';
+import { renderEmailLayout } from '../_shared/emailLayout.ts';
 
 const SUPPORT_EMAIL = 'support@kodipap.com';
 const NAME_MAX = 200;
@@ -89,14 +90,19 @@ Deno.serve(async (req) => {
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   if (resendApiKey) {
-    const html = `
-      <h2>New contact form submission</h2>
-      <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-      ${topic ? `<p><strong>Topic:</strong> ${escapeHtml(topic)}</p>` : ''}
-      <p><strong>Message:</strong></p>
-      <p style="white-space:pre-wrap">${escapeHtml(message)}</p>
-    `;
+    const html = renderEmailLayout({
+      preheader: `${name}: ${topic || message.slice(0, 80)}`,
+      bodyHtml: `
+        <h2 style="margin:0 0 16px;font-size:18px;color:#0F172A;">New contact form submission</h2>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;margin:0 0 16px;">
+          <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;width:90px;">Name</td><td style="padding:10px 16px;color:#0F172A;font-weight:600;">${escapeHtml(name)}</td></tr>
+          <tr style="${topic ? 'border-bottom:1px solid #E2E8F0;' : ''}"><td style="padding:10px 16px;color:#64748B;">Email</td><td style="padding:10px 16px;color:#0F172A;">${escapeHtml(email)}</td></tr>
+          ${topic ? `<tr><td style="padding:10px 16px;color:#64748B;">Topic</td><td style="padding:10px 16px;color:#0F172A;">${escapeHtml(topic)}</td></tr>` : ''}
+        </table>
+        <div style="font-size:12px;color:#64748B;text-transform:uppercase;letter-spacing:0.02em;margin:0 0 6px;">Message</div>
+        <p style="white-space:pre-wrap;background-color:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 16px;color:#0F172A;">${escapeHtml(message)}</p>
+      `,
+    });
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
