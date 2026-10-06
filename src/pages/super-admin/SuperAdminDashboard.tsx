@@ -21,20 +21,11 @@ import { ROUTES } from '@/lib/routes';
 import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
-const TINTS = {
-  violet: 'from-violet-500/20 to-violet-500/5 border-violet-500/20 text-violet-400',
-  blue: 'from-blue-500/20 to-blue-500/5 border-blue-500/20 text-blue-400',
-  emerald: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/20 text-emerald-400',
-  amber: 'from-amber-500/20 to-amber-500/5 border-amber-500/20 text-amber-400',
-  rose: 'from-rose-500/20 to-rose-500/5 border-rose-500/20 text-rose-400',
-} as const;
-
 const StatCard = ({
   title,
   value,
   description,
   icon: Icon,
-  tint = 'blue',
   loading,
   error,
   onClick,
@@ -43,7 +34,6 @@ const StatCard = ({
   value: string | number;
   description?: string;
   icon: React.ComponentType<{ className?: string }>;
-  tint?: keyof typeof TINTS;
   loading?: boolean;
   /** When true, shows a distinct error state instead of falling back to a
    * misleading "0" that's indistinguishable from a real zero count. */
@@ -54,18 +44,18 @@ const StatCard = ({
     onClick={onClick}
     className={cn(
       ADMIN_CARD,
-      onClick && 'cursor-pointer hover:border-primary/40 hover:from-white/[0.07] transition-all duration-150'
+      onClick && 'cursor-pointer hover:border-[#0F766E]/40 transition-colors duration-150'
     )}
   >
     <CardHeader className="flex flex-row items-center justify-between pb-2">
-      <CardTitle className="text-sm font-medium text-slate-400">{title}</CardTitle>
-      <div className={cn('p-2 rounded-lg bg-gradient-to-br border', TINTS[tint])}>
-        <Icon className="h-4 w-4" />
+      <CardTitle className="text-sm font-medium text-[#64748B]">{title}</CardTitle>
+      <div className="p-2 rounded-lg bg-[#F1F5F9] border border-[#E2E8F0]">
+        <Icon className="h-4 w-4 text-[#1E3A5F]" />
       </div>
     </CardHeader>
     <CardContent>
       {loading ? (
-        <Skeleton className="h-8 w-24 bg-white/[0.06]" />
+        <Skeleton className="h-8 w-24 bg-[#E2E8F0]" />
       ) : error ? (
         <div className="flex items-center gap-1.5 text-destructive">
           <CircleAlert className="h-4 w-4 shrink-0" />
@@ -73,9 +63,9 @@ const StatCard = ({
         </div>
       ) : (
         <>
-          <div className="text-3xl font-bold tracking-tight text-white">{value}</div>
+          <div className="text-3xl font-bold tracking-tight text-[#0F172A]">{value}</div>
           {description && (
-            <p className="text-xs text-slate-500 mt-1.5">{description}</p>
+            <p className="text-xs text-[#64748B] mt-1.5">{description}</p>
           )}
         </>
       )}
@@ -100,8 +90,8 @@ const SuperAdminDashboard = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Platform Overview</h1>
-          <p className="text-slate-400">Welcome to the Super Admin Dashboard</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">Platform Overview</h1>
+          <p className="text-[#64748B]">Welcome to the Super Admin Dashboard</p>
         </div>
 
         {/* Stats Grid */}
@@ -111,7 +101,6 @@ const SuperAdminDashboard = () => {
             value={newRequestsCount || 0}
             description="Awaiting triage"
             icon={UserPlus}
-            tint="violet"
             loading={newRequestsLoading}
             error={newRequestsError}
             onClick={() => navigate(ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS)}
@@ -121,7 +110,6 @@ const SuperAdminDashboard = () => {
             value={stats?.totalLandlords || 0}
             description={`${stats?.activeLandlords || 0} active · View all`}
             icon={Users}
-            tint="blue"
             loading={statsLoading}
             error={statsError}
             onClick={() => navigate(ROUTES.SUPER_ADMIN_LANDLORDS)}
@@ -130,7 +118,6 @@ const SuperAdminDashboard = () => {
             title="Total Properties"
             value={stats?.totalProperties || 0}
             icon={Building}
-            tint="blue"
             loading={statsLoading}
             error={statsError}
           />
@@ -138,7 +125,6 @@ const SuperAdminDashboard = () => {
             title="Total Tenants"
             value={stats?.totalTenants || 0}
             icon={UserCheck}
-            tint="blue"
             loading={statsLoading}
             error={statsError}
           />
@@ -146,7 +132,6 @@ const SuperAdminDashboard = () => {
             title="Rent Collected"
             value={`KES ${(stats?.totalRentCollected || 0).toLocaleString()}`}
             icon={DollarSign}
-            tint="emerald"
             loading={statsLoading}
             error={statsError}
           />
@@ -158,7 +143,6 @@ const SuperAdminDashboard = () => {
             title="Suspended Landlords"
             value={stats?.suspendedLandlords || 0}
             icon={Ban}
-            tint="rose"
             loading={statsLoading}
             error={statsError}
           />
@@ -167,7 +151,6 @@ const SuperAdminDashboard = () => {
             value={stats?.expiringSubscriptions || 0}
             description="Within 7 days"
             icon={Clock}
-            tint="amber"
             loading={statsLoading}
             error={statsError}
           />
@@ -176,7 +159,6 @@ const SuperAdminDashboard = () => {
             value={`${(stats?.smsTokensIssued || 0) - (stats?.smsTokensUsed || 0)}`}
             description={`${stats?.smsTokensUsed || 0} used`}
             icon={MessageSquare}
-            tint="violet"
             loading={statsLoading}
             error={statsError}
           />
@@ -184,7 +166,6 @@ const SuperAdminDashboard = () => {
             title="Unmatched Payments"
             value={stats?.unmatchedPayments || 0}
             icon={AlertTriangle}
-            tint="amber"
             loading={statsLoading}
             error={statsError}
           />
@@ -193,8 +174,8 @@ const SuperAdminDashboard = () => {
         {/* Recent Landlords */}
         <Card className={ADMIN_CARD}>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold tracking-tight text-white">Recent Landlords</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">Recent Landlords</CardTitle>
+            <CardDescription className="text-[#64748B]">
               Recently registered landlords on the platform
             </CardDescription>
           </CardHeader>
@@ -202,7 +183,7 @@ const SuperAdminDashboard = () => {
             {landlordsLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
-                  <Skeleton key={i} className="h-12 w-full bg-white/[0.06]" />
+                  <Skeleton key={i} className="h-12 w-full bg-[#E2E8F0]" />
                 ))}
               </div>
             ) : landlordsError ? (
@@ -211,25 +192,25 @@ const SuperAdminDashboard = () => {
                 <span className="text-sm font-medium">Failed to load landlords</span>
               </div>
             ) : recentLandlords.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">No landlords registered yet</p>
+              <p className="text-[#64748B] text-center py-8">No landlords registered yet</p>
             ) : (
               <div className="space-y-2.5">
                 {recentLandlords.map((landlord) => (
                   <div
                     key={landlord.id}
-                    className={cn('flex items-center justify-between p-3', ADMIN_SURFACE, 'hover:bg-white/[0.06] transition-colors duration-150')}
+                    className={cn('flex items-center justify-between p-3', ADMIN_SURFACE, 'hover:bg-[#F1F5F9] transition-colors duration-150')}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center">
-                        <span className="text-primary font-semibold">
+                      <div className="w-10 h-10 rounded-full bg-[#CCFBF1] border border-[#0F766E]/20 flex items-center justify-center">
+                        <span className="text-[#0F766E] font-semibold">
                           {landlord.full_name?.[0] || 'L'}
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-white">
+                        <p className="font-medium text-[#0F172A]">
                           {landlord.full_name || 'Unknown'}
                         </p>
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-[#64748B]">
                           {landlord.company_name || 'No company'}
                         </p>
                       </div>
@@ -247,7 +228,7 @@ const SuperAdminDashboard = () => {
                       >
                         {landlord.account_status}
                       </Badge>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-xs text-[#64748B] mt-1">
                         {formatDate(landlord.created_at)}
                       </p>
                     </div>
