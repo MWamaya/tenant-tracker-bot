@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Settings, Mail, MessageSquare, Shield, Clock } from 'lucide-react';
-import { ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
 interface SystemSetting {
@@ -104,7 +104,7 @@ const SettingsPage = () => {
                 <>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label >Maintenance Mode</Label>
+                      <Label>Maintenance Mode</Label>
                       <p className="text-sm text-[#64748B]">
                         Put the platform in maintenance mode
                       </p>
@@ -119,7 +119,7 @@ const SettingsPage = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label >Bank Email Parsing</Label>
+                      <Label>Bank Email Parsing</Label>
                       <p className="text-sm text-[#64748B]">
                         Enable automatic bank email parsing
                       </p>
@@ -134,7 +134,7 @@ const SettingsPage = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label >Grace Period (Days)</Label>
+                      <Label>Grace Period (Days)</Label>
                       <p className="text-sm text-[#64748B]">
                         Days after subscription expiry before suspension
                       </p>
@@ -170,7 +170,7 @@ const SettingsPage = () => {
                 <>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label >Default SMS Provider</Label>
+                      <Label>Default SMS Provider</Label>
                       <p className="text-sm text-[#64748B]">
                         Primary SMS gateway for notifications
                       </p>
@@ -199,8 +199,8 @@ const SettingsPage = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className={cn("p-4", ADMIN_SURFACE)}>
-                  <div className="flex items-center gap-2 text-green-400">
-                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                  <div className="flex items-center gap-2 text-green-600">
+                    <div className="w-2 h-2 rounded-full bg-green-600" />
                     <span className="text-sm font-medium">RLS Enabled</span>
                   </div>
                   <p className="text-xs text-[#64748B] mt-1">
@@ -208,8 +208,8 @@ const SettingsPage = () => {
                   </p>
                 </div>
                 <div className={cn("p-4", ADMIN_SURFACE)}>
-                  <div className="flex items-center gap-2 text-green-400">
-                    <div className="w-2 h-2 rounded-full bg-green-400" />
+                  <div className="flex items-center gap-2 text-green-600">
+                    <div className="w-2 h-2 rounded-full bg-green-600" />
                     <span className="text-sm font-medium">RBAC Active</span>
                   </div>
                   <p className="text-xs text-[#64748B] mt-1">
@@ -242,7 +242,7 @@ const SettingsPage = () => {
                     return (
                       <div
                         key={setting.id}
-                        className={cn("flex items-center justify-between p-3", ADMIN_SURFACE, "hover:bg-[#E2E8F0] transition-colors duration-150")}
+                        className={cn("flex items-center justify-between p-3", ADMIN_SURFACE, ADMIN_SURFACE_HOVER)}
                       >
                         <div className="flex items-center gap-3">
                           <Icon className="h-4 w-4 text-[#0F766E]" />

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatDate } from '@/lib/dates';
-import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
 const AuditLogsPage = () => {
@@ -62,7 +62,7 @@ const AuditLogsPage = () => {
                 {logs?.map((log) => (
                   <div
                     key={log.id}
-                    className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4", ADMIN_SURFACE, "hover:bg-[#E2E8F0] transition-colors duration-150")}
+                    className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4", ADMIN_SURFACE, ADMIN_SURFACE_HOVER)}
                   >
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full bg-[#0F766E] mt-2" />

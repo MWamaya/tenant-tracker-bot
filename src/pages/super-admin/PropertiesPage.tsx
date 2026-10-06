@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/table';
 import { Search, Building2, MapPin } from 'lucide-react';
 import { formatDate } from '@/lib/dates';
-import { ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
 interface PropertyRow {
@@ -189,7 +189,7 @@ const PropertiesPage = () => {
                     </TableHeader>
                     <TableBody>
                       {filtered.map((p) => (
-                        <TableRow key={p.id} className="border-[#E2E8F0] hover:bg-[#F8FAFC]">
+                        <TableRow key={p.id} className={cn("border-[#E2E8F0]", ADMIN_SURFACE_HOVER)}>
                           <TableCell className="font-medium text-[#0F172A]">{p.name}</TableCell>
                           <TableCell>
                             <div className="text-sm text-[#0F172A]">
