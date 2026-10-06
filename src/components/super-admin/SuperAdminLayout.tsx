@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   Users,
-  CreditCard,
   Settings,
   FileText,
   LogOut,
@@ -29,7 +28,6 @@ const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: ROUTES.SUPER_ADMIN_ROOT },
   { icon: UserPlus, label: 'Onboarding Requests', path: ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS },
   { icon: Users, label: 'Landlords', path: ROUTES.SUPER_ADMIN_LANDLORDS },
-  { icon: CreditCard, label: 'Subscriptions', path: ROUTES.SUPER_ADMIN_SUBSCRIPTIONS },
   { icon: DollarSign, label: 'Payments', path: ROUTES.SUPER_ADMIN_PAYMENTS },
   { icon: Building, label: 'Properties', path: ROUTES.SUPER_ADMIN_PROPERTIES },
   { icon: FileText, label: 'Audit Logs', path: ROUTES.SUPER_ADMIN_AUDIT_LOGS },
@@ -96,7 +94,7 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       <div className="p-4 border-t border-white/10">
         <Button
           variant="ghost"
-          className="w-full justify-start text-slate-400 hover:text-white hover:bg-white/[0.04]"
+          className="w-full justify-start rounded-full text-red-400 hover:text-red-300 hover:bg-red-500/10"
           onClick={handleSignOut}
         >
           <LogOut className="h-[18px] w-[18px] mr-3" />

@@ -331,6 +331,31 @@ export const useLandlords = () => {
   });
 };
 
+// Hook to fetch, per landlord, how many of their rent payments are
+// unmatched (no tenant/house link). This is the landlord's own reconciling
+// job (they have a Reconciliation page for it) — admin just needs enough
+// visibility to tell who has a backlog, surfaced on the Landlords table
+// rather than as a platform-wide "needs attention" queue.
+export const useUnmatchedPaymentCountsByLandlord = () => {
+  return useQuery({
+    queryKey: ['unmatched-payment-counts-by-landlord'],
+    queryFn: async (): Promise<Map<string, number>> => {
+      const { data, error } = await supabase
+        .from('payments')
+        .select('landlord_id')
+        .or('tenant_id.is.null,house_id.is.null');
+
+      if (error) throw error;
+
+      const counts = new Map<string, number>();
+      for (const p of data ?? []) {
+        counts.set(p.landlord_id, (counts.get(p.landlord_id) || 0) + 1);
+      }
+      return counts;
+    },
+  });
+};
+
 // Hook to fetch subscription plans
 export const useSubscriptionPlans = () => {
   return useQuery({

@@ -27,12 +27,6 @@ const SuperAdminTopbar = () => {
 
   const items = [
     {
-      key: 'unmatched-payments',
-      count: stats?.unmatchedPayments ?? 0,
-      label: 'unmatched payment(s)',
-      onClick: () => navigate(`${ROUTES.SUPER_ADMIN_PAYMENTS}?tab=unmatched`),
-    },
-    {
       key: 'failed-emails',
       count: failedEmailCount ?? 0,
       label: 'failed bank-email parse(s)',

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { useLandlords, useUpdateLandlordStatus, useSubscriptionPlans, useAssignSubscription, useAllocateSmsTokens, useUpdateInboundEmail } from '@/hooks/useSuperAdminData';
+import { useLandlords, useUpdateLandlordStatus, useSubscriptionPlans, useAssignSubscription, useAllocateSmsTokens, useUpdateInboundEmail, useUnmatchedPaymentCountsByLandlord } from '@/hooks/useSuperAdminData';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { ROUTES } from '@/lib/routes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,6 +48,7 @@ const LandlordsPage = () => {
   const { startImpersonation } = useImpersonation();
   const { data: landlords, isLoading } = useLandlords();
   const { data: plans } = useSubscriptionPlans();
+  const { data: unmatchedCounts } = useUnmatchedPaymentCountsByLandlord();
   const updateStatus = useUpdateLandlordStatus();
   const assignSubscription = useAssignSubscription();
   const allocateTokens = useAllocateSmsTokens();
@@ -201,6 +202,27 @@ const LandlordsPage = () => {
         cell: ({ row }) => formatDate(row.original.created_at),
       },
       {
+        id: 'Reconciliation',
+        accessorFn: (row) => unmatchedCounts?.get(row.id) || 0,
+        header: 'Reconciliation',
+        cell: ({ row }) => {
+          const count = unmatchedCounts?.get(row.original.id) || 0;
+          if (count === 0) {
+            return <span className="text-[#94A3B8] text-sm">Up to date</span>;
+          }
+          return (
+            <button
+              type="button"
+              onClick={() => handleLoginAs(row.original, ROUTES.RECONCILIATION)}
+              className="inline-flex items-center gap-1 text-sm font-medium text-warning hover:underline"
+              title="Open this landlord's Reconciliation page — matching these is their job, not admin's"
+            >
+              {count} unmatched
+            </button>
+          );
+        },
+      },
+      {
         id: 'Actions',
         header: 'Actions',
         enableHiding: false,
@@ -299,7 +321,7 @@ const LandlordsPage = () => {
         },
       },
     ],
-    [handleLoginAs, handleStatusChange]
+    [handleLoginAs, handleStatusChange, unmatchedCounts]
   );
 
   const csvColumns: CsvColumn<LandlordProfile>[] = [
@@ -310,6 +332,7 @@ const LandlordsPage = () => {
     { id: 'Subscription', header: 'Subscription', accessor: (r) => r.subscription?.plan_name ?? '' },
     { id: 'SMS Balance', header: 'SMS Balance', accessor: (r) => r.sms_token_balance },
     { id: 'Joined', header: 'Joined', accessor: (r) => r.created_at },
+    { id: 'Reconciliation', header: 'Unmatched Payments', accessor: (r) => unmatchedCounts?.get(r.id) || 0 },
   ];
 
   return (

@@ -91,14 +91,6 @@ const NeedsAttentionCard = ({
 
   const allItems = [
     {
-      key: 'unmatched-payments',
-      count: stats?.unmatchedPayments ?? 0,
-      isError: !!statsError,
-      label: 'unmatched payment(s) — review payment matching',
-      errorLabel: 'Failed to load unmatched payments',
-      onClick: () => navigate(`${ROUTES.SUPER_ADMIN_PAYMENTS}?tab=unmatched`),
-    },
-    {
       key: 'failed-emails',
       count: failedEmailCount ?? 0,
       isError: failedEmailCountError,
