@@ -76,8 +76,8 @@ const SettingsPage = () => {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">System Settings</h1>
-          <p className="text-slate-400">Configure platform-wide settings</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">System Settings</h1>
+          <p className="text-[#64748B]">Configure platform-wide settings</p>
         </div>
 
         {/* Settings Grid */}
@@ -85,11 +85,11 @@ const SettingsPage = () => {
           {/* General Settings */}
           <Card className={ADMIN_CARD}>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
                 <Settings className="h-5 w-5" />
                 General Settings
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-[#64748B]">
                 Basic platform configuration
               </CardDescription>
             </CardHeader>
@@ -97,15 +97,15 @@ const SettingsPage = () => {
               {isLoading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-white/[0.06]" />
+                    <Skeleton key={i} className="h-12 w-full bg-[#E2E8F0]" />
                   ))}
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-slate-200">Maintenance Mode</Label>
-                      <p className="text-sm text-slate-400">
+                      <Label >Maintenance Mode</Label>
+                      <p className="text-sm text-[#64748B]">
                         Put the platform in maintenance mode
                       </p>
                     </div>
@@ -119,8 +119,8 @@ const SettingsPage = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-slate-200">Bank Email Parsing</Label>
-                      <p className="text-sm text-slate-400">
+                      <Label >Bank Email Parsing</Label>
+                      <p className="text-sm text-[#64748B]">
                         Enable automatic bank email parsing
                       </p>
                     </div>
@@ -134,12 +134,12 @@ const SettingsPage = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-slate-200">Grace Period (Days)</Label>
-                      <p className="text-sm text-slate-400">
+                      <Label >Grace Period (Days)</Label>
+                      <p className="text-sm text-[#64748B]">
                         Days after subscription expiry before suspension
                       </p>
                     </div>
-                    <span className="text-white font-medium">
+                    <span className="text-[#0F172A] font-medium">
                       {String(getSetting('subscription_grace_period_days') ?? 7)} days
                     </span>
                   </div>
@@ -151,11 +151,11 @@ const SettingsPage = () => {
           {/* SMS Settings */}
           <Card className={ADMIN_CARD}>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
                 SMS Configuration
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-[#64748B]">
                 SMS provider and messaging settings
               </CardDescription>
             </CardHeader>
@@ -163,19 +163,19 @@ const SettingsPage = () => {
               {isLoading ? (
                 <div className="space-y-4">
                   {[1, 2].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full bg-white/[0.06]" />
+                    <Skeleton key={i} className="h-12 w-full bg-[#E2E8F0]" />
                   ))}
                 </div>
               ) : (
                 <>
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label className="text-slate-200">Default SMS Provider</Label>
-                      <p className="text-sm text-slate-400">
+                      <Label >Default SMS Provider</Label>
+                      <p className="text-sm text-[#64748B]">
                         Primary SMS gateway for notifications
                       </p>
                     </div>
-                    <span className="text-white font-medium capitalize">
+                    <span className="text-[#0F172A] font-medium capitalize">
                       {(getSetting('default_sms_provider') as string)?.replace(/_/g, ' ') ||
                         'Not configured'}
                     </span>
@@ -188,11 +188,11 @@ const SettingsPage = () => {
           {/* Security Settings */}
           <Card className={ADMIN_CARD}>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold tracking-tight text-white flex items-center gap-2">
+              <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
                 <Shield className="h-5 w-5" />
                 Security
               </CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardDescription className="text-[#64748B]">
                 Security and access control settings
               </CardDescription>
             </CardHeader>
@@ -203,7 +203,7 @@ const SettingsPage = () => {
                     <div className="w-2 h-2 rounded-full bg-green-400" />
                     <span className="text-sm font-medium">RLS Enabled</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-[#64748B] mt-1">
                     Row Level Security is active on all tables
                   </p>
                 </div>
@@ -212,7 +212,7 @@ const SettingsPage = () => {
                     <div className="w-2 h-2 rounded-full bg-green-400" />
                     <span className="text-sm font-medium">RBAC Active</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
+                  <p className="text-xs text-[#64748B] mt-1">
                     Role-based access control is enforced
                   </p>
                 </div>
@@ -223,8 +223,8 @@ const SettingsPage = () => {
           {/* All Settings */}
           <Card className={ADMIN_CARD}>
             <CardHeader>
-              <CardTitle className="text-lg font-semibold tracking-tight text-white">All Settings</CardTitle>
-              <CardDescription className="text-slate-400">
+              <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">All Settings</CardTitle>
+              <CardDescription className="text-[#64748B]">
                 Complete list of system configuration
               </CardDescription>
             </CardHeader>
@@ -232,7 +232,7 @@ const SettingsPage = () => {
               {isLoading ? (
                 <div className="space-y-3">
                   {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-10 w-full bg-white/[0.06]" />
+                    <Skeleton key={i} className="h-10 w-full bg-[#E2E8F0]" />
                   ))}
                 </div>
               ) : (
@@ -242,20 +242,20 @@ const SettingsPage = () => {
                     return (
                       <div
                         key={setting.id}
-                        className={cn("flex items-center justify-between p-3", ADMIN_SURFACE, "hover:bg-white/[0.06] transition-colors duration-150")}
+                        className={cn("flex items-center justify-between p-3", ADMIN_SURFACE, "hover:bg-[#E2E8F0] transition-colors duration-150")}
                       >
                         <div className="flex items-center gap-3">
-                          <Icon className="h-4 w-4 text-primary" />
+                          <Icon className="h-4 w-4 text-[#0F766E]" />
                           <div>
-                            <p className="text-sm font-medium text-white">
+                            <p className="text-sm font-medium text-[#0F172A]">
                               {setting.setting_key.replace(/_/g, ' ')}
                             </p>
                             {setting.description && (
-                              <p className="text-xs text-slate-400">{setting.description}</p>
+                              <p className="text-xs text-[#64748B]">{setting.description}</p>
                             )}
                           </div>
                         </div>
-                        <span className="text-sm text-slate-300 font-mono">
+                        <span className="text-sm text-[#0F172A] font-mono">
                           {setting.is_sensitive
                             ? '••••••'
                             : String(JSON.stringify(setting.setting_value))}
