@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { AlertTriangle, ChevronRight, CircleCheck, Mail, Webhook, Clock } from 'lucide-react';
+import { AlertTriangle, ChevronRight, CircleCheck, CircleAlert, Mail, Webhook, Clock } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -17,7 +17,7 @@ import {
   useUnprocessedWebhooksCount,
   type PlatformStats,
 } from '@/hooks/useSuperAdminData';
-import { ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { ROUTES } from '@/lib/routes';
 import { formatDateTime } from '@/lib/dates';
 import { cn } from '@/lib/utils';
@@ -71,10 +71,17 @@ const useUnprocessedWebhooksList = (open: boolean) =>
     enabled: open,
   });
 
-const NeedsAttentionCard = ({ stats }: { stats: PlatformStats | undefined }) => {
+const NeedsAttentionCard = ({
+  stats,
+  statsError,
+}: {
+  stats: PlatformStats | undefined;
+  statsError?: boolean;
+}) => {
   const navigate = useNavigate();
-  const { data: failedEmailCount } = useFailedEmailLogsCount();
-  const { data: unprocessedWebhookCount } = useUnprocessedWebhooksCount();
+  const { data: failedEmailCount, isError: failedEmailCountError } = useFailedEmailLogsCount();
+  const { data: unprocessedWebhookCount, isError: unprocessedWebhookCountError } =
+    useUnprocessedWebhooksCount();
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [webhookDialogOpen, setWebhookDialogOpen] = useState(false);
   const { data: failedEmails, isLoading: failedEmailsLoading } =
@@ -82,32 +89,43 @@ const NeedsAttentionCard = ({ stats }: { stats: PlatformStats | undefined }) => 
   const { data: unprocessedWebhooks, isLoading: unprocessedWebhooksLoading } =
     useUnprocessedWebhooksList(webhookDialogOpen);
 
-  const items = [
+  const allItems = [
     {
       key: 'unmatched-payments',
       count: stats?.unmatchedPayments ?? 0,
+      isError: !!statsError,
       label: 'unmatched payment(s) — review payment matching',
+      errorLabel: 'Failed to load unmatched payments',
       onClick: () => navigate(`${ROUTES.SUPER_ADMIN_PAYMENTS}?tab=unmatched`),
     },
     {
       key: 'failed-emails',
       count: failedEmailCount ?? 0,
+      isError: failedEmailCountError,
       label: 'bank email(s) failed to parse',
+      errorLabel: 'Failed to load bank email parse failures',
       onClick: () => setEmailDialogOpen(true),
     },
     {
       key: 'unprocessed-webhooks',
       count: unprocessedWebhookCount ?? 0,
+      isError: unprocessedWebhookCountError,
       label: 'webhook callback(s) never finished processing',
+      errorLabel: 'Failed to load unprocessed webhooks',
       onClick: () => setWebhookDialogOpen(true),
     },
     {
       key: 'expiring-subscriptions',
       count: stats?.expiringSubscriptions ?? 0,
+      isError: !!statsError,
       label: 'subscription(s) expiring within 7 days',
+      errorLabel: 'Failed to load expiring subscriptions',
       onClick: () => navigate(ROUTES.SUPER_ADMIN_LANDLORDS),
     },
-  ].filter((item) => item.count > 0);
+  ];
+
+  const items = allItems.filter((item) => item.isError || item.count > 0);
+  const hasError = allItems.some((item) => item.isError);
 
   return (
     <>
@@ -121,33 +139,48 @@ const NeedsAttentionCard = ({ stats }: { stats: PlatformStats | undefined }) => 
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {items.length === 0 ? (
+          {items.length === 0 && !hasError ? (
             <div className="flex items-center gap-2 text-[#0F766E] py-2">
               <CircleCheck className="h-4 w-4" />
               <span className="text-sm font-medium">All clear</span>
             </div>
           ) : (
             <div className="space-y-2.5">
-              {items.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={item.onClick}
-                  className={cn(
-                    'w-full flex items-center justify-between p-3 text-left',
-                    ADMIN_SURFACE,
-                    'hover:bg-[#F1F5F9] transition-colors duration-150'
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
-                    <span className="text-sm text-[#0F172A]">
-                      <span className="font-semibold">{item.count}</span> {item.label}
+              {items.map((item) =>
+                item.isError ? (
+                  <div
+                    key={item.key}
+                    className={cn(
+                      'w-full flex items-center gap-3 p-3 text-left',
+                      ADMIN_SURFACE
+                    )}
+                  >
+                    <CircleAlert className="h-4 w-4 text-destructive shrink-0" />
+                    <span className="text-sm font-medium text-destructive">
+                      {item.errorLabel}
                     </span>
                   </div>
-                  <ChevronRight className="h-4 w-4 text-[#64748B] shrink-0" />
-                </button>
-              ))}
+                ) : (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={item.onClick}
+                    className={cn(
+                      'w-full flex items-center justify-between p-3 text-left',
+                      ADMIN_SURFACE,
+                      ADMIN_SURFACE_HOVER
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span className="text-sm text-[#0F172A]">
+                        <span className="font-semibold">{item.count}</span> {item.label}
+                      </span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-[#64748B] shrink-0" />
+                  </button>
+                )
+              )}
             </div>
           )}
         </CardContent>

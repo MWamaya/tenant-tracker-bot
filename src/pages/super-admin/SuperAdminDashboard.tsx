@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { formatDate } from '@/lib/dates';
 import { ROUTES } from '@/lib/routes';
-import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
 const StatCard = ({
@@ -172,7 +172,7 @@ const SuperAdminDashboard = () => {
           />
         </div>
 
-        <NeedsAttentionCard stats={stats} />
+        <NeedsAttentionCard stats={stats} statsError={statsError} />
 
         {/* Recent Landlords */}
         <Card className={ADMIN_CARD}>
@@ -201,7 +201,7 @@ const SuperAdminDashboard = () => {
                 {recentLandlords.map((landlord) => (
                   <div
                     key={landlord.id}
-                    className={cn('flex items-center justify-between p-3', ADMIN_SURFACE, 'hover:bg-[#F1F5F9] transition-colors duration-150')}
+                    className={cn('flex items-center justify-between p-3', ADMIN_SURFACE, ADMIN_SURFACE_HOVER)}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-[#CCFBF1] border border-[#0F766E]/20 flex items-center justify-center">
