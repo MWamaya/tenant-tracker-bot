@@ -75,81 +75,81 @@ const EditPlanDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-[#121a2e] border-white/10 text-white max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit {plan?.name}</DialogTitle>
-          <DialogDescription className="text-slate-400">
+          <DialogDescription className="text-[#64748B]">
             Plan name isn't editable here — the public site matches plans by name.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label className="text-slate-200">Price (KES / {plan?.duration_days} days)</Label>
+            <Label >Price (KES / {plan?.duration_days} days)</Label>
             <Input
               type="number"
               min="0"
-              className="bg-white/[0.04] border-white/10"
+              className=""
               value={price}
               onChange={(e) => setPrice(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-200">Description</Label>
+            <Label >Description</Label>
             <Input
-              className="bg-white/[0.04] border-white/10"
+              className=""
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-slate-200">Max Properties</Label>
+              <Label >Max Properties</Label>
               <Input
                 type="number"
                 min="0"
                 placeholder="Unlimited"
-                className="bg-white/[0.04] border-white/10"
+                className=""
                 value={maxProperties}
                 onChange={(e) => setMaxProperties(e.target.value)}
               />
             </div>
             <div className="space-y-2">
-              <Label className="text-slate-200">Max Tenants</Label>
+              <Label >Max Tenants</Label>
               <Input
                 type="number"
                 min="0"
                 placeholder="Unlimited"
-                className="bg-white/[0.04] border-white/10"
+                className=""
                 value={maxTenants}
                 onChange={(e) => setMaxTenants(e.target.value)}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-200">SMS Tokens Included</Label>
+            <Label >SMS Tokens Included</Label>
             <Input
               type="number"
               min="0"
-              className="bg-white/[0.04] border-white/10"
+              className=""
               value={smsTokens}
               onChange={(e) => setSmsTokens(e.target.value)}
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-slate-200">Features (one per line)</Label>
+            <Label >Features (one per line)</Label>
             <Textarea
-              className="bg-white/[0.04] border-white/10 min-h-[100px]"
+              className="min-h-[100px]"
               value={features}
               onChange={(e) => setFeatures(e.target.value)}
             />
           </div>
           <div className="flex items-center justify-between">
-            <Label className="text-slate-200">Active</Label>
+            <Label >Active</Label>
             <Switch checked={isActive} onCheckedChange={setIsActive} />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="bg-transparent border-white/10 text-slate-300 hover:bg-white/10 hover:text-white">
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[#E2E8F0] text-[#1E3A5F] hover:bg-[#F1F5F9]">
             Cancel
           </Button>
           <Button
@@ -174,8 +174,8 @@ const SubscriptionsPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">Subscription Plans</h1>
-            <p className="text-slate-400">Manage subscription plans and pricing</p>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">Subscription Plans</h1>
+            <p className="text-[#64748B]">Manage subscription plans and pricing</p>
           </div>
         </div>
 
@@ -183,7 +183,7 @@ const SubscriptionsPage = () => {
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-80 bg-white/[0.06]" />
+              <Skeleton key={i} className="h-80 bg-[#E2E8F0]" />
             ))}
           </div>
         ) : (
@@ -191,40 +191,40 @@ const SubscriptionsPage = () => {
             {plans?.map((plan) => (
               <Card
                 key={plan.id}
-                className={cn(ADMIN_CARD, plan.name === 'Pro' && 'ring-2 ring-primary')}
+                className={cn(ADMIN_CARD, plan.name === 'Pro' && 'ring-2 ring-[#0F766E]')}
               >
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg font-semibold tracking-tight text-white">{plan.name}</CardTitle>
+                    <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">{plan.name}</CardTitle>
                     <div className="flex items-center gap-2">
-                      {plan.name === 'Pro' && <Badge className="bg-primary">Popular</Badge>}
+                      {plan.name === 'Pro' && <Badge className="bg-[#0F766E]">Popular</Badge>}
                       <Button
                         size="icon"
                         variant="ghost"
-                        className="h-7 w-7 text-slate-400 hover:text-white hover:bg-white/10"
+                        className="h-7 w-7 text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9]"
                         onClick={() => setEditingPlan(plan)}
                       >
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     </div>
                   </div>
-                  <CardDescription className="text-slate-400">
+                  <CardDescription className="text-[#64748B]">
                     {plan.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {/* Pricing */}
                   <div>
-                    <span className="text-3xl font-bold text-white">
+                    <span className="text-3xl font-bold text-[#0F172A]">
                       KES {plan.price.toLocaleString()}
                     </span>
-                    <span className="text-slate-400">/{plan.duration_days} days</span>
+                    <span className="text-[#64748B]">/{plan.duration_days} days</span>
                   </div>
 
                   {/* Limits */}
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <Building className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-2 text-[#0F172A]">
+                      <Building className="h-4 w-4 text-[#0F766E]" />
                       <span>
                         {plan.max_properties === null
                           ? 'Unlimited'
@@ -232,23 +232,23 @@ const SubscriptionsPage = () => {
                         properties
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <Users className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-2 text-[#0F172A]">
+                      <Users className="h-4 w-4 text-[#0F766E]" />
                       <span>
                         {plan.max_tenants === null ? 'Unlimited' : plan.max_tenants}{' '}
                         tenants
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-slate-300">
-                      <MessageSquare className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-2 text-[#0F172A]">
+                      <MessageSquare className="h-4 w-4 text-[#0F766E]" />
                       <span>{plan.sms_tokens_included} SMS tokens</span>
                     </div>
                   </div>
 
                   {/* Features */}
-                  <div className="space-y-2 pt-4 border-t border-white/10">
+                  <div className="space-y-2 pt-4 border-t border-[#E2E8F0]">
                     {plan.features.map((feature, index) => (
-                      <div key={index} className="flex items-center gap-2 text-sm text-slate-300">
+                      <div key={index} className="flex items-center gap-2 text-sm text-[#0F172A]">
                         <Check className="h-4 w-4 text-green-400" />
                         <span>{feature}</span>
                       </div>
