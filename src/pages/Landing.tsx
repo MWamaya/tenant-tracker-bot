@@ -333,7 +333,7 @@ const Landing = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
               <div className="animate-slide-up">
                 <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-3 py-1 text-xs font-bold">
-                  Built for Kenyan landlords
+                  🇰🇪 Built for Kenyan landlords
                 </span>
 
                 <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[0.98] text-foreground drop-shadow-sm">
@@ -359,7 +359,7 @@ const Landing = () => {
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-foreground/80 drop-shadow-sm">
-                  <span className="font-semibold text-foreground">Kenya-first</span>
+                  <span className="font-semibold text-foreground">🇰🇪 Kenya-first</span>
                   <span className="flex items-center gap-1"><Smartphone className="h-3.5 w-3.5 text-success" /> M-Pesa</span>
                   <span className="flex items-center gap-1"><Landmark className="h-3.5 w-3.5 text-success" /> Bank payments</span>
                   <span className="flex items-center gap-1"><Bell className="h-3.5 w-3.5 text-success" /> Automated reminders</span>
@@ -624,7 +624,7 @@ const Landing = () => {
         {/* Footer */}
         <footer className="px-4 sm:px-8 py-8 max-w-5xl mx-auto text-xs text-muted-foreground">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span>© {new Date().getFullYear()} KODI PAP. Built for Kenyan landlords.</span>
+            <span>© {new Date().getFullYear()} KODI PAP. Built for Kenyan landlords. 🇰🇪</span>
             <div className="flex items-center gap-5">
               <a href="#features" className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Features</a>
               <a href="#pricing" className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Pricing</a>
