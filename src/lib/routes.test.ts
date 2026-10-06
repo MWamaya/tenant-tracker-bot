@@ -7,8 +7,19 @@ describe('ROUTES', () => {
   });
 
   it('prefixes every landlord and super-admin path with /app', () => {
-    const { LANDING, ...rest } = ROUTES;
-    for (const [key, value] of Object.entries(rest)) {
+    // Public marketing/legal/lead-intake pages live at the bare root, not
+    // under the authenticated /app shell — exclude them from this check.
+    const PUBLIC_ROUTE_KEYS = new Set([
+      'LANDING',
+      'PRIVACY_POLICY',
+      'TERMS_OF_USE',
+      'COOKIE_POLICY',
+      'REFUND_CANCELLATION',
+      'CONTACT',
+      'GET_STARTED',
+    ]);
+    for (const [key, value] of Object.entries(ROUTES)) {
+      if (PUBLIC_ROUTE_KEYS.has(key)) continue;
       expect(value.startsWith('/app')).toBe(true);
     }
   });
@@ -16,6 +27,12 @@ describe('ROUTES', () => {
   it('has the exact expected value for every route', () => {
     expect(ROUTES).toEqual({
       LANDING: '/',
+      PRIVACY_POLICY: '/privacy-policy',
+      TERMS_OF_USE: '/terms-of-use',
+      COOKIE_POLICY: '/cookie-policy',
+      REFUND_CANCELLATION: '/refund-cancellation',
+      CONTACT: '/contact',
+      GET_STARTED: '/get-started',
       DASHBOARD: '/app',
       AUTH: '/app/auth',
       RESET_PASSWORD: '/app/reset-password',
@@ -37,6 +54,7 @@ describe('ROUTES', () => {
       SUPER_ADMIN_AUDIT_LOGS: '/app/super-admin/audit-logs',
       SUPER_ADMIN_SETTINGS: '/app/super-admin/settings',
       SUPER_ADMIN_PROPERTIES: '/app/super-admin/properties',
+      SUPER_ADMIN_ONBOARDING_REQUESTS: '/app/super-admin/onboarding-requests',
     });
   });
 });
