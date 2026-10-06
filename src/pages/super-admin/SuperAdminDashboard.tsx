@@ -1,5 +1,6 @@
 import { usePlatformStats, useLandlords, useNewOnboardingRequestsCount } from '@/hooks/useSuperAdminData';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
+import NeedsAttentionCard from '@/components/super-admin/NeedsAttentionCard';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -170,6 +171,8 @@ const SuperAdminDashboard = () => {
             error={statsError}
           />
         </div>
+
+        <NeedsAttentionCard stats={stats} />
 
         {/* Recent Landlords */}
         <Card className={ADMIN_CARD}>
