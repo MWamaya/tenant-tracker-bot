@@ -545,6 +545,43 @@ export const useNewOnboardingRequestsCount = () => {
   });
 };
 
+// Hook to fetch the platform-wide count of bank-email parses that failed
+// (email_logs.status === 'failed'), for the dashboard's Needs Attention
+// widget. Independent useQuery (not folded into a combined hook) so one
+// signal failing doesn't blank the others on the dashboard.
+export const useFailedEmailLogsCount = () => {
+  return useQuery({
+    queryKey: ['needs-attention-failed-email-logs-count'],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('email_logs')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'failed');
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
+// Hook to fetch the platform-wide count of webhook deliveries that never
+// finished processing (webhooks_log.processed === false), for the
+// dashboard's Needs Attention widget.
+export const useUnprocessedWebhooksCount = () => {
+  return useQuery({
+    queryKey: ['needs-attention-unprocessed-webhooks-count'],
+    queryFn: async (): Promise<number> => {
+      const { count, error } = await supabase
+        .from('webhooks_log')
+        .select('*', { count: 'exact', head: true })
+        .eq('processed', false);
+
+      if (error) throw error;
+      return count || 0;
+    },
+  });
+};
+
 // Mutation to update an onboarding request's triage status
 export const useUpdateOnboardingStatus = () => {
   const queryClient = useQueryClient();
