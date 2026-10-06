@@ -1,11 +1,16 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import { useOnboardingRequests, useUpdateOnboardingStatus } from '@/hooks/useSuperAdminData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -13,12 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Phone, Mail, Check, X, PhoneCall, UserPlus } from 'lucide-react';
+import { Search, Phone, Mail, Check, X, PhoneCall, UserPlus, MoreVertical } from 'lucide-react';
 import { formatDateTime } from '@/lib/dates';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
-import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE } from '@/lib/adminStatusColors';
-import { cn } from '@/lib/utils';
+import { DataTable } from '@/components/super-admin/DataTable';
+import { useTableViewState } from '@/hooks/useTableViewState';
+import type { CsvColumn } from '@/lib/csvExport';
+import { STATUS_BADGE_CLASSES, ADMIN_CARD } from '@/lib/adminStatusColors';
 
 const STATUS_OPTIONS = ['new', 'contacted', 'converted', 'dismissed'];
 
@@ -41,8 +48,16 @@ const OnboardingRequestsPage = () => {
   const { data: requests, isLoading } = useOnboardingRequests();
   const updateStatus = useUpdateOnboardingStatus();
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const {
+    search: searchQuery,
+    setSearch: setSearchQuery,
+    statusFilter,
+    setStatusFilter,
+    sorting,
+    setSorting,
+    columnVisibility,
+    setColumnVisibility,
+  } = useTableViewState('super-admin-onboarding-requests');
   const [createAccountFor, setCreateAccountFor] = useState<OnboardingRequest | null>(null);
 
   const filteredRequests = requests?.filter((r) => {
@@ -59,13 +74,101 @@ const OnboardingRequestsPage = () => {
     updateStatus.mutate({ requestId, status });
   };
 
+  const columns = useMemo<ColumnDef<OnboardingRequest>[]>(
+    () => [
+      { id: 'Name', accessorKey: 'full_name', header: 'Name' },
+      { id: 'Email', accessorKey: 'email', header: 'Email' },
+      { id: 'Phone', accessorKey: 'phone', header: 'Phone' },
+      {
+        id: 'Plan',
+        accessorKey: 'plan',
+        header: 'Plan',
+        cell: ({ row }) => (
+          <Badge variant="outline" className="border-[#0F766E]/40 text-[#0F766E]">
+            {row.original.plan}
+          </Badge>
+        ),
+      },
+      {
+        id: 'Status',
+        accessorKey: 'status',
+        header: 'Status',
+        cell: ({ row }) => (
+          <Badge variant="outline" className={getStatusBadgeColor(row.original.status)}>
+            {row.original.status}
+          </Badge>
+        ),
+      },
+      {
+        id: 'Created',
+        accessorKey: 'created_at',
+        header: 'Created',
+        cell: ({ row }) => formatDateTime(row.original.created_at),
+      },
+      {
+        id: 'Actions',
+        header: 'Actions',
+        enableHiding: false,
+        enableSorting: false,
+        cell: ({ row }) => {
+          const request = row.original;
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" className="p-1.5 rounded hover:bg-[#F1F5F9]">
+                  <MoreVertical className="h-4 w-4 text-[#64748B]" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {request.status === 'new' && (
+                  <DropdownMenuItem onClick={() => handleStatusChange(request.id, 'contacted')}>
+                    <PhoneCall className="h-4 w-4 mr-2" />
+                    Mark contacted
+                  </DropdownMenuItem>
+                )}
+                {request.status !== 'converted' && (
+                  <DropdownMenuItem onClick={() => setCreateAccountFor(request)}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Create account
+                  </DropdownMenuItem>
+                )}
+                {request.status !== 'converted' && (
+                  <DropdownMenuItem onClick={() => handleStatusChange(request.id, 'converted')}>
+                    <Check className="h-4 w-4 mr-2 text-green-600" />
+                    Mark converted
+                  </DropdownMenuItem>
+                )}
+                {request.status !== 'dismissed' && (
+                  <DropdownMenuItem onClick={() => handleStatusChange(request.id, 'dismissed')}>
+                    <X className="h-4 w-4 mr-2 text-red-600" />
+                    Dismiss
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          );
+        },
+      },
+    ],
+    [handleStatusChange]
+  );
+
+  const csvColumns: CsvColumn<OnboardingRequest>[] = [
+    { header: 'Name', accessor: (r) => r.full_name },
+    { header: 'Email', accessor: (r) => r.email },
+    { header: 'Phone', accessor: (r) => r.phone },
+    { header: 'Plan', accessor: (r) => r.plan },
+    { header: 'Status', accessor: (r) => r.status },
+    { header: 'Created', accessor: (r) => r.created_at },
+  ];
+
   return (
     <SuperAdminLayout>
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Onboarding Requests</h1>
-          <p className="text-slate-400">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">Onboarding Requests</h1>
+          <p className="text-[#64748B]">
             Leads from the public "Get started" form — reach out and onboard them.
           </p>
         </div>
@@ -75,19 +178,19 @@ const OnboardingRequestsPage = () => {
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3 top-3 h-4 w-4 text-[#64748B]" />
                 <Input
                   placeholder="Search by name, email, or phone..."
-                  className="pl-10 bg-white/[0.04] border-white/10 text-white"
+                  className="pl-10"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-48 bg-white/[0.04] border-white/10 text-white">
+                <SelectTrigger className="w-full sm:w-48">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
-                <SelectContent className="bg-[#121a2e] border-white/10">
+                <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   {STATUS_OPTIONS.map((s) => (
                     <SelectItem key={s} value={s} className="capitalize">
@@ -103,101 +206,24 @@ const OnboardingRequestsPage = () => {
         {/* Requests List */}
         <Card className={ADMIN_CARD}>
           <CardHeader>
-            <CardTitle className="text-lg font-semibold tracking-tight text-white">Requests ({filteredRequests?.length || 0})</CardTitle>
-            <CardDescription className="text-slate-400">
+            <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">Requests ({filteredRequests?.length || 0})</CardTitle>
+            <CardDescription className="text-[#64748B]">
               Newest requests first
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <Skeleton key={i} className="h-20 w-full bg-white/[0.06]" />
-                ))}
-              </div>
-            ) : filteredRequests?.length === 0 ? (
-              <p className="text-slate-400 text-center py-8">No onboarding requests found</p>
-            ) : (
-              <div className="space-y-2.5">
-                {filteredRequests?.map((request) => (
-                  <div
-                    key={request.id}
-                    className={cn('flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4', ADMIN_SURFACE, 'hover:bg-white/[0.06] transition-colors duration-150')}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 shrink-0 rounded-full bg-gradient-to-br from-primary/25 to-primary/5 border border-primary/20 flex items-center justify-center">
-                        <span className="text-primary font-bold text-lg">
-                          {request.full_name[0]}
-                        </span>
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium text-white truncate">{request.full_name}</p>
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
-                          <span className="flex items-center gap-1">
-                            <Mail className="h-3.5 w-3.5" /> {request.email}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Phone className="h-3.5 w-3.5" /> {request.phone}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-500 mt-1">
-                          {formatDateTime(request.created_at)}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
-                      <Badge variant="outline" className="border-primary/40 text-primary">
-                        {request.plan}
-                      </Badge>
-                      <Badge variant="outline" className={getStatusBadgeColor(request.status)}>
-                        {request.status}
-                      </Badge>
-
-                      {request.status === 'new' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-transparent border-white/10 text-slate-200 hover:bg-white/10"
-                          onClick={() => handleStatusChange(request.id, 'contacted')}
-                        >
-                          <PhoneCall className="h-4 w-4 mr-1.5" /> Mark contacted
-                        </Button>
-                      )}
-                      {request.status !== 'converted' && (
-                        <Button
-                          size="sm"
-                          className="bg-primary hover:bg-primary/90"
-                          onClick={() => setCreateAccountFor(request)}
-                        >
-                          <UserPlus className="h-4 w-4 mr-1.5" /> Create account
-                        </Button>
-                      )}
-                      {request.status !== 'converted' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-transparent border-green-600/50 text-green-400 hover:bg-green-500/10"
-                          onClick={() => handleStatusChange(request.id, 'converted')}
-                        >
-                          <Check className="h-4 w-4 mr-1.5" /> Mark converted
-                        </Button>
-                      )}
-                      {request.status !== 'dismissed' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-transparent border-red-600/50 text-red-400 hover:bg-red-500/10"
-                          onClick={() => handleStatusChange(request.id, 'dismissed')}
-                        >
-                          <X className="h-4 w-4 mr-1.5" /> Dismiss
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <DataTable<OnboardingRequest>
+              columns={columns}
+              data={filteredRequests || []}
+              sorting={sorting}
+              onSortingChange={setSorting}
+              columnVisibility={columnVisibility}
+              onColumnVisibilityChange={setColumnVisibility}
+              csvColumns={csvColumns}
+              csvFilename="kodipap-onboarding-requests.csv"
+              isLoading={isLoading}
+              emptyMessage="No onboarding requests found"
+            />
           </CardContent>
         </Card>
       </div>
