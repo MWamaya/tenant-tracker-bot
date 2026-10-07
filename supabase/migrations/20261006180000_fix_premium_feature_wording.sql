@@ -5,7 +5,7 @@
 update public.subscription_plans
 set features = (
   select jsonb_agg(
-    case when value = 'All Professional features' then '"All Pro features"'::jsonb else value end
+    case when value = '"All Professional features"'::jsonb then '"All Pro features"'::jsonb else value end
   )
   from jsonb_array_elements(features) as value
 )
