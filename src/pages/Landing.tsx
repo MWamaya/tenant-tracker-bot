@@ -174,7 +174,7 @@ const Reveal = ({
 
 /** The "live dashboard" mockup card used in the hero. */
 const DashboardMockup = () => (
-  <div className="rounded-2xl border bg-card shadow-2xl overflow-hidden">
+  <div className="rounded-3xl sm:rounded-2xl border bg-card shadow-2xl overflow-hidden">
     <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
       <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
       <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
@@ -280,7 +280,7 @@ const Landing = () => {
         description="Collect rent the smart way. KODI PAP automates M-Pesa and bank payment matching, tenant statements and reminders for landlords in Kenya."
         path="/"
       />
-      <div className="min-h-screen">
+      <div className="min-h-screen pb-24 sm:pb-0">
         {/* Fixed nav — pill on desktop, full-width bar on mobile (logo far left, hamburger far right) */}
         <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex sm:justify-center pointer-events-none">
           <nav
@@ -438,7 +438,7 @@ const Landing = () => {
 
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
               <Reveal>
-                <div className="h-full rounded-2xl border border-background/20 bg-background/[0.08] p-6">
+                <div className="h-full rounded-3xl sm:rounded-2xl border border-background/20 bg-background/[0.08] p-6">
                   <h3 className="font-semibold mb-4">Without KODI PAP</h3>
                   <ul className="space-y-3">
                     {WITHOUT.map((item) => (
@@ -451,7 +451,7 @@ const Landing = () => {
                 </div>
               </Reveal>
               <Reveal delay={100}>
-                <div className="h-full rounded-2xl bg-gradient-to-br from-success to-success/80 p-6 shadow-2xl">
+                <div className="h-full rounded-3xl sm:rounded-2xl bg-gradient-to-br from-success to-success/80 p-6 shadow-2xl">
                   <h3 className="font-semibold mb-4 text-success-foreground">With KODI PAP</h3>
                   <ul className="space-y-3">
                     {WITH.map((item) => (
@@ -482,7 +482,7 @@ const Landing = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {STEPS.map((step, i) => (
               <Reveal key={step.title} delay={i * 100}>
-                <div className="h-full rounded-2xl border bg-card p-5 shadow-sm">
+                <div className="h-full rounded-3xl sm:rounded-2xl border bg-card p-5 shadow-sm">
                   <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary text-xs font-bold">
                     {String(i + 1).padStart(2, '0')}
                   </div>
@@ -517,7 +517,7 @@ const Landing = () => {
             </Reveal>
 
             <Reveal delay={100}>
-              <div className="rounded-2xl border bg-card shadow-lg overflow-hidden">
+              <div className="rounded-3xl sm:rounded-2xl border bg-card shadow-lg overflow-hidden">
                 <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
                   <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
@@ -577,7 +577,7 @@ const Landing = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {FEATURES.map((feature, i) => (
                 <Reveal key={feature.title} delay={(i % 3) * 100}>
-                  <div className="h-full rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                  <div className="h-full rounded-3xl sm:rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                     <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary">
                       <feature.icon className="h-[18px] w-[18px]" />
                     </div>
@@ -606,7 +606,7 @@ const Landing = () => {
             {plans.map((plan, i) => (
                   <Reveal key={plan.name} delay={i * 100}>
                     <div
-                      className={`relative h-full rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                      className={`relative h-full rounded-3xl sm:rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
                         plan.highlighted ? 'border-primary shadow-lg sm:scale-105' : ''
                       }`}
                     >
@@ -713,8 +713,22 @@ const Landing = () => {
           </div>
         </footer>
 
+        {/* Sticky mobile CTA bar — floating glass pill, app-style persistent conversion action */}
+        <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 w-full max-w-sm rounded-full border bg-background/80 backdrop-blur-xl shadow-lg px-2 py-2">
+            <Button asChild variant="ghost" size="sm" className="rounded-full">
+              <Link to={ROUTES.AUTH}>Log in</Link>
+            </Button>
+            <Button asChild size="sm" className="flex-1 rounded-full gap-1.5">
+              <Link to={ROUTES.GET_STARTED}>
+                Get started <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+
         <div
-          className={`group fixed bottom-20 right-4 sm:right-8 z-40 transition-all duration-200 ${
+          className={`group fixed bottom-36 right-4 sm:bottom-20 sm:right-8 z-40 transition-all duration-200 ${
             showScrollToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
@@ -732,7 +746,7 @@ const Landing = () => {
         </div>
 
         <div
-          className={`group fixed bottom-6 right-4 sm:right-8 z-40 transition-all duration-200 ${
+          className={`group fixed bottom-24 right-4 sm:bottom-6 sm:right-8 z-40 transition-all duration-200 ${
             showScrollToBottom ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >

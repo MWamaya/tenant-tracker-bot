@@ -1,21 +1,16 @@
-import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Home, 
-  Users, 
-  CreditCard, 
-  FileText, 
+import {
+  LayoutDashboard,
+  Home,
+  Users,
+  CreditCard,
+  FileText,
   Settings,
   Mail,
   LogOut,
-  Menu,
-  X,
   Building2,
   ListChecks
 } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useReconciliation } from '@/hooks/useReconciliation';
 import { toast } from 'sonner';
@@ -33,7 +28,7 @@ const navigation = [
   { name: 'Email Logs', href: ROUTES.EMAIL_LOGS, icon: Mail },
 ];
 
-const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
+const SidebarContent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { signOut } = useAuth();
@@ -50,7 +45,6 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       {/* Logo */}
       <NavLink
         to={ROUTES.DASHBOARD}
-        onClick={onNavigate}
         className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 hover:bg-sidebar-accent/50 transition-colors"
       >
         <img src={kodiPapLogo} alt="Kodi Pap Logo" className="h-10 w-auto" />
@@ -68,7 +62,6 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
             <NavLink
               key={item.name}
               to={item.href}
-              onClick={onNavigate}
               className={`sidebar-link ${isActive ? 'sidebar-link-active' : ''}`}
             >
               <item.icon className="h-5 w-5" />
@@ -87,13 +80,12 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
       <div className="border-t border-sidebar-border p-3">
         <NavLink
           to={ROUTES.SETTINGS}
-          onClick={onNavigate}
           className={`sidebar-link ${location.pathname === ROUTES.SETTINGS ? 'sidebar-link-active' : ''}`}
         >
           <Settings className="h-5 w-5" />
           <span>Settings</span>
         </NavLink>
-        <button 
+        <button
           onClick={handleLogout}
           className="sidebar-link w-full text-left text-destructive/80 hover:text-destructive hover:bg-destructive/10"
         >
@@ -106,42 +98,9 @@ const SidebarContent = ({ onNavigate }: { onNavigate?: () => void }) => {
 };
 
 export const Sidebar = () => {
-  const [open, setOpen] = useState(false);
-  const navigate = useNavigate();
-
   return (
-    <>
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-sidebar border-b border-sidebar-border">
-        <div className="flex h-14 items-center justify-between px-4">
-          <button
-            type="button"
-            onClick={() => {
-              navigate(ROUTES.DASHBOARD);
-              setOpen(true);
-            }}
-            className="flex items-center gap-2"
-          >
-            <img src={kodiPapLogo} alt="Kodi Pap Logo" className="h-8 w-auto" />
-            <span className="text-base font-bold text-sidebar-foreground tracking-tight">KODI PAP</span>
-          </button>
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-sidebar-foreground">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-64 p-0 bg-sidebar border-sidebar-border">
-              <SidebarContent onNavigate={() => setOpen(false)} />
-            </SheetContent>
-          </Sheet>
-        </div>
-      </div>
-
-      {/* Desktop Sidebar */}
-      <aside className="hidden lg:block fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar">
-        <SidebarContent />
-      </aside>
-    </>
+    <aside className="hidden lg:block fixed left-0 top-0 z-40 h-screen w-64 bg-sidebar">
+      <SidebarContent />
+    </aside>
   );
 };
