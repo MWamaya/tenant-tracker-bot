@@ -23,6 +23,9 @@ import {
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
 import heroImage from '@/assets/landing-hero.jpg';
+import heroImageKibera from '@/assets/new landings/Kibera-2.jpeg';
+import heroImageTower from '@/assets/new landings/b061011516dc4f365758fd2577d554bc.jpg';
+import heroImageCourtyard from '@/assets/new landings/c1c73dc65af87f1e7b7b624de4a46f848d342728.webp';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { PUBLIC_PLANS } from '@/lib/plans';
@@ -168,6 +171,42 @@ const Reveal = ({
     >
       {children}
     </div>
+  );
+};
+
+const HERO_SLIDES = [
+  { src: heroImage, alt: 'Modern apartment block in Nairobi, Kenya' },
+  { src: heroImageKibera, alt: 'Aerial view of a gated apartment complex in Kibera, Nairobi' },
+  { src: heroImageTower, alt: 'High-rise residential tower under a clear sky' },
+  { src: heroImageCourtyard, alt: 'Landscaped courtyard between apartment blocks' },
+];
+
+/** Slow auto-crossfading background for the hero section. */
+const HeroSlideshow = () => {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <>
+      {HERO_SLIDES.map((slide, i) => (
+        <img
+          key={slide.src}
+          src={slide.src}
+          alt={slide.alt}
+          width={1920}
+          height={1078}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
+            i === active ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      ))}
+    </>
   );
 };
 
@@ -341,15 +380,9 @@ const Landing = () => {
         </nav>
 
         {/* Hero — text sits directly on the photo, no card behind it */}
-        <section className="relative min-h-[88vh] flex items-center overflow-hidden">
+        <section className="relative min-h-screen flex items-center overflow-hidden">
           <div className="absolute inset-0 -z-10">
-            <img
-              src={heroImage}
-              alt="Modern apartment block in Nairobi, Kenya"
-              width={1920}
-              height={1078}
-              className="h-full w-full object-cover"
-            />
+            <HeroSlideshow />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
           </div>
