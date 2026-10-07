@@ -1,8 +1,7 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import {
@@ -11,7 +10,6 @@ import {
   Settings,
   FileText,
   LogOut,
-  Menu,
   Shield,
   Building,
   DollarSign,
@@ -19,10 +17,25 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import SuperAdminTopbar from './SuperAdminTopbar';
+import { SuperAdminMobileTopBar } from './SuperAdminMobileTopBar';
+import SuperAdminMobileTabBar from './SuperAdminMobileTabBar';
 
 interface SuperAdminLayoutProps {
   children: ReactNode;
+  mobileTitle?: string;
+  showBackButton?: boolean;
+  onBack?: () => void;
 }
+
+const titleByPath: Record<string, string> = {
+  [ROUTES.SUPER_ADMIN_ROOT]: 'Dashboard',
+  [ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS]: 'Onboarding Requests',
+  [ROUTES.SUPER_ADMIN_LANDLORDS]: 'Landlords',
+  [ROUTES.SUPER_ADMIN_PAYMENTS]: 'Payments',
+  [ROUTES.SUPER_ADMIN_PROPERTIES]: 'Properties',
+  [ROUTES.SUPER_ADMIN_AUDIT_LOGS]: 'Audit Logs',
+  [ROUTES.SUPER_ADMIN_SETTINGS]: 'Settings',
+};
 
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: ROUTES.SUPER_ADMIN_ROOT },
@@ -105,28 +118,13 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   );
 };
 
-const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+const SuperAdminLayout = ({ children, mobileTitle, showBackButton, onBack }: SuperAdminLayoutProps) => {
+  const location = useLocation();
+  const title = mobileTitle ?? titleByPath[location.pathname] ?? 'Super Admin';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      {/* Mobile Header */}
-      <header className="lg:hidden sticky top-0 z-50 flex items-center justify-between p-4 bg-[#0F172A] border-b border-white/10">
-        <div className="flex items-center gap-2">
-          <Shield className="h-6 w-6 text-[#2DD4BF]" />
-          <span className="font-semibold tracking-tight text-white">Super Admin</span>
-        </div>
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-white">
-              <Menu className="h-6 w-6" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-72 bg-[#0F172A] border-white/10">
-            <NavContent onNavigate={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
-      </header>
+      <SuperAdminMobileTopBar title={title} showBackButton={showBackButton} onBack={onBack} />
 
       <div className="flex">
         {/* Desktop Sidebar */}
@@ -135,13 +133,15 @@ const SuperAdminLayout = ({ children }: SuperAdminLayoutProps) => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-h-screen">
+        <main className="flex-1 min-h-screen pb-20 lg:pb-0">
           <SuperAdminTopbar />
           <div className="p-4 lg:p-8">
             {children}
           </div>
         </main>
       </div>
+
+      <SuperAdminMobileTabBar />
     </div>
   );
 };

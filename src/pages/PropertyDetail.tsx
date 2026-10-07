@@ -193,7 +193,7 @@ const PropertyDetail = () => {
 
   if (isLoading) {
     return (
-      <MainLayout>
+      <MainLayout mobileTitle="Property" showBackButton onBack={() => navigate(ROUTES.PROPERTIES)}>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -203,7 +203,7 @@ const PropertyDetail = () => {
 
   if (!property) {
     return (
-      <MainLayout>
+      <MainLayout mobileTitle="Property" showBackButton onBack={() => navigate(ROUTES.PROPERTIES)}>
         <div className="text-center py-12">
           <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
           <h3 className="text-lg font-medium">Property not found</h3>
@@ -218,7 +218,7 @@ const PropertyDetail = () => {
   }
 
   return (
-    <MainLayout>
+    <MainLayout mobileTitle={property.name} showBackButton onBack={() => navigate(ROUTES.PROPERTIES)}>
       <div className="space-y-6">
         <AppBreadcrumbs />
 

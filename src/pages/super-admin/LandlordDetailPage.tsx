@@ -210,7 +210,7 @@ const LandlordDetailPage = () => {
 
   if (landlordLoading) {
     return (
-      <SuperAdminLayout>
+      <SuperAdminLayout mobileTitle="Landlord" showBackButton onBack={() => navigate(ROUTES.SUPER_ADMIN_LANDLORDS)}>
         <div className="space-y-6">
           <Skeleton className="h-8 w-48 bg-[#E2E8F0]" />
           <Skeleton className="h-32 w-full bg-[#E2E8F0]" />
@@ -221,7 +221,7 @@ const LandlordDetailPage = () => {
 
   if (!landlord) {
     return (
-      <SuperAdminLayout>
+      <SuperAdminLayout mobileTitle="Landlord" showBackButton onBack={() => navigate(ROUTES.SUPER_ADMIN_LANDLORDS)}>
         <div className="space-y-4">
           <Link to={ROUTES.SUPER_ADMIN_LANDLORDS} className="text-sm text-[#1E3A5F] hover:text-[#1E3A5F]/80 flex items-center gap-1">
             <ArrowLeft className="h-4 w-4" /> Back to Landlords
@@ -233,7 +233,11 @@ const LandlordDetailPage = () => {
   }
 
   return (
-    <SuperAdminLayout>
+    <SuperAdminLayout
+      mobileTitle={landlord.full_name || 'Landlord'}
+      showBackButton
+      onBack={() => navigate(ROUTES.SUPER_ADMIN_LANDLORDS)}
+    >
       <div className="space-y-6">
         <Link to={ROUTES.SUPER_ADMIN_LANDLORDS} className="text-sm text-[#1E3A5F] hover:text-[#1E3A5F]/80 flex items-center gap-1 w-fit">
           <ArrowLeft className="h-4 w-4" /> Back to Landlords

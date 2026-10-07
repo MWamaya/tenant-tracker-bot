@@ -13,7 +13,6 @@ import {
   UserPlus,
   Smartphone,
   ClipboardCheck,
-  Menu,
   RefreshCw,
   Landmark,
   Users,
@@ -174,7 +173,7 @@ const Reveal = ({
 
 /** The "live dashboard" mockup card used in the hero. */
 const DashboardMockup = () => (
-  <div className="rounded-2xl border bg-card shadow-2xl overflow-hidden">
+  <div className="rounded-3xl sm:rounded-2xl border bg-card shadow-2xl overflow-hidden">
     <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
       <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
       <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
@@ -256,7 +255,6 @@ const DashboardMockup = () => (
 );
 
 const Landing = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(true);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const plans = PUBLIC_PLANS;
@@ -280,80 +278,67 @@ const Landing = () => {
         description="Collect rent the smart way. KODI PAP automates M-Pesa and bank payment matching, tenant statements and reminders for landlords in Kenya."
         path="/"
       />
-      <div className="min-h-screen">
-        {/* Fixed nav — pill on desktop, full-width bar on mobile (logo far left, hamburger far right) */}
-        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex sm:justify-center pointer-events-none">
-          <nav
-            className={`pointer-events-auto w-full sm:w-fit border bg-background/70 backdrop-blur-xl shadow-lg transition-[border-radius] duration-200 ${
-              menuOpen ? 'rounded-2xl' : 'rounded-2xl sm:rounded-full'
-            }`}
-          >
-            <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 px-3 sm:px-2 py-2 sm:py-1.5">
-              <Link to={ROUTES.LANDING} className="sm:ml-1.5 sm:mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+      <div className="min-h-screen pb-24 sm:pb-0">
+        {/* Fixed top — desktop: pill nav (logo, links, sign up). Mobile: no bar, just a free-floating logo + colored log in button */}
+        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-between sm:justify-center pointer-events-none">
+          <Link to={ROUTES.LANDING} className="sm:hidden pointer-events-auto rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <img src={kodiPapLogo} alt="KODI PAP" className="h-7 w-auto drop-shadow" />
+          </Link>
+
+          <nav className="hidden sm:block pointer-events-auto w-fit rounded-full border bg-background/70 backdrop-blur-xl shadow-lg">
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <Link to={ROUTES.LANDING} className="ml-1.5 mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto" />
               </Link>
-
-              <div className="hidden sm:flex items-center gap-1">
-                <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  How it works
-                </a>
-                <a href="#features" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Features
-                </a>
-                <a href="#pricing" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Pricing
-                </a>
-                <Button asChild size="sm" className="rounded-full gap-1.5">
-                  <Link to={ROUTES.GET_STARTED}>
-                    Sign up <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Mobile: hamburger toggle, pinned to the far right */}
-              <button
-                type="button"
-                onClick={() => setMenuOpen((v) => !v)}
-                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-                aria-expanded={menuOpen}
-                className="sm:hidden flex items-center justify-center h-11 w-11 -mr-1 rounded-full text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
-            </div>
-
-            {/* Mobile dropdown panel */}
-            <div
-              className={`sm:hidden grid transition-all duration-200 ease-out ${
-                menuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
-              <div className="overflow-hidden">
-                <div className="flex flex-col gap-1 px-3 pb-3 pt-1">
-                  {[
-                    { href: '#how', label: 'How it works' },
-                    { href: '#features', label: 'Features' },
-                    { href: '#pricing', label: 'Pricing' },
-                  ].map((item) => (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMenuOpen(false)}
-                      className="px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                  <Button asChild size="sm" className="mt-1 w-full rounded-full">
-                    <Link to={ROUTES.GET_STARTED} onClick={() => setMenuOpen(false)}>
-                      Sign up
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+              <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                How it works
+              </a>
+              <a href="#features" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Features
+              </a>
+              <a href="#pricing" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Pricing
+              </a>
+              <Button asChild size="sm" className="rounded-full gap-1.5">
+                <Link to={ROUTES.GET_STARTED}>
+                  Sign up <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
             </div>
           </nav>
+
+          <div className="sm:hidden flex items-center gap-2 pointer-events-auto">
+            <Button asChild size="sm" variant="outline" className="rounded-full shadow-lg bg-background/80 backdrop-blur">
+              <Link to={ROUTES.AUTH}>Log in</Link>
+            </Button>
+            <Button asChild size="sm" className="rounded-full shadow-lg">
+              <Link to={ROUTES.GET_STARTED}>Get started</Link>
+            </Button>
+          </div>
         </header>
+
+        {/* Fixed bottom nav — mobile-only floating glass pill with section links + log in + primary CTA */}
+        <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-full border bg-background/70 backdrop-blur-xl shadow-lg px-1.5 py-1.5">
+            <a href="#how" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              How it works
+            </a>
+            <a href="#features" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Features
+            </a>
+            <a href="#pricing" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Pricing
+            </a>
+            {/* <Button asChild size="sm" variant="ghost" className="rounded-full">
+              <Link to={ROUTES.AUTH}>Log in</Link>
+            </Button> */}
+            <Button asChild size="sm" className="rounded-full gap-1">
+              <Link to={ROUTES.GET_STARTED}>
+                Sign up <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </nav>
 
         {/* Hero — text sits directly on the photo, no card behind it */}
         <section className="relative min-h-[88vh] flex items-center overflow-hidden">
@@ -372,7 +357,7 @@ const Landing = () => {
           <Button
             asChild
             size="sm"
-            className="absolute top-20 right-4 sm:top-6 sm:right-8 z-10 gap-1.5 shadow-lg"
+            className="hidden sm:inline-flex absolute top-6 right-8 z-10 gap-1.5 shadow-lg"
           >
             <Link to={ROUTES.AUTH}>
               Log in <ArrowRight className="h-3.5 w-3.5" />
@@ -438,7 +423,7 @@ const Landing = () => {
 
             <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
               <Reveal>
-                <div className="h-full rounded-2xl border border-background/20 bg-background/[0.08] p-6">
+                <div className="h-full rounded-3xl sm:rounded-2xl border border-background/20 bg-background/[0.08] p-6">
                   <h3 className="font-semibold mb-4">Without KODI PAP</h3>
                   <ul className="space-y-3">
                     {WITHOUT.map((item) => (
@@ -451,7 +436,7 @@ const Landing = () => {
                 </div>
               </Reveal>
               <Reveal delay={100}>
-                <div className="h-full rounded-2xl bg-gradient-to-br from-success to-success/80 p-6 shadow-2xl">
+                <div className="h-full rounded-3xl sm:rounded-2xl bg-gradient-to-br from-success to-success/80 p-6 shadow-2xl">
                   <h3 className="font-semibold mb-4 text-success-foreground">With KODI PAP</h3>
                   <ul className="space-y-3">
                     {WITH.map((item) => (
@@ -482,7 +467,7 @@ const Landing = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {STEPS.map((step, i) => (
               <Reveal key={step.title} delay={i * 100}>
-                <div className="h-full rounded-2xl border bg-card p-5 shadow-sm">
+                <div className="h-full rounded-3xl sm:rounded-2xl border bg-card p-5 shadow-sm">
                   <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary text-xs font-bold">
                     {String(i + 1).padStart(2, '0')}
                   </div>
@@ -517,7 +502,7 @@ const Landing = () => {
             </Reveal>
 
             <Reveal delay={100}>
-              <div className="rounded-2xl border bg-card shadow-lg overflow-hidden">
+              <div className="rounded-3xl sm:rounded-2xl border bg-card shadow-lg overflow-hidden">
                 <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
                   <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
                   <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
@@ -577,7 +562,7 @@ const Landing = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {FEATURES.map((feature, i) => (
                 <Reveal key={feature.title} delay={(i % 3) * 100}>
-                  <div className="h-full rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                  <div className="h-full rounded-3xl sm:rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                     <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary">
                       <feature.icon className="h-[18px] w-[18px]" />
                     </div>
@@ -606,7 +591,7 @@ const Landing = () => {
             {plans.map((plan, i) => (
                   <Reveal key={plan.name} delay={i * 100}>
                     <div
-                      className={`relative h-full rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
+                      className={`relative h-full rounded-3xl sm:rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
                         plan.highlighted ? 'border-primary shadow-lg sm:scale-105' : ''
                       }`}
                     >
@@ -714,7 +699,7 @@ const Landing = () => {
         </footer>
 
         <div
-          className={`group fixed bottom-20 right-4 sm:right-8 z-40 transition-all duration-200 ${
+          className={`group fixed bottom-36 right-4 sm:bottom-20 sm:right-8 z-40 transition-all duration-200 ${
             showScrollToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
@@ -732,7 +717,7 @@ const Landing = () => {
         </div>
 
         <div
-          className={`group fixed bottom-6 right-4 sm:right-8 z-40 transition-all duration-200 ${
+          className={`group fixed bottom-24 right-4 sm:bottom-6 sm:right-8 z-40 transition-all duration-200 ${
             showScrollToBottom ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
