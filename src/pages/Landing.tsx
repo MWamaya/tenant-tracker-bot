@@ -13,7 +13,6 @@ import {
   UserPlus,
   Smartphone,
   ClipboardCheck,
-  Menu,
   RefreshCw,
   Landmark,
   Users,
@@ -256,7 +255,6 @@ const DashboardMockup = () => (
 );
 
 const Landing = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(true);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const plans = PUBLIC_PLANS;
@@ -281,79 +279,66 @@ const Landing = () => {
         path="/"
       />
       <div className="min-h-screen pb-24 sm:pb-0">
-        {/* Fixed nav — pill on desktop, full-width bar on mobile (logo far left, hamburger far right) */}
-        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex sm:justify-center pointer-events-none">
-          <nav
-            className={`pointer-events-auto w-full sm:w-fit border bg-background/70 backdrop-blur-xl shadow-lg transition-[border-radius] duration-200 ${
-              menuOpen ? 'rounded-2xl' : 'rounded-2xl sm:rounded-full'
-            }`}
-          >
-            <div className="flex items-center justify-between sm:justify-start gap-1 sm:gap-2 px-3 sm:px-2 py-2 sm:py-1.5">
-              <Link to={ROUTES.LANDING} className="sm:ml-1.5 sm:mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        {/* Fixed top — desktop: pill nav (logo, links, sign up). Mobile: no bar, just a free-floating logo + colored log in button */}
+        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-between sm:justify-center pointer-events-none">
+          <Link to={ROUTES.LANDING} className="sm:hidden pointer-events-auto rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <img src={kodiPapLogo} alt="KODI PAP" className="h-7 w-auto drop-shadow" />
+          </Link>
+
+          <nav className="hidden sm:block pointer-events-auto w-fit rounded-full border bg-background/70 backdrop-blur-xl shadow-lg">
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <Link to={ROUTES.LANDING} className="ml-1.5 mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto" />
               </Link>
-
-              <div className="hidden sm:flex items-center gap-1">
-                <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  How it works
-                </a>
-                <a href="#features" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Features
-                </a>
-                <a href="#pricing" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  Pricing
-                </a>
-                <Button asChild size="sm" className="rounded-full gap-1.5">
-                  <Link to={ROUTES.GET_STARTED}>
-                    Sign up <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
-                </Button>
-              </div>
-
-              {/* Mobile: hamburger toggle, pinned to the far right */}
-              <button
-                type="button"
-                onClick={() => setMenuOpen((v) => !v)}
-                aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-                aria-expanded={menuOpen}
-                className="sm:hidden flex items-center justify-center h-11 w-11 -mr-1 rounded-full text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              </button>
-            </div>
-
-            {/* Mobile dropdown panel */}
-            <div
-              className={`sm:hidden grid transition-all duration-200 ease-out ${
-                menuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
-              <div className="overflow-hidden">
-                <div className="flex flex-col gap-1 px-3 pb-3 pt-1">
-                  {[
-                    { href: '#how', label: 'How it works' },
-                    { href: '#features', label: 'Features' },
-                    { href: '#pricing', label: 'Pricing' },
-                  ].map((item) => (
-                    <a
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMenuOpen(false)}
-                      className="px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      {item.label}
-                    </a>
-                  ))}
-                  <Button asChild size="sm" className="mt-1 w-full rounded-full">
-                    <Link to={ROUTES.GET_STARTED} onClick={() => setMenuOpen(false)}>
-                      Sign up
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+              <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                How it works
+              </a>
+              <a href="#features" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Features
+              </a>
+              <a href="#pricing" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                Pricing
+              </a>
+              <Button asChild size="sm" className="rounded-full gap-1.5">
+                <Link to={ROUTES.GET_STARTED}>
+                  Sign up <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </Button>
             </div>
           </nav>
+
+          <div className="sm:hidden flex items-center gap-2 pointer-events-auto">
+            <Button asChild size="sm" variant="outline" className="rounded-full shadow-lg bg-background/80 backdrop-blur">
+              <Link to={ROUTES.AUTH}>Log in</Link>
+            </Button>
+            <Button asChild size="sm" className="rounded-full shadow-lg">
+              <Link to={ROUTES.GET_STARTED}>Get started</Link>
+            </Button>
+          </div>
         </header>
+
+        {/* Fixed bottom nav — mobile-only floating glass pill with section links + log in + primary CTA */}
+        <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-1 rounded-full border bg-background/70 backdrop-blur-xl shadow-lg px-1.5 py-1.5">
+            <a href="#how" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              How it works
+            </a>
+            <a href="#features" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Features
+            </a>
+            <a href="#pricing" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              Pricing
+            </a>
+            {/* <Button asChild size="sm" variant="ghost" className="rounded-full">
+              <Link to={ROUTES.AUTH}>Log in</Link>
+            </Button> */}
+            <Button asChild size="sm" className="rounded-full gap-1">
+              <Link to={ROUTES.GET_STARTED}>
+                Sign up <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </nav>
 
         {/* Hero — text sits directly on the photo, no card behind it */}
         <section className="relative min-h-[88vh] flex items-center overflow-hidden">
@@ -372,7 +357,7 @@ const Landing = () => {
           <Button
             asChild
             size="sm"
-            className="absolute top-20 right-4 sm:top-6 sm:right-8 z-10 gap-1.5 shadow-lg"
+            className="hidden sm:inline-flex absolute top-6 right-8 z-10 gap-1.5 shadow-lg"
           >
             <Link to={ROUTES.AUTH}>
               Log in <ArrowRight className="h-3.5 w-3.5" />
@@ -712,20 +697,6 @@ const Landing = () => {
             <Link to={ROUTES.CONTACT} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Contact & Support</Link>
           </div>
         </footer>
-
-        {/* Sticky mobile CTA bar — floating glass pill, app-style persistent conversion action */}
-        <div className="sm:hidden fixed bottom-0 inset-x-0 z-40 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-2 w-full max-w-sm rounded-full border bg-background/80 backdrop-blur-xl shadow-lg px-2 py-2">
-            <Button asChild variant="ghost" size="sm" className="rounded-full">
-              <Link to={ROUTES.AUTH}>Log in</Link>
-            </Button>
-            <Button asChild size="sm" className="flex-1 rounded-full gap-1.5">
-              <Link to={ROUTES.GET_STARTED}>
-                Get started <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </Button>
-          </div>
-        </div>
 
         <div
           className={`group fixed bottom-36 right-4 sm:bottom-20 sm:right-8 z-40 transition-all duration-200 ${
