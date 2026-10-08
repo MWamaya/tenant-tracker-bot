@@ -9,9 +9,13 @@ import { activateLandlordSubscription } from '../_shared/subscriptionActivation.
 const MPESA_STK_URL = 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 const MPESA_SANDBOX_STK_URL = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
+const ALLOWED_MONTHS = [1, 3, 6, 12];
+
 interface SubscriptionSTKRequest {
   plan_name: string;
   phone_number: string;
+  /** Billing cycles to prepay at once — 1, 3, 6, or 12. Defaults to 1. */
+  months?: number;
 }
 
 Deno.serve(async (req) => {
@@ -27,7 +31,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { plan_name, phone_number }: SubscriptionSTKRequest = await req.json();
+    const { plan_name, phone_number, months: rawMonths }: SubscriptionSTKRequest = await req.json();
 
     if (!plan_name || !phone_number) {
       return new Response(
@@ -35,6 +39,8 @@ Deno.serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const months = ALLOWED_MONTHS.includes(rawMonths as number) ? (rawMonths as number) : 1;
 
     const supabase = createServiceClient();
 
@@ -52,6 +58,26 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Prepaying multiple cycles only makes sense as a renewal of the plan
+    // you're already on — switching plans stays a single-month action.
+    if (months > 1) {
+      const { data: currentSub } = await supabase
+        .from('landlord_subscriptions')
+        .select('plan_id')
+        .eq('landlord_id', auth.user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (!currentSub || currentSub.plan_id !== plan.id) {
+        return new Response(
+          JSON.stringify({ error: 'Prepaying multiple months is only available when renewing your current plan.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Free plans activate immediately — no M-Pesa round trip needed.
     if (plan.price <= 0) {
       await activateLandlordSubscription(supabase, {
@@ -59,6 +85,7 @@ Deno.serve(async (req) => {
         planId: plan.id,
         paymentReference: 'free_plan',
         amountPaid: 0,
+        months,
       });
 
       return new Response(
@@ -124,19 +151,22 @@ Deno.serve(async (req) => {
 
     // Short, alphanumeric account reference — Safaricom caps this at 12 chars.
     const accountReference = `SUB${plan.name}`.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
+    const totalAmount = plan.price * months;
 
     const stkPayload = {
       BusinessShortCode: shortcode,
       Password: password,
       Timestamp: timestamp,
       TransactionType: 'CustomerPayBillOnline',
-      Amount: Math.round(plan.price),
+      Amount: Math.round(totalAmount),
       PartyA: formattedPhone,
       PartyB: shortcode,
       PhoneNumber: formattedPhone,
       CallBackURL: callbackUrl || defaultCallbackUrl,
       AccountReference: accountReference,
-      TransactionDesc: `KODI PAP ${plan.name} subscription`,
+      TransactionDesc: months > 1
+        ? `KODI PAP ${plan.name} subscription (${months} months)`
+        : `KODI PAP ${plan.name} subscription`,
     };
 
     const stkResponse = await fetch(stkUrl, {
@@ -181,7 +211,8 @@ Deno.serve(async (req) => {
       checkout_request_id: stkResult.CheckoutRequestID,
       merchant_request_id: stkResult.MerchantRequestID,
       phone: formattedPhone,
-      amount: plan.price,
+      amount: totalAmount,
+      months,
       status: 'pending',
     });
 

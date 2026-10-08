@@ -256,6 +256,7 @@ async function handleSubscriptionSTKCallback(
       planId: subRequest.plan_id,
       paymentReference: receiptNumber || callback.CheckoutRequestID,
       amountPaid: amount ?? subRequest.amount,
+      months: subRequest.months,
     });
 
     await supabase

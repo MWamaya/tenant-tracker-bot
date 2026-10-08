@@ -18,20 +18,24 @@ interface MpesaPayDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   planName: string;
+  /** Total amount to charge — monthly price × months. */
   amount: number;
+  /** Billing cycles this payment covers (1, 3, 6, or 12). Defaults to 1. */
+  months?: number;
   onActivated: () => void;
 }
 
-export const MpesaPayDialog = ({ open, onOpenChange, planName, amount, onActivated }: MpesaPayDialogProps) => {
+export const MpesaPayDialog = ({ open, onOpenChange, planName, amount, months = 1, onActivated }: MpesaPayDialogProps) => {
   const { user } = useAuth();
   const { status, failureReason, pay, reset } = useSubscriptionPayment();
   const [phone, setPhone] = useState((user?.user_metadata?.phone as string) || '');
 
   const busy = status === 'requesting' || status === 'awaiting_pin';
+  const planLabel = months > 1 ? `${planName} plan — ${months} months` : `${planName} plan`;
 
   const handlePay = async () => {
     if (!phone.trim()) return;
-    await pay(planName, phone.trim());
+    await pay(planName, phone.trim(), months);
   };
 
   const handleDone = () => {
@@ -66,7 +70,7 @@ export const MpesaPayDialog = ({ open, onOpenChange, planName, amount, onActivat
                   Payment successful <PartyPopper className="h-4 w-4 text-primary" />
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {planName} plan is now active. Receipt for KES {amount.toLocaleString()} confirmed.
+                  {planLabel} is now active. Receipt for KES {amount.toLocaleString()} confirmed.
                 </p>
               </div>
             </div>
@@ -81,7 +85,7 @@ export const MpesaPayDialog = ({ open, onOpenChange, planName, amount, onActivat
             <DialogHeader>
               <DialogTitle>Pay with M-Pesa</DialogTitle>
               <DialogDescription>
-                {planName} plan — KES {amount.toLocaleString()}/month
+                {planLabel} — KES {amount.toLocaleString()}{months > 1 ? ' total' : '/month'}
               </DialogDescription>
             </DialogHeader>
 

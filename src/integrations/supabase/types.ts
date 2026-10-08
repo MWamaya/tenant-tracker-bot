@@ -1341,6 +1341,7 @@ export type Database = {
           id: string
           landlord_id: string
           merchant_request_id: string | null
+          months: number
           mpesa_receipt_number: string | null
           phone: string
           plan_id: string
@@ -1355,6 +1356,7 @@ export type Database = {
           id?: string
           landlord_id: string
           merchant_request_id?: string | null
+          months?: number
           mpesa_receipt_number?: string | null
           phone: string
           plan_id: string
@@ -1369,6 +1371,7 @@ export type Database = {
           id?: string
           landlord_id?: string
           merchant_request_id?: string | null
+          months?: number
           mpesa_receipt_number?: string | null
           phone?: string
           plan_id?: string

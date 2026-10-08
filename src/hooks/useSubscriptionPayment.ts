@@ -38,12 +38,12 @@ export const useSubscriptionPayment = () => {
   }, [stopPolling]);
 
   const pay = useCallback(
-    async (planName: string, phoneNumber: string) => {
+    async (planName: string, phoneNumber: string, months = 1) => {
       setStatus('requesting');
       setFailureReason(null);
 
       const { data, error } = await supabase.functions.invoke('mpesa-subscription-stk-push', {
-        body: { plan_name: planName, phone_number: phoneNumber },
+        body: { plan_name: planName, phone_number: phoneNumber, months },
       });
 
       if (error || data?.error) {

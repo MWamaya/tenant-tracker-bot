@@ -9,9 +9,11 @@ export async function activateLandlordSubscription(
     planId: string;
     paymentReference: string;
     amountPaid: number;
+    /** Billing cycles paid for in this one payment (1, 3, 6, or 12). */
+    months?: number;
   },
 ) {
-  const { landlordId, planId, paymentReference, amountPaid } = params;
+  const { landlordId, planId, paymentReference, amountPaid, months = 1 } = params;
 
   const { data: plan, error: planError } = await supabase
     .from('subscription_plans')
@@ -21,34 +23,76 @@ export async function activateLandlordSubscription(
 
   if (planError) throw planError;
 
-  const startDate = new Date();
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() + plan.duration_days);
+  const durationDays = plan.duration_days * months;
+  const smsTokens = plan.sms_tokens_included * months;
 
-  // A landlord should only ever have one active subscription.
-  const { error: cancelError } = await supabase
+  // Prepaying the SAME plan while time is still left on it stacks onto the
+  // existing end_date, so paying early never forfeits time already paid
+  // for. Switching plans (or renewing after expiry) replaces it instead —
+  // there's no partial-period carryover to reconcile across plans.
+  const { data: existing, error: existingError } = await supabase
     .from('landlord_subscriptions')
-    .update({ status: 'cancelled' })
+    .select('*')
     .eq('landlord_id', landlordId)
-    .eq('status', 'active');
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (cancelError) throw cancelError;
+  if (existingError) throw existingError;
 
-  const { data: subscription, error: subError } = await supabase
-    .from('landlord_subscriptions')
-    .insert({
-      landlord_id: landlordId,
-      plan_id: planId,
-      status: 'active',
-      start_date: startDate.toISOString(),
-      end_date: endDate.toISOString(),
-      payment_reference: paymentReference,
-      amount_paid: amountPaid,
-    })
-    .select()
-    .single();
+  const now = new Date();
+  const isStackableRenewal =
+    existing && existing.plan_id === planId && new Date(existing.end_date) > now;
 
-  if (subError) throw subError;
+  let subscription: any;
+
+  if (isStackableRenewal) {
+    const newEndDate = new Date(existing.end_date);
+    newEndDate.setDate(newEndDate.getDate() + durationDays);
+
+    const { data: updated, error: updateError } = await supabase
+      .from('landlord_subscriptions')
+      .update({
+        end_date: newEndDate.toISOString(),
+        amount_paid: (existing.amount_paid || 0) + amountPaid,
+        payment_reference: paymentReference,
+      })
+      .eq('id', existing.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    subscription = updated;
+  } else {
+    const { error: cancelError } = await supabase
+      .from('landlord_subscriptions')
+      .update({ status: 'cancelled' })
+      .eq('landlord_id', landlordId)
+      .eq('status', 'active');
+
+    if (cancelError) throw cancelError;
+
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + durationDays);
+
+    const { data: inserted, error: subError } = await supabase
+      .from('landlord_subscriptions')
+      .insert({
+        landlord_id: landlordId,
+        plan_id: planId,
+        status: 'active',
+        start_date: now.toISOString(),
+        end_date: endDate.toISOString(),
+        payment_reference: paymentReference,
+        amount_paid: amountPaid,
+      })
+      .select()
+      .single();
+
+    if (subError) throw subError;
+    subscription = inserted;
+  }
 
   const { error: statusError } = await supabase
     .from('profiles')
@@ -57,10 +101,10 @@ export async function activateLandlordSubscription(
 
   if (statusError) throw statusError;
 
-  if (plan.sms_tokens_included > 0) {
+  if (smsTokens > 0) {
     const { data: newBalance, error: incrementError } = await supabase.rpc('increment_sms_balance', {
       p_landlord_id: landlordId,
-      p_amount: plan.sms_tokens_included,
+      p_amount: smsTokens,
     });
 
     if (incrementError) throw incrementError;
@@ -68,9 +112,12 @@ export async function activateLandlordSubscription(
     const { error: smsTxError } = await supabase.from('sms_transactions').insert({
       landlord_id: landlordId,
       transaction_type: 'credit',
-      amount: plan.sms_tokens_included,
+      amount: smsTokens,
       balance_after: newBalance,
-      description: `SMS tokens from ${plan.name} subscription (M-Pesa)`,
+      description:
+        months > 1
+          ? `SMS tokens from ${months}-month ${plan.name} prepayment (M-Pesa)`
+          : `SMS tokens from ${plan.name} subscription (M-Pesa)`,
       created_by: landlordId,
     });
 
@@ -95,7 +142,13 @@ export async function activateLandlordSubscription(
     action: 'SUBSCRIPTION_ACTIVATED_MPESA',
     entity_type: 'subscription',
     entity_id: subscription.id,
-    new_values: { plan_name: plan.name, landlord_id: landlordId, payment_reference: paymentReference },
+    new_values: {
+      plan_name: plan.name,
+      landlord_id: landlordId,
+      payment_reference: paymentReference,
+      months,
+      stacked: !!isStackableRenewal,
+    },
   });
 
   return { subscription, plan };
