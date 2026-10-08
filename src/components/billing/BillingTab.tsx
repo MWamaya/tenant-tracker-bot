@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PUBLIC_PLANS, PublicPlan } from '@/lib/plans';
+import { PUBLIC_PLANS, PublicPlan, calcPrepayTotal } from '@/lib/plans';
 import { MpesaPayDialog } from '@/components/billing/MpesaPayDialog';
 import { CreditCard, Building2, Users, MessageSquare, Check, ArrowRight, TriangleAlert, CalendarClock } from 'lucide-react';
 import { format } from 'date-fns';
@@ -196,21 +196,26 @@ export const BillingTab = () => {
                         type="button"
                         onClick={() => setPrepayMonths(opt.months)}
                         className={cn(
-                          'rounded-md border px-2 py-2 text-center transition-colors',
+                          'relative rounded-md border px-2 py-2 text-center transition-colors',
                           prepayMonths === opt.months
                             ? 'border-primary bg-primary text-primary-foreground'
                             : 'border-border bg-background hover:border-primary/40',
                         )}
                       >
+                        {opt.months === 12 && (
+                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-success text-success-foreground text-[9px] font-bold px-1.5 py-0.5 whitespace-nowrap">
+                            Save 20%
+                          </span>
+                        )}
                         <div className="text-sm font-semibold">{opt.months === 1 ? '1 mo' : `${opt.months} mo`}</div>
                         <div className={cn('text-xs', prepayMonths === opt.months ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
-                          KES {(currentPlan.price * opt.months).toLocaleString()}
+                          KES {calcPrepayTotal(currentPlan.price, opt.months).toLocaleString()}
                         </div>
                       </button>
                     ))}
                   </div>
                   <Button className="w-full" disabled={viewOnly} onClick={() => handleRenew(currentPlan, prepayMonths)}>
-                    Pay KES {(currentPlan.price * prepayMonths).toLocaleString()} with M-Pesa
+                    Pay KES {calcPrepayTotal(currentPlan.price, prepayMonths).toLocaleString()} with M-Pesa
                   </Button>
                 </div>
               )}
@@ -273,7 +278,7 @@ export const BillingTab = () => {
                         .filter(
                           (f) =>
                             !below.features.includes(f) &&
-                            !/^all .* features$/i.test(f) &&
+                            !/^everything in /i.test(f) &&
                             !/^unlimited (properties|tenants)$/i.test(f),
                         )
                         .map((f) => (
@@ -326,7 +331,7 @@ export const BillingTab = () => {
           open={!!selectedPlan}
           onOpenChange={(open) => !open && setSelectedPlan(null)}
           planName={selectedPlan.name}
-          amount={selectedPlan.price * selectedMonths}
+          amount={calcPrepayTotal(selectedPlan.price, selectedMonths)}
           months={selectedMonths}
           onActivated={refresh}
         />

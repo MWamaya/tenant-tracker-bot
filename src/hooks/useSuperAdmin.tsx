@@ -58,7 +58,13 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     checkSuperAdmin();
-  }, [user]);
+    // Only the identity matters here — depending on the whole `user` object
+    // re-runs this (and flips the app-wide blocking `loading` flag) on every
+    // auth event, including a profile metadata update or a background token
+    // refresh, which briefly blanks the entire app behind a full-screen
+    // spinner for no real reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   return (
     <SuperAdminContext.Provider value={{ isSuperAdmin, loading, checkSuperAdmin }}>

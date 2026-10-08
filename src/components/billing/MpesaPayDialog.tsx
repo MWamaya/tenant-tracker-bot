@@ -32,6 +32,7 @@ export const MpesaPayDialog = ({ open, onOpenChange, planName, amount, months = 
 
   const busy = status === 'requesting' || status === 'awaiting_pin';
   const planLabel = months > 1 ? `${planName} plan — ${months} months` : `${planName} plan`;
+  const isAnnualDiscount = months === 12;
 
   const handlePay = async () => {
     if (!phone.trim()) return;
@@ -86,6 +87,7 @@ export const MpesaPayDialog = ({ open, onOpenChange, planName, amount, months = 
               <DialogTitle>Pay with M-Pesa</DialogTitle>
               <DialogDescription>
                 {planLabel} — KES {amount.toLocaleString()}{months > 1 ? ' total' : '/month'}
+                {isAnnualDiscount && <span className="text-success font-medium"> (20% off)</span>}
               </DialogDescription>
             </DialogHeader>
 
