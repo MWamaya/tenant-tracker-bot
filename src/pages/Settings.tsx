@@ -34,7 +34,6 @@ import {
   Bell,
   Database,
   Clock,
-  Save,
   MessageSquare,
   Smartphone,
   Plus,
@@ -643,13 +642,6 @@ const Settings = () => {
             </Card>
           </TabsContent>
         </Tabs>
-
-        <div className="flex justify-end">
-          <Button className="gap-2">
-            <Save className="h-4 w-4" />
-            Save Changes
-          </Button>
-        </div>
       </div>
 
       <Dialog open={recipientDialogOpen} onOpenChange={setRecipientDialogOpen}>
