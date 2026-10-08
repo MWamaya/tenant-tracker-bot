@@ -552,7 +552,7 @@ const STEP_VISUALS = [
   ),
 ];
 
-/** Interactive, auto-advancing walkthrough of the four-step flow. */
+/** Interactive, auto-advancing horizontal timeline for the four-step flow. */
 const HowItWorksStepper = () => {
   const [active, setActive] = useState(0);
 
@@ -566,48 +566,70 @@ const HowItWorksStepper = () => {
   const ActiveVisual = STEP_VISUALS[active];
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-8 lg:gap-12 items-start">
-      <div className="space-y-2">
+    <div>
+      <div className="flex items-start max-w-3xl mx-auto">
         {STEPS.map((step, i) => {
           const isActive = active === i;
+          const isDone = i < active;
           return (
-            <button
-              key={step.title}
-              type="button"
-              onClick={() => setActive(i)}
-              className={`relative w-full text-left rounded-2xl border px-4 py-4 overflow-hidden transition-colors ${
-                isActive ? 'border-primary/30 bg-primary/5' : 'border-transparent hover:bg-muted/50'
-              }`}
-            >
-              <div className="flex items-start gap-3.5">
-                <div
-                  className={`flex items-center justify-center h-8 w-8 shrink-0 rounded-lg text-xs font-bold transition-colors ${
-                    isActive ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
-                  }`}
+            <div key={step.title} className="contents">
+              <div className="flex flex-col items-center text-center w-20 sm:w-28 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActive(i)}
+                  aria-label={step.title}
+                  className="relative flex items-center justify-center h-10 w-10 rounded-full"
                 >
-                  {String(i + 1).padStart(2, '0')}
-                </div>
-                <div className="min-w-0">
-                  <h3 className="font-semibold text-foreground">{step.title}</h3>
-                  <p className={`mt-1 text-sm text-muted-foreground transition-all ${isActive ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0 overflow-hidden lg:max-h-20 lg:opacity-100'}`}>
-                    {step.description}
-                  </p>
-                </div>
+                  {isActive && (
+                    <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                  )}
+                  <span
+                    className={`relative flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold border-2 transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : isDone
+                        ? 'bg-primary/10 text-primary border-primary/40'
+                        : 'bg-card text-muted-foreground border-border'
+                    }`}
+                  >
+                    {isDone ? <Check className="h-4 w-4" /> : String(i + 1).padStart(2, '0')}
+                  </span>
+                </button>
+                <h3 className={`mt-3 text-sm font-semibold transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {step.title}
+                </h3>
+                <p className="hidden sm:block mt-1 text-xs text-muted-foreground leading-relaxed">
+                  {step.description}
+                </p>
               </div>
-              {isActive && (
-                <span
-                  key={active}
-                  className="absolute left-0 bottom-0 h-0.5 bg-primary animate-fill-progress"
-                  style={{ animationDuration: `${STEP_MS}ms` }}
-                />
+
+              {i < STEPS.length - 1 && (
+                <div className="flex-1 h-0.5 mt-5 relative rounded-full overflow-hidden bg-border">
+                  <div
+                    className="absolute inset-y-0 left-0 bg-primary transition-all duration-500 ease-out"
+                    style={{ width: i < active ? '100%' : '0%' }}
+                  />
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </div>
 
-      <div key={active} className="animate-fade-in lg:sticky lg:top-24">
-        <ActiveVisual />
+      <div className="mt-10 sm:mt-14 max-w-sm mx-auto">
+        <div className="rounded-2xl border bg-card shadow-lg overflow-hidden">
+          <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
+            <span className="ml-2 text-xs text-muted-foreground">
+              Step {active + 1} of {STEPS.length}
+            </span>
+          </div>
+          <div key={active} className="animate-fade-in p-5">
+            <ActiveVisual />
+          </div>
+        </div>
       </div>
     </div>
   );
