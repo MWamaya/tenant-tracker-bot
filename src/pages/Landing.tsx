@@ -26,7 +26,7 @@ import heroImagePipelineStreet from '@/assets/new landings/Pipeline-Estate-i-Nai
 import heroImagePipelineSunset from '@/assets/new landings/Pipeline-estate.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
-import { PUBLIC_PLANS } from '@/lib/plans';
+import { PUBLIC_PLANS, ENTERPRISE_PLAN, calcPrepayTotal, ANNUAL_DISCOUNT } from '@/lib/plans';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const WITHOUT = [
@@ -638,6 +638,7 @@ const HowItWorksStepper = () => {
 const Landing = () => {
   const [showScrollToBottom, setShowScrollToBottom] = useState(true);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
   const plans = PUBLIC_PLANS;
 
   useEffect(() => {
@@ -945,15 +946,44 @@ const Landing = () => {
           <Reveal className="text-center mb-10 sm:mb-14 max-w-xl mx-auto">
             <Kicker>Simple pricing</Kicker>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
-              Start small. Scale as you grow.
+              Priced per tenant. Cheaper as you grow.
             </h2>
             <p className="mt-3 text-muted-foreground">
-              Choose the plan that fits your portfolio today. Upgrade as your rental business grows.
+              No per-transaction cuts, no surprise fees on what tenants pay you. One flat rate per
+              tenant, and it drops the bigger your portfolio gets.
             </p>
           </Reveal>
 
-          <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            {plans.map((plan, i) => (
+          <Reveal className="flex items-center justify-center gap-2 mb-8">
+            <button
+              type="button"
+              onClick={() => setBilling('monthly')}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+                billing === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              onClick={() => setBilling('annual')}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                billing === 'annual' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Annual
+              <span className={`rounded-full text-[10px] font-bold px-1.5 py-0.5 ${billing === 'annual' ? 'bg-primary-foreground/20' : 'bg-success/10 text-success'}`}>
+                Save {ANNUAL_DISCOUNT * 100}%
+              </span>
+            </button>
+          </Reveal>
+
+          <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {plans.map((plan, i) => {
+              const months = billing === 'annual' ? 12 : 1;
+              const total = calcPrepayTotal(plan.price, months);
+              const effectiveMonthly = billing === 'annual' ? Math.round(total / 12) : plan.price;
+              return (
                   <Reveal key={plan.name} delay={i * 100}>
                     <div
                       className={`relative h-full rounded-3xl sm:rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
@@ -966,24 +996,32 @@ const Landing = () => {
                         </div>
                       )}
                       <h3 className="font-semibold text-foreground">{plan.name}</h3>
+                      <p className="mt-1 text-xs text-muted-foreground">{plan.description}</p>
                       <div className="mt-3">
                         <span className="text-3xl font-bold tracking-tight text-foreground">
-                          KES {plan.price.toLocaleString()}
+                          KES {(billing === 'annual' ? total : plan.price).toLocaleString()}
                         </span>
-                        <span className="text-sm text-muted-foreground"> / month</span>
+                        <span className="text-sm text-muted-foreground"> / {billing === 'annual' ? 'year' : 'month'}</span>
                       </div>
+                      {billing === 'annual' ? (
+                        <p className="text-xs text-success font-medium">KES {effectiveMonthly.toLocaleString()}/month</p>
+                      ) : (
+                        <div className="mt-1 text-xs font-medium text-primary">
+                          KES {plan.pricePerTenant}/tenant · up to {plan.maxTenants} tenants
+                        </div>
+                      )}
                       <div className="mt-4 space-y-1.5 text-sm text-muted-foreground">
                         <div className="flex items-center gap-2">
                           <Building2 className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <span>{plan.maxProperties === null ? 'Unlimited' : plan.maxProperties} properties</span>
+                          <span>Up to {plan.maxProperties} {plan.maxProperties === 1 ? 'property' : 'properties'}</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <Users className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <span>{plan.maxTenants === null ? 'Unlimited' : plan.maxTenants} tenants</span>
+                          <span>Up to {plan.maxTenants} tenants</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <MessageSquare className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <span>{plan.smsTokensIncluded} SMS tokens</span>
+                          <span>{plan.smsTokensIncluded} SMS tokens included</span>
                         </div>
                       </div>
                       <ul className="mt-5 space-y-2.5 flex-1 pt-4 border-t">
@@ -1003,7 +1041,32 @@ const Landing = () => {
                       </Button>
                     </div>
                   </Reveal>
-                ))}
+              );
+            })}
+
+            <Reveal delay={plans.length * 100}>
+              <div className="h-full rounded-3xl sm:rounded-2xl border border-dashed bg-card/50 p-6 flex flex-col">
+                <h3 className="font-semibold text-foreground">{ENTERPRISE_PLAN.name}</h3>
+                <p className="mt-1 text-xs text-muted-foreground">{ENTERPRISE_PLAN.description}</p>
+                <div className="mt-3">
+                  <span className="text-2xl font-bold tracking-tight text-foreground">Custom</span>
+                </div>
+                <div className="mt-1 text-xs font-medium text-muted-foreground">
+                  101+ tenants · volume pricing
+                </div>
+                <ul className="mt-5 space-y-2.5 flex-1 pt-4 border-t">
+                  {ENTERPRISE_PLAN.features.map((f) => (
+                    <li key={f} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button asChild variant="outline" className="mt-6 w-full transition-transform hover:scale-[1.02]">
+                  <Link to={ROUTES.CONTACT}>Get a quote</Link>
+                </Button>
+              </div>
+            </Reveal>
           </div>
         </section>
 

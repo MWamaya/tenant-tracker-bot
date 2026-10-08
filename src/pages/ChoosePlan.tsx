@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { PUBLIC_PLANS, PublicPlan } from '@/lib/plans';
+import { PUBLIC_PLANS, PublicPlan, calcPrepayTotal, ANNUAL_DISCOUNT } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, LogOut, Mail, Building2, Users, MessageSquare } from 'lucide-react';
@@ -17,6 +17,8 @@ const ChoosePlan = () => {
   const queryClient = useQueryClient();
   const plans = PUBLIC_PLANS;
   const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
+  const months = billing === 'annual' ? 12 : 1;
 
   return (
     <>
@@ -37,8 +39,35 @@ const ChoosePlan = () => {
           </p>
         </div>
 
+        <div className="flex items-center justify-center gap-2 mb-8">
+          <button
+            type="button"
+            onClick={() => setBilling('monthly')}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              billing === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setBilling('annual')}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors flex items-center gap-1.5 ${
+              billing === 'annual' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Annual
+            <span className={`rounded-full text-[10px] font-bold px-1.5 py-0.5 ${billing === 'annual' ? 'bg-primary-foreground/20' : 'bg-success/10 text-success'}`}>
+              Save {ANNUAL_DISCOUNT * 100}%
+            </span>
+          </button>
+        </div>
+
         <div className="grid gap-4 sm:gap-6 md:grid-cols-3 mb-8">
-          {plans.map((plan) => (
+          {plans.map((plan) => {
+            const total = calcPrepayTotal(plan.price, months);
+            const effectiveMonthly = billing === 'annual' ? Math.round(total / 12) : plan.price;
+            return (
                 <Card
                   key={plan.name}
                   className={
@@ -56,9 +85,14 @@ const ChoosePlan = () => {
                     <CardTitle>{plan.name}</CardTitle>
                     <CardDescription>{plan.description}</CardDescription>
                     <div className="pt-2">
-                      <span className="text-3xl font-bold">KES {plan.price.toLocaleString()}</span>
-                      <span className="text-muted-foreground text-sm">/month</span>
+                      <span className="text-3xl font-bold">KES {(billing === 'annual' ? total : plan.price).toLocaleString()}</span>
+                      <span className="text-muted-foreground text-sm">/{billing === 'annual' ? 'year' : 'month'}</span>
                     </div>
+                    {billing === 'annual' && (
+                      <p className="text-xs text-success font-medium">
+                        KES {effectiveMonthly.toLocaleString()}/month
+                      </p>
+                    )}
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2 text-sm">
@@ -92,7 +126,8 @@ const ChoosePlan = () => {
                     </Button>
                   </CardContent>
                 </Card>
-              ))}
+            );
+          })}
         </div>
 
         <Card className="max-w-2xl mx-auto">
@@ -126,7 +161,8 @@ const ChoosePlan = () => {
           open={!!selectedPlan}
           onOpenChange={(open) => !open && setSelectedPlan(null)}
           planName={selectedPlan.name}
-          amount={selectedPlan.price}
+          amount={calcPrepayTotal(selectedPlan.price, months)}
+          months={months}
           onActivated={async () => {
             await queryClient.invalidateQueries({ queryKey: ['account-status', user?.id] });
             navigate(ROUTES.DASHBOARD);

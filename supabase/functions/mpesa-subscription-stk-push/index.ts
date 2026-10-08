@@ -10,6 +10,10 @@ const MPESA_STK_URL = 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processreque
 const MPESA_SANDBOX_STK_URL = 'https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
 
 const ALLOWED_MONTHS = [1, 3, 6, 12];
+// Paying for all 12 months at once gets this fraction off the total — the
+// only discount in the pricing model. Must match ANNUAL_DISCOUNT in
+// src/lib/plans.ts (can't share the module with this Deno function).
+const ANNUAL_DISCOUNT = 0.2;
 
 interface SubscriptionSTKRequest {
   plan_name: string;
@@ -58,8 +62,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Prepaying multiple cycles only makes sense as a renewal of the plan
-    // you're already on — switching plans stays a single-month action.
+    // Prepaying multiple cycles is fine for a first-ever subscription (e.g.
+    // choosing Annual at signup) or when renewing the plan you're already
+    // on — but not as a way to prepay while also switching to a different
+    // plan, which stays a single-month action.
     if (months > 1) {
       const { data: currentSub } = await supabase
         .from('landlord_subscriptions')
@@ -70,7 +76,7 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
 
-      if (!currentSub || currentSub.plan_id !== plan.id) {
+      if (currentSub && currentSub.plan_id !== plan.id) {
         return new Response(
           JSON.stringify({ error: 'Prepaying multiple months is only available when renewing your current plan.' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -151,7 +157,9 @@ Deno.serve(async (req) => {
 
     // Short, alphanumeric account reference — Safaricom caps this at 12 chars.
     const accountReference = `SUB${plan.name}`.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
-    const totalAmount = plan.price * months;
+    const totalAmount = months === 12
+      ? Math.round(plan.price * 12 * (1 - ANNUAL_DISCOUNT))
+      : plan.price * months;
 
     const stkPayload = {
       BusinessShortCode: shortcode,

@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, LogOut, Mail, CreditCard } from 'lucide-react';
-import { PUBLIC_PLANS, PublicPlan } from '@/lib/plans';
+import { PUBLIC_PLANS, PublicPlan, calcPrepayTotal, ANNUAL_DISCOUNT } from '@/lib/plans';
 import { MpesaPayDialog } from '@/components/billing/MpesaPayDialog';
 import { ROUTES } from '@/lib/routes';
 
@@ -14,6 +14,8 @@ const AccountSuspended = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
+  const [billing, setBilling] = useState<'monthly' | 'annual'>('monthly');
+  const months = billing === 'annual' ? 12 : 1;
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -34,18 +36,46 @@ const AccountSuspended = () => {
               <CreditCard className="h-4 w-4 text-primary" />
               Reactivate with M-Pesa
             </div>
+            <div className="flex items-center justify-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setBilling('monthly')}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  billing === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                type="button"
+                onClick={() => setBilling('annual')}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors flex items-center gap-1 ${
+                  billing === 'annual' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Annual
+                <span className={`rounded-full text-[9px] font-bold px-1 py-0.5 ${billing === 'annual' ? 'bg-primary-foreground/20' : 'bg-success/10 text-success'}`}>
+                  -{ANNUAL_DISCOUNT * 100}%
+                </span>
+              </button>
+            </div>
             <div className="space-y-2">
-              {PUBLIC_PLANS.map((plan) => (
-                <Button
-                  key={plan.name}
-                  variant="outline"
-                  className="w-full justify-between"
-                  onClick={() => setSelectedPlan(plan)}
-                >
-                  <span>{plan.name}</span>
-                  <span className="text-muted-foreground">KES {plan.price.toLocaleString()}/mo</span>
-                </Button>
-              ))}
+              {PUBLIC_PLANS.map((plan) => {
+                const total = calcPrepayTotal(plan.price, months);
+                return (
+                  <Button
+                    key={plan.name}
+                    variant="outline"
+                    className="w-full justify-between"
+                    onClick={() => setSelectedPlan(plan)}
+                  >
+                    <span>{plan.name}</span>
+                    <span className="text-muted-foreground">
+                      KES {total.toLocaleString()}{billing === 'annual' ? '/yr' : '/mo'}
+                    </span>
+                  </Button>
+                );
+              })}
             </div>
           </div>
 
@@ -75,7 +105,8 @@ const AccountSuspended = () => {
           open={!!selectedPlan}
           onOpenChange={(open) => !open && setSelectedPlan(null)}
           planName={selectedPlan.name}
-          amount={selectedPlan.price}
+          amount={calcPrepayTotal(selectedPlan.price, months)}
+          months={months}
           onActivated={async () => {
             await queryClient.invalidateQueries({ queryKey: ['account-status', user?.id] });
             navigate(ROUTES.DASHBOARD);
