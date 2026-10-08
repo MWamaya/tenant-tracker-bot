@@ -599,6 +599,33 @@ export const useUpdateLandlordStatus = () => {
   });
 };
 
+// Mutation to permanently delete a suspended landlord account. Backed by
+// an edge function (needs the service role to delete the auth.users row,
+// which cascades through every landlord_id FK).
+export const useDeleteLandlord = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (landlordId: string) => {
+      const { data, error } = await supabase.functions.invoke('admin-delete-landlord', {
+        body: { landlordId },
+      });
+
+      if (error || data?.error) {
+        throw new Error(data?.error || error?.message || 'Could not delete the account.');
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['landlords'] });
+      queryClient.invalidateQueries({ queryKey: ['platform-stats'] });
+      toast.success('Landlord account deleted');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete account: ${error.message}`);
+    },
+  });
+};
+
 // Mutation to update a landlord's inbound (kodipap) email
 export const useUpdateInboundEmail = () => {
   const queryClient = useQueryClient();

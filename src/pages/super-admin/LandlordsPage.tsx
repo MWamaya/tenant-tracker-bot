@@ -2,13 +2,22 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { useLandlords, useUpdateLandlordStatus, useUnmatchedPaymentCountsByLandlord } from '@/hooks/useSuperAdminData';
+import { useLandlords, useUpdateLandlordStatus, useDeleteLandlord, useUnmatchedPaymentCountsByLandlord } from '@/hooks/useSuperAdminData';
 import { useImpersonation } from '@/hooks/useImpersonation';
 import { ROUTES } from '@/lib/routes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -22,7 +31,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, LogIn } from 'lucide-react';
+import { Search, MoreVertical, UserPlus, Eye, Ban, CheckCircle, LogIn, Trash2 } from 'lucide-react';
 import { formatDate } from '@/lib/dates';
 import type { LandlordProfile } from '@/hooks/useSuperAdminData';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
@@ -41,6 +50,9 @@ const LandlordsPage = () => {
   const { data: landlords, isLoading } = useLandlords();
   const { data: unmatchedCounts } = useUnmatchedPaymentCountsByLandlord();
   const updateStatus = useUpdateLandlordStatus();
+  const deleteLandlord = useDeleteLandlord();
+  const [deleteTarget, setDeleteTarget] = useState<LandlordProfile | null>(null);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const handleLoginAs = async (landlord: LandlordProfile, destination = ROUTES.DASHBOARD) => {
     await startImpersonation({
@@ -98,6 +110,14 @@ const LandlordsPage = () => {
 
   const handleStatusChange = async (landlordId: string, newStatus: string) => {
     await updateStatus.mutateAsync({ landlordId, status: newStatus });
+  };
+
+  const deleteConfirmPhrase = deleteTarget?.full_name?.trim() || deleteTarget?.company_name?.trim() || 'DELETE';
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    await deleteLandlord.mutateAsync(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   const getStatusBadgeColor = (status: string) => {
@@ -232,6 +252,18 @@ const LandlordsPage = () => {
                     <LogIn className="h-4 w-4 mr-2" />
                     Impersonate Landlord
                   </DropdownMenuItem>
+                  {landlord.account_status === 'suspended' && (
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => {
+                        setDeleteConfirmText('');
+                        setDeleteTarget(landlord);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Delete Account
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -279,6 +311,41 @@ const LandlordsPage = () => {
         </div>
 
         <CreateLandlordDialog open={addLandlordOpen} onOpenChange={setAddLandlordOpen} />
+
+        <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="text-destructive">Delete this account?</DialogTitle>
+              <DialogDescription>
+                This permanently deletes {deleteTarget?.full_name}'s account and everything tied to it —
+                properties, houses, tenants, payments, and subscription history. This cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label>
+                Type <span className="font-semibold">{deleteConfirmPhrase}</span> to confirm
+              </Label>
+              <Input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder={deleteConfirmPhrase}
+              />
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteLandlord.isPending || deleteConfirmText.trim() !== deleteConfirmPhrase}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                {deleteLandlord.isPending ? 'Deleting...' : 'Delete Permanently'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Filters */}
         <Card className={ADMIN_CARD}>

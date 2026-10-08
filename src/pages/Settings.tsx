@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { ROUTES } from '@/lib/routes';
 import { AppBreadcrumbs } from '@/components/navigation/AppBreadcrumbs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,7 +42,16 @@ import {
   Trash2,
   Users,
   Loader2,
+  CreditCard,
+  User,
+  Filter,
+  FileText,
+  Zap,
 } from 'lucide-react';
+import { BillingTab } from '@/components/billing/BillingTab';
+import { ProfileTab } from '@/components/settings/ProfileTab';
+import { SectionIcon } from '@/components/settings/SectionIcon';
+import { ToggleRow } from '@/components/settings/ToggleRow';
 
 interface ReportRecipient {
   id: string;
@@ -54,6 +63,8 @@ const Settings = () => {
   const landlordId = useEffectiveLandlordId();
   const { viewOnly } = useImpersonation();
   const queryClient = useQueryClient();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'general';
   const [inboundEmail, setInboundEmail] = useState<string | null>(null);
   const [reportDay, setReportDay] = useState<string>('5');
   const [savingReportDay, setSavingReportDay] = useState(false);
@@ -172,38 +183,67 @@ const Settings = () => {
         <AppBreadcrumbs />
         
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground mt-1">
-            Configure your rent collection system
-          </p>
+        <div className="flex items-center gap-3">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground shrink-0">
+            <SettingsIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+            <p className="text-muted-foreground mt-0.5">
+              Configure your rent collection system
+            </p>
+          </div>
         </div>
 
-        <Tabs defaultValue="general" className="space-y-6">
-          <TabsList className="bg-muted/50">
-            <TabsTrigger value="general" className="gap-2">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('tab', v);
+            return next;
+          }, { replace: true })}
+          className="space-y-6"
+        >
+          <TabsList className="bg-muted/50 h-auto flex-wrap p-1.5 gap-1">
+            <TabsTrigger value="general" className="gap-2 data-[state=active]:text-primary">
               <SettingsIcon className="h-4 w-4" />
               General
             </TabsTrigger>
-            <TabsTrigger value="email" className="gap-2">
+            <TabsTrigger value="profile" className="gap-2 data-[state=active]:text-primary">
+              <User className="h-4 w-4" />
+              Profile
+            </TabsTrigger>
+            <TabsTrigger value="email" className="gap-2 data-[state=active]:text-primary">
               <Mail className="h-4 w-4" />
               Email Integration
             </TabsTrigger>
-            <TabsTrigger value="sms" className="gap-2">
+            <TabsTrigger value="sms" className="gap-2 data-[state=active]:text-primary">
               <MessageSquare className="h-4 w-4" />
               SMS Integration
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="gap-2">
+            <TabsTrigger value="notifications" className="gap-2 data-[state=active]:text-primary">
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
+            <TabsTrigger value="billing" className="gap-2 data-[state=active]:text-primary">
+              <CreditCard className="h-4 w-4" />
+              Billing
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="billing">
+            <BillingTab />
+          </TabsContent>
+
+          <TabsContent value="profile">
+            <ProfileTab />
+          </TabsContent>
 
           <TabsContent value="general" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Database className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={Database} />
                   Property Settings
                 </CardTitle>
                 <CardDescription>
@@ -233,8 +273,8 @@ const Settings = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={Clock} />
                   Monthly Report Day
                 </CardTitle>
                 <CardDescription>
@@ -258,8 +298,8 @@ const Settings = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={Users} />
                   Monthly Report Recipients
                 </CardTitle>
                 <CardDescription>
@@ -316,8 +356,8 @@ const Settings = () => {
           <TabsContent value="email" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={Mail} />
                   Bank Email Forwarding
                 </CardTitle>
                 <CardDescription>
@@ -340,8 +380,8 @@ const Settings = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={Mail} />
                   Gmail API Configuration
                 </CardTitle>
                 <CardDescription>
@@ -349,11 +389,11 @@ const Settings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-destructive/10">
-                        <Mail className="h-5 w-5 text-destructive" />
+                      <div className="p-2 rounded-lg bg-warning/10">
+                        <Mail className="h-5 w-5 text-warning" />
                       </div>
                       <div>
                         <p className="font-medium">Gmail Account</p>
@@ -364,16 +404,12 @@ const Settings = () => {
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Auto-sync Emails</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Automatically fetch new emails at regular intervals
-                      </p>
-                    </div>
-                    <Switch />
-                  </div>
+                <div className="space-y-3">
+                  <ToggleRow
+                    htmlFor="autoSyncEmails"
+                    label="Auto-sync Emails"
+                    description="Automatically fetch new emails at regular intervals"
+                  />
 
                   <div className="space-y-2">
                     <Label htmlFor="syncInterval">Sync Interval (Minutes)</Label>
@@ -399,39 +435,29 @@ const Settings = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Message Parser Settings</CardTitle>
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={Filter} />
+                  Message Parser Settings
+                </CardTitle>
                 <CardDescription>
                   Configure how payment messages are parsed
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Strict Parsing Mode</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Reject messages that can't be fully parsed
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Auto-match Tenants</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically link payments to existing tenants
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Duplicate Detection</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Prevent duplicate payments using M-Pesa reference.
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
+              <CardContent className="space-y-3">
+                <ToggleRow
+                  label="Strict Parsing Mode"
+                  description="Reject messages that can't be fully parsed"
+                />
+                <ToggleRow
+                  label="Auto-match Tenants"
+                  description="Automatically link payments to existing tenants"
+                  defaultChecked
+                />
+                <ToggleRow
+                  label="Duplicate Detection"
+                  description="Prevent duplicate payments using M-Pesa reference."
+                  defaultChecked
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -439,8 +465,8 @@ const Settings = () => {
           <TabsContent value="sms" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={MessageSquare} />
                   SMS Gateway Configuration
                 </CardTitle>
                 <CardDescription>
@@ -448,11 +474,11 @@ const Settings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                  <div className="flex items-center justify-between">
+                <div className="p-4 rounded-lg bg-warning/5 border border-warning/20">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-destructive/10">
-                        <Smartphone className="h-5 w-5 text-destructive" />
+                      <div className="p-2 rounded-lg bg-warning/10">
+                        <Smartphone className="h-5 w-5 text-warning" />
                       </div>
                       <div>
                         <p className="font-medium">SMS Provider</p>
@@ -501,7 +527,10 @@ const Settings = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>SMS Templates</CardTitle>
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={FileText} />
+                  SMS Templates
+                </CardTitle>
                 <CardDescription>
                   Configure message templates for different notifications
                 </CardDescription>
@@ -547,43 +576,34 @@ const Settings = () => {
 
             <Card>
               <CardHeader>
-                <CardTitle>Automated SMS Settings</CardTitle>
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={Zap} />
+                  Automated SMS Settings
+                </CardTitle>
                 <CardDescription>
                   Configure when to automatically send SMS notifications
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b">
-                  <div>
-                    <Label>Send Payment Reminders</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically send reminders before due date
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="space-y-2">
+              <CardContent className="space-y-3">
+                <ToggleRow
+                  label="Send Payment Reminders"
+                  description="Automatically send reminders before due date"
+                  defaultChecked
+                />
+                <div className="space-y-2 px-1">
                   <Label htmlFor="reminderDays">Days Before Due Date</Label>
                   <Input id="reminderDays" type="number" placeholder="3" className="w-24" />
                 </div>
-                <div className="flex items-center justify-between py-3 border-b">
-                  <div>
-                    <Label>Send Payment Confirmations</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Notify tenants when payment is received
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <div>
-                    <Label>Send Overdue Notices</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Alert tenants about overdue payments
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
+                <ToggleRow
+                  label="Send Payment Confirmations"
+                  description="Notify tenants when payment is received"
+                  defaultChecked
+                />
+                <ToggleRow
+                  label="Send Overdue Notices"
+                  description="Alert tenants about overdue payments"
+                  defaultChecked
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -591,51 +611,34 @@ const Settings = () => {
           <TabsContent value="notifications" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="h-5 w-5" />
+                <CardTitle className="flex items-center gap-2.5">
+                  <SectionIcon icon={Bell} />
                   Notification Preferences
                 </CardTitle>
                 <CardDescription>
                   Choose how you want to be notified about rent collection activities
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between py-3 border-b">
-                  <div>
-                    <Label>New Payment Received</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified when a new payment is recorded
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between py-3 border-b">
-                  <div>
-                    <Label>Payment Reminder</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Remind about unpaid tenants on due date
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between py-3 border-b">
-                  <div>
-                    <Label>Monthly Summary</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive a summary of monthly collection
-                    </p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between py-3">
-                  <div>
-                    <Label>Failed Email Parse</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Alert when an email cannot be parsed
-                    </p>
-                  </div>
-                  <Switch />
-                </div>
+              <CardContent className="space-y-3">
+                <ToggleRow
+                  label="New Payment Received"
+                  description="Get notified when a new payment is recorded"
+                  defaultChecked
+                />
+                <ToggleRow
+                  label="Payment Reminder"
+                  description="Remind about unpaid tenants on due date"
+                  defaultChecked
+                />
+                <ToggleRow
+                  label="Monthly Summary"
+                  description="Receive a summary of monthly collection"
+                  defaultChecked
+                />
+                <ToggleRow
+                  label="Failed Email Parse"
+                  description="Alert when an email cannot be parsed"
+                />
               </CardContent>
             </Card>
           </TabsContent>

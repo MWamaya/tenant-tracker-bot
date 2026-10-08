@@ -1,15 +1,22 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { PUBLIC_PLANS } from '@/lib/plans';
+import { PUBLIC_PLANS, PublicPlan } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, CreditCard, LogOut, Mail, Building2, Users, MessageSquare } from 'lucide-react';
+import { Check, LogOut, Mail, Building2, Users, MessageSquare } from 'lucide-react';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { ROUTES } from '@/lib/routes';
+import { MpesaPayDialog } from '@/components/billing/MpesaPayDialog';
 
 const ChoosePlan = () => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const plans = PUBLIC_PLANS;
+  const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
 
   return (
     <>
@@ -79,11 +86,7 @@ const ChoosePlan = () => {
                     <Button
                       className="w-full"
                       variant={plan.highlighted ? 'default' : 'outline'}
-                      onClick={() =>
-                        document
-                          .getElementById('payment-instructions')
-                          ?.scrollIntoView({ behavior: 'smooth' })
-                      }
+                      onClick={() => setSelectedPlan(plan)}
                     >
                       Choose {plan.name}
                     </Button>
@@ -92,35 +95,16 @@ const ChoosePlan = () => {
               ))}
         </div>
 
-        <Card id="payment-instructions" className="max-w-2xl mx-auto">
+        <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
-              <CardTitle className="text-lg">Activate Your Account</CardTitle>
-            </div>
+            <CardTitle className="text-lg">Need help?</CardTitle>
             <CardDescription>
-              Complete payment using the details below. Your account will be activated by
-              our team within 24 hours of payment confirmation.
+              Pick a plan above to pay instantly with M-Pesa — your account activates as soon as
+              payment is confirmed.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg border bg-muted/40 p-4 space-y-2 text-sm">
-              <div>
-                <span className="font-medium text-foreground">M-Pesa Paybill:</span>{' '}
-                <span className="text-muted-foreground">247247</span>
-              </div>
-              <div>
-                <span className="font-medium text-foreground">Account Number:</span>{' '}
-                <span className="text-muted-foreground">Your registered phone number</span>
-              </div>
-              <div>
-                <span className="font-medium text-foreground">Amount:</span>{' '}
-                <span className="text-muted-foreground">As per the plan you chose</span>
-              </div>
-            </div>
-
             <div className="rounded-lg border p-4 space-y-2">
-              <div className="font-semibold text-sm">Need help?</div>
               <a
                 href="mailto:support@kodipap.com"
                 className="flex items-center gap-2 text-sm text-primary hover:underline"
@@ -136,6 +120,19 @@ const ChoosePlan = () => {
           </CardContent>
         </Card>
       </div>
+
+      {selectedPlan && (
+        <MpesaPayDialog
+          open={!!selectedPlan}
+          onOpenChange={(open) => !open && setSelectedPlan(null)}
+          planName={selectedPlan.name}
+          amount={selectedPlan.price}
+          onActivated={async () => {
+            await queryClient.invalidateQueries({ queryKey: ['account-status', user?.id] });
+            navigate(ROUTES.DASHBOARD);
+          }}
+        />
+      )}
     </div>
     </>
   );

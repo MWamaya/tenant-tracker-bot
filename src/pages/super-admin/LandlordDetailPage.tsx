@@ -4,6 +4,7 @@ import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
 import {
   useLandlords,
   useUpdateLandlordStatus,
+  useDeleteLandlord,
   useSubscriptionPlans,
   useAssignSubscription,
   useAllocateSmsTokens,
@@ -56,6 +57,7 @@ import {
   LogIn,
   Clock,
   History,
+  Trash2,
 } from 'lucide-react';
 import { formatDate, formatDateTime } from '@/lib/dates';
 import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
@@ -139,19 +141,29 @@ const LandlordDetailPage = () => {
   const assignSubscription = useAssignSubscription();
   const allocateTokens = useAllocateSmsTokens();
   const updateInboundEmail = useUpdateInboundEmail();
+  const deleteLandlord = useDeleteLandlord();
 
-  const [dialogType, setDialogType] = useState<'subscription' | 'sms' | 'inboundEmail' | null>(null);
+  const [dialogType, setDialogType] = useState<'subscription' | 'sms' | 'inboundEmail' | 'delete' | null>(null);
   const [subscriptionData, setSubscriptionData] = useState({ planId: '', paymentReference: '', amountPaid: '' });
   const [smsAmount, setSmsAmount] = useState('');
   const [inboundEmailInput, setInboundEmailInput] = useState(landlord?.inbound_email || '');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const occupiedHouses = houses?.filter((h) => h.status === 'occupied').length || 0;
   const vacantHouses = houses?.filter((h) => h.status === 'vacant').length || 0;
   const unmatchedCount = (landlordId && unmatchedCounts?.get(landlordId)) || 0;
+  const deleteConfirmPhrase = landlord?.full_name?.trim() || landlord?.company_name?.trim() || 'DELETE';
 
   const handleStatusChange = async (newStatus: string) => {
     if (!landlord) return;
     await updateStatus.mutateAsync({ landlordId: landlord.id, status: newStatus });
+  };
+
+  const handleDelete = async () => {
+    if (!landlord) return;
+    await deleteLandlord.mutateAsync(landlord.id);
+    setDialogType(null);
+    navigate(ROUTES.SUPER_ADMIN_LANDLORDS);
   };
 
   // Read-only: for admins checking in on an account, not acting on the
@@ -273,14 +285,27 @@ const LandlordDetailPage = () => {
                   Suspend Account
                 </Button>
               ) : (
-                <Button
-                  variant="outline"
-                  className="border-[#0F766E]/40 text-[#0F766E] hover:bg-[#0F766E]/5"
-                  onClick={() => handleStatusChange('active')}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Activate Account
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    className="border-[#0F766E]/40 text-[#0F766E] hover:bg-[#0F766E]/5"
+                    onClick={() => handleStatusChange('active')}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Activate Account
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="border-destructive/40 text-destructive hover:bg-destructive/5"
+                    onClick={() => {
+                      setDeleteConfirmText('');
+                      setDialogType('delete');
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Account
+                  </Button>
+                </>
               )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -710,6 +735,42 @@ const LandlordDetailPage = () => {
               disabled={!Number.isFinite(parseInt(smsAmount, 10)) || parseInt(smsAmount, 10) <= 0}
             >
               Allocate Tokens
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Landlord Dialog */}
+      <Dialog open={dialogType === 'delete'} onOpenChange={() => setDialogType(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete this account?</DialogTitle>
+            <DialogDescription className="text-[#64748B]">
+              This permanently deletes {landlord.full_name}'s account and everything tied to it —
+              properties, houses, tenants, payments, and subscription history. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>
+              Type <span className="font-semibold text-[#0F172A]">{deleteConfirmPhrase}</span> to confirm
+            </Label>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder={deleteConfirmPhrase}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogType(null)} className={cn('border-[#E2E8F0] text-[#1E3A5F]', ADMIN_SURFACE_HOVER)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deleteLandlord.isPending || deleteConfirmText.trim() !== deleteConfirmPhrase}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              {deleteLandlord.isPending ? 'Deleting...' : 'Delete Permanently'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -22,7 +22,8 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
-import heroImage from '@/assets/landing-hero.jpg';
+import heroImagePipelineStreet from '@/assets/new landings/Pipeline-Estate-i-Nairobi-Kenya-Afrika.jpg';
+import heroImagePipelineSunset from '@/assets/new landings/Pipeline-estate.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { PUBLIC_PLANS } from '@/lib/plans';
@@ -66,6 +67,8 @@ const STEPS = [
     description: 'Track collections, arrears, occupancy and statements from one dashboard.',
   },
 ];
+
+const STEP_MS = 4000;
 
 const SHOWCASE_POINTS = [
   'See who has paid and who hasn’t',
@@ -171,88 +174,466 @@ const Reveal = ({
   );
 };
 
-/** The "live dashboard" mockup card used in the hero. */
-const DashboardMockup = () => (
-  <div className="rounded-3xl sm:rounded-2xl border bg-card shadow-2xl overflow-hidden">
-    <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
-      <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
-      <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
-      <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
-      <span className="ml-2 text-xs text-muted-foreground">app.kodipap.com</span>
+const HERO_SLIDES = [
+  { src: heroImagePipelineStreet, alt: 'Dense residential apartment blocks in Pipeline Estate, Nairobi' },
+  { src: heroImagePipelineSunset, alt: 'Pipeline Estate apartment blocks in Nairobi at sunset' },
+];
+
+/** Slow auto-crossfading background for the hero section. */
+const HeroSlideshow = () => {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <>
+      {HERO_SLIDES.map((slide, i) => (
+        <img
+          key={slide.src}
+          src={slide.src}
+          alt={slide.alt}
+          width={1920}
+          height={1078}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
+            i === active ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      ))}
+    </>
+  );
+};
+
+const DASHBOARD_TABS = ['Overview', 'Properties', 'Tenants', 'Payments', 'Statements', 'Reports'] as const;
+const DASHBOARD_TAB_MS = 4200;
+
+const StatTile = ({ label, value, sub, subClass = 'text-muted-foreground' }: { label: string; value: string; sub: string; subClass?: string }) => (
+  <div className="min-w-0 rounded-lg border p-2.5">
+    <span className="block text-[10px] text-muted-foreground truncate">{label}</span>
+    <span className="block text-sm font-bold text-foreground mt-1 whitespace-nowrap">{value}</span>
+    <span className={`text-[10px] ${subClass}`}>{sub}</span>
+  </div>
+);
+
+const OverviewPanel = () => (
+  <>
+    <div className="flex items-center justify-between mb-4">
+      <div>
+        <h3 className="text-base font-semibold text-foreground">Good morning</h3>
+        <p className="text-xs text-muted-foreground">Here's your rental portfolio</p>
+      </div>
+      <span className="inline-flex items-center gap-1 rounded-full bg-success/10 text-success text-[10px] font-semibold px-2 py-1">
+        <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" /> Live
+      </span>
     </div>
-    <div className="grid grid-cols-1 sm:grid-cols-[120px_1fr] min-h-[340px] sm:min-h-[390px]">
-      <aside className="hidden sm:block bg-muted/40 border-r px-3 py-4 text-xs">
-        <strong className="block mb-4 px-2 text-sm">KODI PAP</strong>
-        <div className="rounded-md bg-primary/10 text-primary font-semibold px-2.5 py-2 mb-1">Overview</div>
-        {['Properties', 'Tenants', 'Payments', 'Statements', 'Reports'].map((item) => (
-          <div key={item} className="px-2.5 py-2 text-muted-foreground">
-            {item}
-          </div>
+
+    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <StatTile label="Collected" value="KES 284,500" sub="↑ 12.4%" subClass="text-success" />
+      <StatTile label="Outstanding" value="KES 36,000" sub="3 tenants" subClass="text-warning" />
+      <div className="col-span-2 sm:col-span-1">
+        <StatTile label="Occupancy" value="94%" sub="47/50 units" />
+      </div>
+    </div>
+
+    <div className="rounded-lg border p-3 mt-3">
+      <div className="flex items-center justify-between text-xs font-semibold">
+        <span>Monthly collections</span>
+        <span className="text-success">KES 284.5K</span>
+      </div>
+      <div className="flex items-end gap-1.5 h-16 mt-3">
+        {[30, 45, 55, 68, 62, 82].map((h, i) => (
+          <div key={i} className={`flex-1 rounded-sm ${i === 5 ? 'bg-primary' : 'bg-primary/25'}`} style={{ height: `${h}%` }} />
         ))}
-      </aside>
-      <div className="p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-base font-semibold text-foreground">Good morning</h3>
-            <p className="text-xs text-muted-foreground">Here's your rental portfolio</p>
-          </div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-success/10 text-success text-[10px] font-semibold px-2 py-1">
-            <span className="h-1.5 w-1.5 rounded-full bg-success" /> Live
+      </div>
+    </div>
+
+    <div className="rounded-lg border overflow-hidden mt-3">
+      {[
+        { name: 'John Kamau · Unit 4B', amount: 'KES 15,000' },
+        { name: 'Mary Wanjiku · Unit 2A', amount: 'KES 12,000' },
+      ].map((row) => (
+        <div key={row.name} className="flex items-center justify-between px-3 py-2 text-xs border-b last:border-0">
+          <span className="text-muted-foreground">{row.name}</span>
+          <span className="font-semibold">{row.amount}</span>
+          <span className="flex items-center gap-1 text-success font-medium">
+            <Check className="h-3 w-3" /> Matched
           </span>
         </div>
+      ))}
+    </div>
+  </>
+);
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          <div className="min-w-0 rounded-lg border p-2.5">
-            <span className="block text-[10px] text-muted-foreground truncate">Collected</span>
-            <span className="block text-sm font-bold text-foreground mt-1 whitespace-nowrap">KES 284,500</span>
-            <span className="text-[10px] text-success">↑ 12.4%</span>
+const PropertiesPanel = () => (
+  <>
+    <div className="mb-4">
+      <h3 className="text-base font-semibold text-foreground">Properties</h3>
+      <p className="text-xs text-muted-foreground">3 properties · 50 units</p>
+    </div>
+    <div className="space-y-2.5">
+      {[
+        { name: 'Kileleshwa Apartments', units: 12, occupancy: 100 },
+        { name: 'Donholm Court', units: 20, occupancy: 90 },
+        { name: 'Westlands Heights', units: 18, occupancy: 94 },
+      ].map((p) => (
+        <div key={p.name} className="rounded-lg border p-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-foreground truncate">{p.name}</span>
+            <span className="text-muted-foreground shrink-0 ml-2">{p.units} units</span>
           </div>
-          <div className="min-w-0 rounded-lg border p-2.5">
-            <span className="block text-[10px] text-muted-foreground truncate">Outstanding</span>
-            <span className="block text-sm font-bold text-foreground mt-1 whitespace-nowrap">KES 36,000</span>
-            <span className="text-[10px] text-warning">3 tenants</span>
-          </div>
-          <div className="min-w-0 rounded-lg border p-2.5 col-span-2 sm:col-span-1">
-            <span className="block text-[10px] text-muted-foreground truncate">Occupancy</span>
-            <span className="block text-sm font-bold text-foreground mt-1 whitespace-nowrap">94%</span>
-            <span className="text-[10px] text-muted-foreground">47/50 units</span>
-          </div>
-        </div>
-
-        <div className="rounded-lg border p-3 mt-3">
-          <div className="flex items-center justify-between text-xs font-semibold">
-            <span>Monthly collections</span>
-            <span className="text-success">KES 284.5K</span>
-          </div>
-          <div className="flex items-end gap-1.5 h-16 mt-3">
-            {[30, 45, 55, 68, 62, 82].map((h, i) => (
-              <div
-                key={i}
-                className={`flex-1 rounded-sm ${i === 5 ? 'bg-primary' : 'bg-primary/25'}`}
-                style={{ height: `${h}%` }}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-lg border overflow-hidden mt-3">
-          {[
-            { name: 'John Kamau · Unit 4B', amount: 'KES 15,000' },
-            { name: 'Mary Wanjiku · Unit 2A', amount: 'KES 12,000' },
-          ].map((row) => (
-            <div key={row.name} className="flex items-center justify-between px-3 py-2 text-xs border-b last:border-0">
-              <span className="text-muted-foreground">{row.name}</span>
-              <span className="font-semibold">{row.amount}</span>
-              <span className="flex items-center gap-1 text-success font-medium">
-                <Check className="h-3 w-3" /> Matched
-              </span>
+          <div className="flex items-center gap-2 mt-2">
+            <div className="h-1.5 flex-1 rounded-full bg-muted overflow-hidden">
+              <div className="h-full rounded-full bg-success" style={{ width: `${p.occupancy}%` }} />
             </div>
+            <span className="text-[10px] font-medium text-success shrink-0">{p.occupancy}%</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </>
+);
+
+const TenantsPanel = () => {
+  const statusClass: Record<string, string> = {
+    Paid: 'bg-success/10 text-success',
+    'Due soon': 'bg-warning/10 text-warning',
+    Overdue: 'bg-destructive/10 text-destructive',
+  };
+  return (
+    <>
+      <div className="mb-4">
+        <h3 className="text-base font-semibold text-foreground">Tenants</h3>
+        <p className="text-xs text-muted-foreground">50 active tenants</p>
+      </div>
+      <div className="rounded-lg border overflow-hidden">
+        {[
+          { name: 'John Kamau', unit: '4B', status: 'Paid' },
+          { name: 'Mary Wanjiku', unit: '2A', status: 'Paid' },
+          { name: 'Grace Mumbi', unit: '1A', status: 'Due soon' },
+          { name: 'Peter Otieno', unit: '7C', status: 'Overdue' },
+        ].map((t) => (
+          <div key={t.name} className="flex items-center justify-between px-3 py-2.5 text-xs border-b last:border-0">
+            <div className="min-w-0">
+              <span className="block font-medium text-foreground truncate">{t.name}</span>
+              <span className="text-muted-foreground">Unit {t.unit}</span>
+            </div>
+            <span className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${statusClass[t.status]}`}>
+              {t.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+};
+
+const PaymentsPanel = () => (
+  <>
+    <div className="mb-4">
+      <h3 className="text-base font-semibold text-foreground">Payments</h3>
+      <p className="text-xs text-muted-foreground">Today</p>
+    </div>
+    <div className="rounded-lg border overflow-hidden">
+      {[
+        { name: 'John Kamau · 4B', amount: 'KES 15,000', source: 'M-Pesa', time: '09:12' },
+        { name: 'Mary Wanjiku · 2A', amount: 'KES 12,000', source: 'M-Pesa', time: '08:47' },
+        { name: 'Grace Mumbi · 1A', amount: 'KES 9,500', source: 'Bank', time: 'Yesterday' },
+      ].map((row) => (
+        <div key={row.name} className="flex items-center justify-between gap-2 px-3 py-2.5 text-xs border-b last:border-0">
+          <div className="min-w-0">
+            <span className="block text-muted-foreground truncate">{row.name}</span>
+            <span className="text-[10px] text-muted-foreground/70">{row.source} · {row.time}</span>
+          </div>
+          <span className="font-semibold shrink-0">{row.amount}</span>
+        </div>
+      ))}
+    </div>
+  </>
+);
+
+const StatementsPanel = () => (
+  <>
+    <div className="mb-4">
+      <h3 className="text-base font-semibold text-foreground">Statement</h3>
+      <p className="text-xs text-muted-foreground">John Kamau · Unit 4B</p>
+    </div>
+    <div className="rounded-lg border overflow-hidden">
+      {[
+        { date: 'Oct 1', desc: 'Rent due', amount: '-15,000' },
+        { date: 'Oct 1', desc: 'M-Pesa payment', amount: '+15,000' },
+        { date: 'Sep 1', desc: 'Rent due', amount: '-15,000' },
+        { date: 'Sep 2', desc: 'M-Pesa payment', amount: '+15,000' },
+      ].map((row, i) => (
+        <div key={i} className="flex items-center justify-between px-3 py-2 text-xs border-b last:border-0">
+          <span className="text-muted-foreground w-12 shrink-0">{row.date}</span>
+          <span className="text-foreground flex-1 truncate">{row.desc}</span>
+          <span className={`font-semibold shrink-0 ${row.amount.startsWith('+') ? 'text-success' : 'text-foreground'}`}>
+            {row.amount}
+          </span>
+        </div>
+      ))}
+    </div>
+    <div className="flex items-center justify-between rounded-lg bg-success/5 border border-success/20 px-3 py-2.5 mt-2.5">
+      <span className="text-xs font-semibold text-foreground">Balance</span>
+      <span className="text-sm font-bold text-success">KES 0</span>
+    </div>
+    <div className="inline-flex items-center gap-1.5 text-xs font-medium text-primary mt-3">
+      <FileText className="h-3.5 w-3.5" /> Download PDF
+    </div>
+  </>
+);
+
+const ReportsPanel = () => (
+  <>
+    <div className="mb-4">
+      <h3 className="text-base font-semibold text-foreground">Monthly report</h3>
+      <p className="text-xs text-muted-foreground">October 2026</p>
+    </div>
+    <div className="grid grid-cols-3 gap-2">
+      <StatTile label="Expected" value="KES 320K" sub="50 units" />
+      <StatTile label="Collected" value="KES 284.5K" sub="89%" subClass="text-success" />
+      <StatTile label="Outstanding" value="KES 36K" sub="3 tenants" subClass="text-warning" />
+    </div>
+    <div className="rounded-lg border p-3 mt-3 space-y-2.5">
+      {[
+        { name: 'Kileleshwa Apartments', pct: 100 },
+        { name: 'Donholm Court', pct: 85 },
+        { name: 'Westlands Heights', pct: 88 },
+      ].map((p) => (
+        <div key={p.name}>
+          <div className="flex items-center justify-between text-[10px] text-muted-foreground mb-1">
+            <span className="truncate">{p.name}</span>
+            <span className="shrink-0">{p.pct}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+            <div className="h-full rounded-full bg-primary" style={{ width: `${p.pct}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="inline-flex items-center gap-1.5 text-xs font-medium text-primary mt-3">
+      <BarChart3 className="h-3.5 w-3.5" /> Export report
+    </div>
+  </>
+);
+
+const DASHBOARD_PANELS = [OverviewPanel, PropertiesPanel, TenantsPanel, PaymentsPanel, StatementsPanel, ReportsPanel];
+
+/** The "live dashboard" mockup card used in the hero — auto-tours every tab
+ * like a product demo, and is fully clickable to jump around manually. */
+const DashboardMockup = () => {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % DASHBOARD_TABS.length);
+    }, DASHBOARD_TAB_MS);
+    return () => clearInterval(id);
+  }, [active]);
+
+  const ActivePanel = DASHBOARD_PANELS[active];
+
+  return (
+    <div className="rounded-3xl sm:rounded-2xl border bg-card shadow-2xl overflow-hidden">
+      <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+        <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
+        <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
+        <span className="ml-2 text-xs text-muted-foreground">app.kodipap.com</span>
+      </div>
+
+      {/* Mobile tab strip — sidebar is desktop-only */}
+      <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b">
+        {DASHBOARD_TABS.map((tab, i) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setActive(i)}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+              active === i ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] min-h-[340px] sm:min-h-[390px]">
+        <aside className="hidden sm:block bg-muted/40 border-r px-3 py-4 text-xs">
+          <strong className="block mb-4 px-2 text-sm">KODI PAP</strong>
+          {DASHBOARD_TABS.map((tab, i) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActive(i)}
+              className={`relative w-full text-left rounded-md px-2.5 py-2 mb-1 overflow-hidden transition-colors ${
+                active === i ? 'bg-primary/10 text-primary font-semibold' : 'text-muted-foreground hover:bg-muted/60'
+              }`}
+            >
+              {tab}
+              {active === i && (
+                <span
+                  key={active}
+                  className="absolute left-0 bottom-0 h-0.5 bg-primary animate-fill-progress"
+                  style={{ animationDuration: `${DASHBOARD_TAB_MS}ms` }}
+                />
+              )}
+            </button>
           ))}
+        </aside>
+        <div className="p-4 sm:p-5">
+          <div key={active} className="animate-fade-in">
+            <ActivePanel />
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+/** Visual shown beside the active "How it works" step. */
+const STEP_VISUALS = [
+  () => (
+    <div className="rounded-xl border bg-card p-4 space-y-2.5 text-xs">
+      {[
+        ['Property', 'Kileleshwa Apartments'],
+        ['Unit', '4B'],
+        ['Monthly rent', 'KES 15,000'],
+        ['Tenant', 'John Kamau'],
+      ].map(([label, value]) => (
+        <div key={label} className="flex items-center justify-between">
+          <span className="text-muted-foreground">{label}</span>
+          <span className="font-medium text-foreground">{value}</span>
+        </div>
+      ))}
+      <div className="flex items-center gap-1.5 text-success text-xs font-semibold pt-1 border-t">
+        <Check className="h-3.5 w-3.5" /> Saved
+      </div>
+    </div>
+  ),
+  () => (
+    <div className="rounded-xl border bg-muted/30 p-4 text-xs">
+      <div className="flex items-center gap-2 mb-2.5 text-success font-semibold">
+        <Smartphone className="h-4 w-4" /> M-Pesa
+      </div>
+      <p className="leading-relaxed text-foreground">
+        Confirmed. You have sent <strong>KES15,000.00</strong> to KODI PAP for account{' '}
+        <strong>4B</strong> on 1/10/26 at 9:12 AM. New M-PESA balance is KES8,450.00.
+      </p>
+    </div>
+  ),
+  () => (
+    <div className="rounded-xl border bg-card p-4 text-xs">
+      <div className="flex items-center justify-between text-muted-foreground mb-3">
+        <span>Incoming payment</span>
+        <span className="font-mono text-[10px]">QFT7X2PL9K</span>
+      </div>
+      <div className="flex items-center justify-between pt-3 border-t">
+        <div>
+          <span className="block font-medium text-foreground">John Kamau · Unit 4B</span>
+          <span className="text-muted-foreground">KES 15,000 via M-Pesa</span>
+        </div>
+        <span className="flex items-center gap-1 text-success font-semibold shrink-0 ml-2">
+          <Check className="h-3.5 w-3.5" /> Matched
+        </span>
+      </div>
+    </div>
+  ),
+  () => (
+    <div className="grid grid-cols-3 gap-2">
+      <StatTile label="Collected" value="KES 284.5K" sub="↑ 12.4%" subClass="text-success" />
+      <StatTile label="Outstanding" value="KES 36K" sub="3 tenants" subClass="text-warning" />
+      <StatTile label="Occupancy" value="94%" sub="47/50 units" />
+    </div>
+  ),
+];
+
+/** Interactive, auto-advancing horizontal timeline for the four-step flow. */
+const HowItWorksStepper = () => {
+  const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setActive((i) => (i + 1) % STEPS.length);
+    }, STEP_MS);
+    return () => clearInterval(id);
+  }, [active]);
+
+  const ActiveVisual = STEP_VISUALS[active];
+
+  return (
+    <div>
+      <div className="flex items-start max-w-3xl mx-auto">
+        {STEPS.map((step, i) => {
+          const isActive = active === i;
+          const isDone = i < active;
+          return (
+            <div key={step.title} className="contents">
+              <div className="flex flex-col items-center text-center w-20 sm:w-28 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setActive(i)}
+                  aria-label={step.title}
+                  className="relative flex items-center justify-center h-10 w-10 rounded-full"
+                >
+                  {isActive && (
+                    <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                  )}
+                  <span
+                    className={`relative flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold border-2 transition-colors ${
+                      isActive
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : isDone
+                        ? 'bg-primary/10 text-primary border-primary/40'
+                        : 'bg-card text-muted-foreground border-border'
+                    }`}
+                  >
+                    {isDone ? <Check className="h-4 w-4" /> : String(i + 1).padStart(2, '0')}
+                  </span>
+                </button>
+                <h3 className={`mt-3 text-sm font-semibold transition-colors ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  {step.title}
+                </h3>
+                <p className="hidden sm:block mt-1 text-xs text-muted-foreground leading-relaxed">
+                  {step.description}
+                </p>
+              </div>
+
+              {i < STEPS.length - 1 && (
+                <div className="flex-1 h-0.5 mt-5 relative rounded-full overflow-hidden bg-border">
+                  <div
+                    className="absolute inset-y-0 left-0 bg-primary transition-all duration-500 ease-out"
+                    style={{ width: i < active ? '100%' : '0%' }}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-10 sm:mt-14 max-w-sm mx-auto">
+        <div className="rounded-2xl border bg-card shadow-lg overflow-hidden">
+          <div className="flex items-center gap-1.5 border-b bg-muted/50 px-4 py-2.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-destructive/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-warning/60" />
+            <span className="h-2.5 w-2.5 rounded-full bg-success/60" />
+            <span className="ml-2 text-xs text-muted-foreground">
+              Step {active + 1} of {STEPS.length}
+            </span>
+          </div>
+          <div key={active} className="animate-fade-in p-5">
+            <ActiveVisual />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const Landing = () => {
   const [showScrollToBottom, setShowScrollToBottom] = useState(true);
@@ -341,15 +722,9 @@ const Landing = () => {
         </nav>
 
         {/* Hero — text sits directly on the photo, no card behind it */}
-        <section className="relative min-h-[88vh] flex items-center overflow-hidden">
+        <section className="relative min-h-screen flex items-center overflow-hidden">
           <div className="absolute inset-0 -z-10">
-            <img
-              src={heroImage}
-              alt="Modern apartment block in Nairobi, Kenya"
-              width={1920}
-              height={1078}
-              className="h-full w-full object-cover"
-            />
+            <HeroSlideshow />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
           </div>
@@ -464,23 +839,13 @@ const Landing = () => {
               tracking behind the scenes.
             </p>
           </Reveal>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {STEPS.map((step, i) => (
-              <Reveal key={step.title} delay={i * 100}>
-                <div className="h-full rounded-3xl sm:rounded-2xl border bg-card p-5 shadow-sm">
-                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 text-primary text-xs font-bold">
-                    {String(i + 1).padStart(2, '0')}
-                  </div>
-                  <h3 className="mt-4 font-semibold text-foreground">{step.title}</h3>
-                  <p className="mt-1.5 text-sm text-muted-foreground">{step.description}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+          <Reveal>
+            <HowItWorksStepper />
+          </Reveal>
         </section>
 
         {/* Showcase */}
-        <section className="px-4 sm:px-8 py-16 sm:py-24 bg-muted/40">
+        {/* <section className="px-4 sm:px-8 py-16 sm:py-24 bg-muted/40">
           <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <Reveal>
               <Kicker>Your rental business at a glance</Kicker>
@@ -545,7 +910,7 @@ const Landing = () => {
               </div>
             </Reveal>
           </div>
-        </section>
+        </section> */}
 
         {/* Features */}
         <section id="features" className="px-4 sm:px-8 py-16 sm:py-24">

@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { useAuth } from '@/hooks/useAuth';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { EmptyDashboard } from '@/components/dashboard/EmptyDashboard';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
@@ -16,6 +18,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { UserCircle, CreditCard as CreditCardIcon, LogOut } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PaymentsContent } from '@/components/payments/PaymentsContent';
@@ -26,6 +37,8 @@ import { PaymentsContent } from '@/components/payments/PaymentsContent';
 type JsPDFWithAutoTable = jsPDF & { lastAutoTable: { finalY: number } };
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('unpaid');
   const [addPropertyOpen, setAddPropertyOpen] = useState(false);
   const [addHouseOpen, setAddHouseOpen] = useState(false);
@@ -272,6 +285,11 @@ const Dashboard = () => {
     unpaidHouses: filteredBalances.filter(h => h.status === 'unpaid').length,
   };
 
+  const fullName = (user?.user_metadata?.full_name as string) || '';
+  const initials = fullName
+    ? fullName.trim().split(/\s+/).slice(0, 2).map((n) => n[0]).join('').toUpperCase()
+    : (user?.email?.[0] || '?').toUpperCase();
+
   const unpaidHouses = filteredBalances.filter(h => h.status === 'unpaid' && h.tenantId);
   const partialHouses = filteredBalances.filter(h => h.status === 'partial');
   const paidHouses = filteredBalances.filter(h => h.status === 'paid');
@@ -315,6 +333,66 @@ const Dashboard = () => {
                 </SelectContent>
               </Select>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="self-center sm:self-auto rounded-full ring-offset-background transition-shadow hover:ring-2 hover:ring-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  aria-label="Account menu"
+                >
+                  <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 p-0 overflow-hidden">
+                <div className="flex items-center gap-3 bg-primary/5 px-4 py-3.5">
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">{fullName || 'Your account'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                  </div>
+                </div>
+                <div className="p-1.5">
+                  <DropdownMenuItem
+                    className="gap-2.5 py-2"
+                    onClick={() => navigate(`${ROUTES.SETTINGS}?tab=profile`)}
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+                      <UserCircle className="h-4 w-4" />
+                    </span>
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="gap-2.5 py-2"
+                    onClick={() => navigate(`${ROUTES.SETTINGS}?tab=billing`)}
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary shrink-0">
+                      <CreditCardIcon className="h-4 w-4" />
+                    </span>
+                    Billing
+                  </DropdownMenuItem>
+                </div>
+                <DropdownMenuSeparator className="my-0" />
+                <div className="p-1.5">
+                  <DropdownMenuItem
+                    className="gap-2.5 py-2 text-destructive focus:text-destructive"
+                    onClick={() => signOut()}
+                  >
+                    <span className="flex h-7 w-7 items-center justify-center rounded-md bg-destructive/10 text-destructive shrink-0">
+                      <LogOut className="h-4 w-4" />
+                    </span>
+                    Sign out
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

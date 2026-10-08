@@ -1332,6 +1332,69 @@ export type Database = {
           },
         ]
       }
+      subscription_mpesa_requests: {
+        Row: {
+          amount: number
+          checkout_request_id: string
+          created_at: string
+          failure_reason: string | null
+          id: string
+          landlord_id: string
+          merchant_request_id: string | null
+          months: number
+          mpesa_receipt_number: string | null
+          phone: string
+          plan_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          checkout_request_id: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          landlord_id: string
+          merchant_request_id?: string | null
+          months?: number
+          mpesa_receipt_number?: string | null
+          phone: string
+          plan_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          checkout_request_id?: string
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          landlord_id?: string
+          merchant_request_id?: string | null
+          months?: number
+          mpesa_receipt_number?: string | null
+          phone?: string
+          plan_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_mpesa_requests_landlord_id_fkey"
+            columns: ["landlord_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscription_mpesa_requests_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       subscription_plans: {
         Row: {
           created_at: string
