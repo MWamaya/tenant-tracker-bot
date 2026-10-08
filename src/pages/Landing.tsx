@@ -845,7 +845,7 @@ const Landing = () => {
         </section>
 
         {/* Showcase */}
-        <section className="px-4 sm:px-8 py-16 sm:py-24 bg-muted/40">
+        {/* <section className="px-4 sm:px-8 py-16 sm:py-24 bg-muted/40">
           <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <Reveal>
               <Kicker>Your rental business at a glance</Kicker>
@@ -910,7 +910,7 @@ const Landing = () => {
               </div>
             </Reveal>
           </div>
-        </section>
+        </section> */}
 
         {/* Features */}
         <section id="features" className="px-4 sm:px-8 py-16 sm:py-24">
