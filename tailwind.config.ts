@@ -94,6 +94,10 @@ export default {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        "fill-progress": {
+          from: { width: "0%" },
+          to: { width: "100%" },
+        },
         "slide-up": {
           from: { opacity: "0", transform: "translateY(10px)" },
           to: { opacity: "1", transform: "translateY(0)" },
@@ -108,6 +112,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
         "slide-up": "slide-up 0.4s ease-out",
+        "fill-progress": "fill-progress linear forwards",
         "dance": "dance 1.4s ease-in-out infinite",
       },
     },
