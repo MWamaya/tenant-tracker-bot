@@ -2,6 +2,7 @@ import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/supabase.ts';
 import { matchHouseAndTenant, updateHouseBalance, clearMatchedEmailLog } from '../_shared/paymentMatching.ts';
 import { autoTagDeposits } from '../_shared/depositAutoTag.ts';
+import { activateLandlordSubscription } from '../_shared/subscriptionActivation.ts';
 
 // M-Pesa C2B and STK Push callback handler
 // This endpoint receives payment notifications from Safaricom
@@ -158,16 +159,31 @@ Deno.serve(async (req) => {
 
 async function handleSTKCallback(supabase: any, payload: STKCallbackPayload) {
   const callback = payload.Body.stkCallback;
-  
+
+  // A subscription STK push (mpesa-subscription-stk-push) records its
+  // CheckoutRequestID up front — if we find a pending row for it, this
+  // callback is a landlord paying their own platform subscription, not a
+  // tenant paying rent. Handle it separately and stop.
+  const { data: subRequest } = await supabase
+    .from('subscription_mpesa_requests')
+    .select('*')
+    .eq('checkout_request_id', callback.CheckoutRequestID)
+    .eq('status', 'pending')
+    .maybeSingle();
+
+  if (subRequest) {
+    return await handleSubscriptionSTKCallback(supabase, callback, subRequest);
+  }
+
   if (callback.ResultCode !== 0) {
     // Payment failed or cancelled
     console.log('STK Push failed:', callback.ResultDesc);
-    
+
     // Update webhook log
     await supabase.from('webhooks_log')
-      .update({ 
-        processed: true, 
-        error_message: callback.ResultDesc 
+      .update({
+        processed: true,
+        error_message: callback.ResultDesc
       })
       .eq('payload->Body->stkCallback->CheckoutRequestID', callback.CheckoutRequestID);
 
@@ -197,6 +213,70 @@ async function handleSTKCallback(supabase: any, payload: STKCallbackPayload) {
       raw_payload: payload,
     });
   }
+
+  return new Response(
+    JSON.stringify({ ResultCode: 0, ResultDesc: 'Accepted' }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+async function handleSubscriptionSTKCallback(
+  supabase: any,
+  callback: STKCallbackPayload['Body']['stkCallback'],
+  subRequest: any,
+) {
+  if (callback.ResultCode !== 0) {
+    console.log('Subscription STK Push failed:', callback.ResultDesc);
+
+    await supabase
+      .from('subscription_mpesa_requests')
+      .update({ status: 'failed', failure_reason: callback.ResultDesc })
+      .eq('id', subRequest.id);
+
+    await supabase.from('webhooks_log')
+      .update({ processed: true, error_message: callback.ResultDesc })
+      .eq('payload->Body->stkCallback->CheckoutRequestID', callback.CheckoutRequestID);
+
+    return new Response(
+      JSON.stringify({ ResultCode: 0, ResultDesc: 'Accepted' }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const metadata = callback.CallbackMetadata?.Item || [];
+  const getMetaValue = (name: string) =>
+    metadata.find((item) => item.Name === name)?.Value;
+
+  const receiptNumber = getMetaValue('MpesaReceiptNumber') as string;
+  const amount = getMetaValue('Amount') as number;
+
+  try {
+    await activateLandlordSubscription(supabase, {
+      landlordId: subRequest.landlord_id,
+      planId: subRequest.plan_id,
+      paymentReference: receiptNumber || callback.CheckoutRequestID,
+      amountPaid: amount ?? subRequest.amount,
+    });
+
+    await supabase
+      .from('subscription_mpesa_requests')
+      .update({ status: 'completed', mpesa_receipt_number: receiptNumber })
+      .eq('id', subRequest.id);
+  } catch (error) {
+    console.error('Failed to activate subscription after M-Pesa payment:', error);
+    await supabase
+      .from('subscription_mpesa_requests')
+      .update({
+        status: 'failed',
+        failure_reason: error instanceof Error ? error.message : 'Activation failed',
+        mpesa_receipt_number: receiptNumber,
+      })
+      .eq('id', subRequest.id);
+  }
+
+  await supabase.from('webhooks_log')
+    .update({ processed: true })
+    .eq('payload->Body->stkCallback->CheckoutRequestID', callback.CheckoutRequestID);
 
   return new Response(
     JSON.stringify({ ResultCode: 0, ResultDesc: 'Accepted' }),

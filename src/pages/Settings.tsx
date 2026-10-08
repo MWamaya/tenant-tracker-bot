@@ -42,7 +42,9 @@ import {
   Trash2,
   Users,
   Loader2,
+  CreditCard,
 } from 'lucide-react';
+import { BillingTab } from '@/components/billing/BillingTab';
 
 interface ReportRecipient {
   id: string;
@@ -197,7 +199,15 @@ const Settings = () => {
               <Bell className="h-4 w-4" />
               Notifications
             </TabsTrigger>
+            <TabsTrigger value="billing" className="gap-2">
+              <CreditCard className="h-4 w-4" />
+              Billing
+            </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="billing">
+            <BillingTab />
+          </TabsContent>
 
           <TabsContent value="general" className="space-y-6">
             <Card>

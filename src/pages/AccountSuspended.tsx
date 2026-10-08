@@ -1,10 +1,19 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, LogOut, Mail, CreditCard } from 'lucide-react';
+import { PUBLIC_PLANS, PublicPlan } from '@/lib/plans';
+import { MpesaPayDialog } from '@/components/billing/MpesaPayDialog';
+import { ROUTES } from '@/lib/routes';
 
 const AccountSuspended = () => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [selectedPlan, setSelectedPlan] = useState<PublicPlan | null>(null);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -15,27 +24,29 @@ const AccountSuspended = () => {
           </div>
           <CardTitle className="text-2xl">Account Suspended</CardTitle>
           <CardDescription className="text-base">
-            Your KODI PAP account has been suspended. Kindly update your payment status
-            to restore access.
+            Your KODI PAP account has been suspended. Pay for a plan below to restore access
+            instantly.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
           <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
             <div className="flex items-center gap-2 font-semibold text-sm">
               <CreditCard className="h-4 w-4 text-primary" />
-              Payment Instructions
+              Reactivate with M-Pesa
             </div>
-            <ul className="text-sm space-y-2 text-muted-foreground">
-              <li>
-                <span className="font-medium text-foreground">M-Pesa Paybill:</span> 247247
-              </li>
-              <li>
-                <span className="font-medium text-foreground">Account Number:</span> Your registered phone number
-              </li>
-              <li>
-                <span className="font-medium text-foreground">Amount:</span> As per your subscription plan
-              </li>
-            </ul>
+            <div className="space-y-2">
+              {PUBLIC_PLANS.map((plan) => (
+                <Button
+                  key={plan.name}
+                  variant="outline"
+                  className="w-full justify-between"
+                  onClick={() => setSelectedPlan(plan)}
+                >
+                  <span>{plan.name}</span>
+                  <span className="text-muted-foreground">KES {plan.price.toLocaleString()}/mo</span>
+                </Button>
+              ))}
+            </div>
           </div>
 
           <div className="rounded-lg border p-4 space-y-2">
@@ -49,7 +60,7 @@ const AccountSuspended = () => {
           </div>
 
           <p className="text-xs text-muted-foreground text-center">
-            Once payment is confirmed, your account will be reactivated and access restored.
+            Once payment is confirmed, your account reactivates automatically.
           </p>
 
           <Button variant="outline" className="w-full" onClick={() => signOut()}>
@@ -58,6 +69,19 @@ const AccountSuspended = () => {
           </Button>
         </CardContent>
       </Card>
+
+      {selectedPlan && (
+        <MpesaPayDialog
+          open={!!selectedPlan}
+          onOpenChange={(open) => !open && setSelectedPlan(null)}
+          planName={selectedPlan.name}
+          amount={selectedPlan.price}
+          onActivated={async () => {
+            await queryClient.invalidateQueries({ queryKey: ['account-status', user?.id] });
+            navigate(ROUTES.DASHBOARD);
+          }}
+        />
+      )}
     </div>
   );
 };
