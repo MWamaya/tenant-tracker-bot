@@ -28,6 +28,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // SIGNED_IN only fires for an actual new sign-in (password, invite,
+        // recovery link) — not for a session restored from storage on page
+        // load (that's INITIAL_SESSION) or a background token refresh.
+        if (event === 'SIGNED_IN' && session?.user) {
+          supabase
+            .from('profiles')
+            .update({ last_login_at: new Date().toISOString() })
+            .eq('id', session.user.id)
+            .then(({ error }) => {
+              if (error) console.error('Failed to record last_login_at:', error);
+            });
+        }
       }
     );
 
