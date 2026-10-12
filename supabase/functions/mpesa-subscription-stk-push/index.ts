@@ -133,8 +133,8 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const defaultCallbackUrl = `${supabaseUrl}/functions/v1/mpesa-callback`;
 
-    // Short, alphanumeric account reference — Safaricom caps this at 12 chars.
-    const accountReference = `SUB${plan.name}`.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
+    // Short, branded account reference — Safaricom caps this at 12 chars.
+    const accountReference = `KP-${plan.name}`.replace(/[^a-zA-Z0-9-]/g, '').slice(0, 12);
     const totalAmount = months === 12
       ? Math.round(plan.price * 12 * (1 - ANNUAL_DISCOUNT))
       : plan.price * months;
