@@ -23,6 +23,15 @@ function jsonResponse(body: unknown, status = 200): Response {
   });
 }
 
+// Company inbox addresses on the same catch-all domain as landlord
+// forwarding addresses — expected to receive mail that was never meant to
+// match a landlord, so it shouldn't trigger the "unmatched recipient" alert.
+const KNOWN_COMPANY_ADDRESSES = new Set([
+  'support@kodipap.com',
+  'info@kodipap.com',
+  'noreply@kodipap.com',
+]);
+
 Deno.serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
@@ -94,6 +103,15 @@ Deno.serve(async (req) => {
   if (!emailId || !toAddress) {
     await markBaseLogProcessed('email.received payload missing email_id or to address');
     return jsonResponse({ received: true });
+  }
+
+  // Mail to the company's own addresses (support requests, general inbox)
+  // is expected to never match a landlord's inbound_email — it's not a
+  // misdirected bank-forwarding attempt, so it shouldn't raise an
+  // "unmatched recipient" alert for an admin to act on.
+  if (KNOWN_COMPANY_ADDRESSES.has(toAddress)) {
+    await markBaseLogProcessed();
+    return jsonResponse({ received: true, companyAddress: true });
   }
 
   const { data: existingLog } = await supabase
