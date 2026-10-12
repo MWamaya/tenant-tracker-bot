@@ -982,7 +982,7 @@ export const useCreateLandlordAccount = () => {
       queryClient.invalidateQueries({ queryKey: ['platform-stats'] });
       queryClient.invalidateQueries({ queryKey: ['onboarding-requests'] });
       queryClient.invalidateQueries({ queryKey: ['onboarding-requests-new-count'] });
-      toast.success('Landlord account created — they’ve been emailed an invite to set a password.');
+      toast.success('Landlord account created and activated — they’ve been emailed login and setup instructions.');
     },
     onError: (error: Error) => {
       toast.error(`Failed to create landlord: ${error.message}`);

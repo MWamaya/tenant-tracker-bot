@@ -101,6 +101,20 @@ Deno.serve(async (req) => {
     );
   }
 
+  // Move straight past 'pending' so they can log in and set up payment
+  // forwarding right away — a DB trigger reacts to this by generating
+  // their inbound_email and emailing them the setup instructions. They
+  // stay gated to Settings + Subscribe (see ProtectedRoute) until they
+  // actually pay, which flips this to 'active'.
+  const { error: statusError } = await serviceClient
+    .from('profiles')
+    .update({ account_status: 'awaiting_payment' })
+    .eq('id', invited.user.id);
+
+  if (statusError) {
+    console.error('Failed to set awaiting_payment status:', statusError);
+  }
+
   if (onboardingRequestId) {
     await serviceClient
       .from('onboarding_requests')

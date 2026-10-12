@@ -62,8 +62,9 @@ export const CreateLandlordDialog = ({
         <DialogHeader>
           <DialogTitle>Add Landlord</DialogTitle>
           <DialogDescription className="text-[#64748B]">
-            Creates the account and emails them an invite to set a password. No subscription is
-            assigned yet — do that afterwards from the Landlords list.
+            Creates the account, emails them an invite to set a password, and activates it —
+            they can log in and set up payment forwarding right away, but stay limited to
+            Settings until they subscribe to a plan.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
