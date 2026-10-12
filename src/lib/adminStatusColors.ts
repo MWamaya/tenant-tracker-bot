@@ -4,12 +4,12 @@
 // literal-color workaround the old dark-mode theme needed.
 //
 // "info" has no semantic token anywhere in the app, so it stays a literal
-// teal — matching the admin area's navy+teal palette.
+// color — matching the current brand green (#16A34A), not the old teal.
 export const STATUS_BADGE_CLASSES = {
   success: 'border-success/40 text-success',
   warning: 'border-warning/40 text-warning',
   destructive: 'border-destructive/40 text-destructive',
-  info: 'border-[#0F766E]/40 text-[#0F766E]',
+  info: 'border-[#16A34A]/40 text-[#16A34A]',
   neutral: 'border-slate-300 text-slate-500',
 } as const;
 
