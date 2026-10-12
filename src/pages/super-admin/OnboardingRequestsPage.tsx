@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Check, X, PhoneCall, UserPlus, MoreVertical, Trash2 } from 'lucide-react';
+import { Search, X, UserPlus, MoreVertical, Trash2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/dates';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
@@ -139,22 +139,10 @@ const OnboardingRequestsPage = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {request.status === 'new' && (
-                  <DropdownMenuItem onClick={() => handleStatusChange(request.id, 'contacted')}>
-                    <PhoneCall className="h-4 w-4 mr-2" />
-                    Mark contacted
-                  </DropdownMenuItem>
-                )}
                 {request.status !== 'converted' && (
                   <DropdownMenuItem onClick={() => setCreateAccountFor(request)}>
                     <UserPlus className="h-4 w-4 mr-2" />
-                    Create account
-                  </DropdownMenuItem>
-                )}
-                {request.status !== 'converted' && (
-                  <DropdownMenuItem onClick={() => handleStatusChange(request.id, 'converted')}>
-                    <Check className="h-4 w-4 mr-2 text-green-600" />
-                    Mark converted
+                    Create &amp; activate account
                   </DropdownMenuItem>
                 )}
                 {request.status !== 'dismissed' && request.status !== 'converted' && (

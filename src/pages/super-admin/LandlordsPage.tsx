@@ -130,6 +130,8 @@ const LandlordsPage = () => {
         return STATUS_BADGE_CLASSES.warning;
       case 'pending':
         return STATUS_BADGE_CLASSES.info;
+      case 'awaiting_payment':
+        return STATUS_BADGE_CLASSES.warning;
       default:
         return STATUS_BADGE_CLASSES.neutral;
     }
@@ -370,6 +372,7 @@ const LandlordsPage = () => {
                   <SelectItem value="suspended">Suspended</SelectItem>
                   <SelectItem value="expired">Expired</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="awaiting_payment">Awaiting payment</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -15,7 +15,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
   const { isSuperAdmin, loading: superAdminLoading } = useSuperAdmin();
   const { impersonating } = useImpersonation();
-  const { isSuspended, isPending, loading: statusLoading } = useAccountStatus();
+  const { isSuspended, isPending, isAwaitingPayment, loading: statusLoading } = useAccountStatus();
   const location = useLocation();
 
   if (loading || superAdminLoading || statusLoading) {
@@ -36,6 +36,18 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // New signups must choose a subscription plan before accessing the app.
   if (isPending && !isSuperAdmin && !impersonating && location.pathname !== ROUTES.SUBSCRIBE) {
+    return <Navigate to={ROUTES.SUBSCRIBE} replace />;
+  }
+
+  // Admin-activated but not yet paid: can set up email forwarding in
+  // Settings, but everything else still redirects to Subscribe.
+  if (
+    isAwaitingPayment &&
+    !isSuperAdmin &&
+    !impersonating &&
+    location.pathname !== ROUTES.SUBSCRIBE &&
+    location.pathname !== ROUTES.SETTINGS
+  ) {
     return <Navigate to={ROUTES.SUBSCRIBE} replace />;
   }
 

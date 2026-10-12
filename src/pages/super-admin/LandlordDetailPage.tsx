@@ -114,6 +114,8 @@ const getStatusBadgeColor = (status: string) => {
       return STATUS_BADGE_CLASSES.warning;
     case 'pending':
       return STATUS_BADGE_CLASSES.info;
+    case 'awaiting_payment':
+      return STATUS_BADGE_CLASSES.warning;
     default:
       return STATUS_BADGE_CLASSES.neutral;
   }
