@@ -669,7 +669,7 @@ const Landing = () => {
           to={ROUTES.LANDING}
           className="fixed top-4 left-4 sm:top-6 sm:left-8 z-50 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <img src={kodiPapLogo} alt="KODI PAP" className="h-8 sm:h-9 w-auto drop-shadow" />
+          <img src={kodiPapLogo} alt="KODI PAP" className="h-12 sm:h-14 w-auto drop-shadow" />
         </Link>
 
         <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-end sm:justify-center pointer-events-none">
@@ -702,6 +702,16 @@ const Landing = () => {
           </div>
         </header>
 
+        <Button
+          asChild
+          size="sm"
+          className="group hidden sm:inline-flex fixed top-6 right-8 z-50 rounded-full gap-1.5 shadow-lg bg-[#16a34a] hover:bg-[#15803d] text-white hover:scale-105 transition-all duration-200"
+        >
+          <Link to={ROUTES.AUTH}>
+            Log in <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </Button>
+
         {/* Fixed bottom nav — mobile-only floating glass pill with section links + log in + primary CTA */}
         <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none">
           <div className="pointer-events-auto flex items-center gap-1 rounded-full border bg-background/70 backdrop-blur-xl shadow-lg px-1.5 py-1.5">
@@ -732,16 +742,6 @@ const Landing = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
           </div>
-
-          <Button
-            asChild
-            size="sm"
-            className="hidden sm:inline-flex absolute top-6 right-8 z-10 gap-1.5 shadow-lg"
-          >
-            <Link to={ROUTES.AUTH}>
-              Log in <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
 
           <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-6xl mx-auto w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
