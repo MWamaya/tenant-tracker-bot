@@ -124,6 +124,33 @@ Deno.serve(async (req) => {
     if (!res.ok) {
       console.error(`Resend send failed (${res.status}): ${await res.text()}`);
     }
+
+    const confirmationHtml = renderEmailLayout({
+      preheader: "We've got your request and will be in touch shortly.",
+      bodyHtml: `
+        <h2 style="margin:0 0 16px;font-size:18px;color:#0F172A;">Thanks, ${escapeHtml(fullName.split(' ')[0] || fullName)} — we've got your request</h2>
+        <p style="margin:0 0 20px;">We received your interest in the <strong>${escapeHtml(plan)}</strong> plan. Our team will review it and reach out — usually within one business day — to get you set up.</p>
+        <p style="margin:0;color:#64748B;font-size:13px;">Questions in the meantime? Just reply to this email.</p>
+      `,
+    });
+
+    const confirmationRes = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'KODI PAP <noreply@kodipap.com>',
+        to: [email],
+        subject: "We've got your request — KODI PAP",
+        html: confirmationHtml,
+      }),
+    });
+
+    if (!confirmationRes.ok) {
+      console.error(`Resend confirmation send failed (${confirmationRes.status}): ${await confirmationRes.text()}`);
+    }
   }
 
   return jsonResponse({ ok: true });
