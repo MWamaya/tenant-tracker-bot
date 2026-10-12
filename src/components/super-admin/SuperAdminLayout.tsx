@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useNewOnboardingRequestsCount } from '@/hooks/useSuperAdminData';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,7 @@ const navItems = [
 const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { data: pendingCount } = useNewOnboardingRequestsCount();
 
   const handleSignOut = async () => {
     await signOut();
@@ -97,6 +99,11 @@ const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => {
                   )}
                 />
                 {item.label}
+                {item.path === ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS && !!pendingCount && (
+                  <span className="ml-auto h-5 min-w-5 px-1.5 rounded-full bg-destructive text-white text-[11px] font-semibold flex items-center justify-center">
+                    {pendingCount > 99 ? '99+' : pendingCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -133,7 +140,7 @@ const SuperAdminLayout = ({ children, mobileTitle, showBackButton, onBack }: Sup
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-h-screen pb-20 lg:pb-0">
+        <main className="flex-1 min-w-0 min-h-screen pb-20 lg:pb-0">
           <SuperAdminTopbar />
           <div className="p-4 lg:p-8">
             {children}

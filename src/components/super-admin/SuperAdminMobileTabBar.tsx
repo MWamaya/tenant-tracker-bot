@@ -13,17 +13,18 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
+import { useNewOnboardingRequestsCount } from '@/hooks/useSuperAdminData';
 import { ROUTES } from '@/lib/routes';
 
 const tabs = [
   { name: 'Dashboard', href: ROUTES.SUPER_ADMIN_ROOT, icon: LayoutDashboard },
+  { name: 'Onboarding', href: ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS, icon: UserPlus },
   { name: 'Landlords', href: ROUTES.SUPER_ADMIN_LANDLORDS, icon: Users },
   { name: 'Payments', href: ROUTES.SUPER_ADMIN_PAYMENTS, icon: DollarSign },
   { name: 'Properties', href: ROUTES.SUPER_ADMIN_PROPERTIES, icon: Building },
 ];
 
 const moreLinks = [
-  { name: 'Onboarding Requests', href: ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS, icon: UserPlus },
   { name: 'Audit Logs', href: ROUTES.SUPER_ADMIN_AUDIT_LOGS, icon: FileText },
   { name: 'Settings', href: ROUTES.SUPER_ADMIN_SETTINGS, icon: Settings },
 ];
@@ -31,6 +32,7 @@ const moreLinks = [
 const SuperAdminMobileTabBar = () => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { data: pendingCount } = useNewOnboardingRequestsCount();
   const [moreOpen, setMoreOpen] = useState(false);
 
   const isMoreActive = moreLinks.some((link) => location.pathname === link.href);
@@ -45,11 +47,16 @@ const SuperAdminMobileTabBar = () => {
               <Link
                 key={tab.name}
                 to={tab.href}
-                className={`flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
+                className={`relative flex h-11 w-11 items-center justify-center rounded-full transition-colors ${
                   isActive ? 'bg-[#2DD4BF] text-[#0F172A]' : 'text-slate-300'
                 }`}
               >
                 <tab.icon className="h-5 w-5" />
+                {tab.href === ROUTES.SUPER_ADMIN_ONBOARDING_REQUESTS && !!pendingCount && (
+                  <span className="absolute top-0.5 right-0.5 h-4 min-w-4 px-1 rounded-full bg-destructive text-white text-[10px] font-semibold flex items-center justify-center">
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
               </Link>
             );
           })}
