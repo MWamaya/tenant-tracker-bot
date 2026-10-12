@@ -19,6 +19,7 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronUp,
+  Mail,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
@@ -50,6 +51,12 @@ const STEPS = [
     icon: UserPlus,
     title: 'Add your properties',
     description: 'Set up houses, units and tenants in minutes — no spreadsheets required.',
+  },
+  {
+    icon: Mail,
+    title: 'Connect your payment channel',
+    description:
+      "Forward M-Pesa and bank confirmations to your KODI PAP address. We never touch your money.",
   },
   {
     icon: Smartphone,
@@ -559,6 +566,23 @@ const STEP_VISUALS = [
       ))}
       <div className="flex items-center gap-1.5 text-success text-xs font-semibold pt-1 border-t">
         <Check className="h-3.5 w-3.5" /> Saved
+      </div>
+    </div>
+  ),
+  () => (
+    <div className="rounded-xl border bg-card p-4 text-xs space-y-3">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Mail className="h-4 w-4 text-success" />
+        Bank &amp; M-Pesa Email Forwarding
+      </div>
+      <p className="leading-relaxed text-foreground">
+        Forward your M-Pesa and bank payment confirmations to your forwarding address:
+      </p>
+      <div className="p-2.5 rounded-lg bg-muted/50 border border-border font-mono text-[11px] break-all">
+        yourname@payments.kodipap.com
+      </div>
+      <div className="flex items-center gap-1.5 text-success text-xs font-semibold pt-1 border-t">
+        <ShieldCheck className="h-3.5 w-3.5" /> Money still goes straight to you
       </div>
     </div>
   ),
