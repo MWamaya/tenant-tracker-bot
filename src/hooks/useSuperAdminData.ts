@@ -141,10 +141,12 @@ export const usePlatformStats = () => {
 
       const totalRentCollected = payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
-      // Fetch unmatched payments (payments without tenant_id or house_id)
+      // Fetch unmatched payments (payments without tenant_id or house_id,
+      // excluding ones a landlord already dismissed from their own queue)
       const { count: unmatchedCount, error: unmatchedError } = await supabase
         .from('payments')
         .select('*', { count: 'exact', head: true })
+        .eq('reconciliation_dismissed', false)
         .or('tenant_id.is.null,house_id.is.null');
 
       if (unmatchedError) throw unmatchedError;
@@ -347,6 +349,7 @@ export const useUnmatchedPaymentCountsByLandlord = () => {
       const { data, error } = await supabase
         .from('payments')
         .select('landlord_id')
+        .eq('reconciliation_dismissed', false)
         .or('tenant_id.is.null,house_id.is.null');
 
       if (error) throw error;
