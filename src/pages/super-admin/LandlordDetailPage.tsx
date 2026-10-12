@@ -381,15 +381,15 @@ const LandlordDetailPage = () => {
                 </div>
               </div>
               <div className="pt-2 border-t border-[#E2E8F0]">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="min-w-0">
                     <Label className="text-[#64748B]">Inbound Email</Label>
-                    <p className="text-[#0F172A]">{landlord.inbound_email || 'Not yet generated'}</p>
+                    <p className="text-[#0F172A] break-all">{landlord.inbound_email || 'Not yet generated'}</p>
                   </div>
                   <Button
                     size="sm"
                     variant="outline"
-                    className={cn('border-[#E2E8F0] text-[#1E3A5F]', ADMIN_SURFACE_HOVER)}
+                    className={cn('border-[#E2E8F0] text-[#1E3A5F] shrink-0 self-start', ADMIN_SURFACE_HOVER)}
                     onClick={() => {
                       setInboundEmailInput(landlord.inbound_email || '');
                       setDialogType('inboundEmail');
@@ -408,7 +408,7 @@ const LandlordDetailPage = () => {
               <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A]">Subscription & SMS</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <Label className="text-[#64748B]">Plan</Label>
                   <p className="text-[#0F172A] font-medium">{landlord.subscription?.plan_name || 'No subscription'}</p>
@@ -428,14 +428,14 @@ const LandlordDetailPage = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className={cn('border-[#E2E8F0] text-[#1E3A5F]', ADMIN_SURFACE_HOVER)}
+                  className={cn('border-[#E2E8F0] text-[#1E3A5F] shrink-0 self-start', ADMIN_SURFACE_HOVER)}
                   onClick={() => setDialogType('subscription')}
                 >
                   <CreditCard className="h-4 w-4 mr-2" />
                   Assign Plan
                 </Button>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#E2E8F0]">
                 <div>
                   <Label className="text-[#64748B]">SMS Balance</Label>
                   <p className="text-[#0F172A] font-medium">{landlord.sms_token_balance} tokens</p>
@@ -443,7 +443,7 @@ const LandlordDetailPage = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className={cn('border-[#E2E8F0] text-[#1E3A5F]', ADMIN_SURFACE_HOVER)}
+                  className={cn('border-[#E2E8F0] text-[#1E3A5F] shrink-0 self-start', ADMIN_SURFACE_HOVER)}
                   onClick={() => setDialogType('sms')}
                 >
                   <MessageSquare className="h-4 w-4 mr-2" />
@@ -451,7 +451,7 @@ const LandlordDetailPage = () => {
                 </Button>
               </div>
               {unmatchedCount > 0 && (
-                <div className="flex items-center justify-between pt-2 border-t border-[#E2E8F0]">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-[#E2E8F0]">
                   <div className="flex items-center gap-2 text-warning">
                     <AlertTriangle className="h-4 w-4 shrink-0" />
                     <span className="text-sm font-medium">{unmatchedCount} unmatched rent payment(s)</span>
@@ -459,7 +459,7 @@ const LandlordDetailPage = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    className={cn('border-[#E2E8F0] text-[#1E3A5F]', ADMIN_SURFACE_HOVER)}
+                    className={cn('border-[#E2E8F0] text-[#1E3A5F] shrink-0 self-start', ADMIN_SURFACE_HOVER)}
                     onClick={handleOpenReconciliation}
                   >
                     Open Reconciliation

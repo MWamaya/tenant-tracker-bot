@@ -90,6 +90,21 @@ Deno.serve(async (req) => {
 
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   if (resendApiKey) {
+    // Notify every current SUPER_ADMIN directly — not just the support@
+    // alias, which may or may not be an inbox anyone actually watches.
+    const { data: adminRoles } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'SUPER_ADMIN');
+    const adminIds = (adminRoles ?? []).map((r) => r.user_id);
+    const { data: adminProfiles } = adminIds.length
+      ? await supabase.from('profiles').select('email').in('id', adminIds)
+      : { data: [] as { email: string | null }[] };
+    const adminEmails = (adminProfiles ?? [])
+      .map((p) => p.email)
+      .filter((e): e is string => !!e);
+    const notifyRecipients = [...new Set([SUPPORT_EMAIL, ...adminEmails])];
+
     const html = renderEmailLayout({
       preheader: `New onboarding request from ${fullName} (${plan})`,
       bodyHtml: `
@@ -112,7 +127,7 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         from: 'KODI PAP <noreply@kodipap.com>',
-        to: [SUPPORT_EMAIL],
+        to: notifyRecipients,
         reply_to: email,
         subject: `New onboarding request: ${fullName} (${plan})`,
         html,

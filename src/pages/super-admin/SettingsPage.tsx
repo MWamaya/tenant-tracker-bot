@@ -440,7 +440,7 @@ const AdminsTab = () => {
 
   return (
     <Card className={ADMIN_CARD}>
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <CardTitle className="text-lg font-semibold tracking-tight text-[#0F172A] flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -450,7 +450,7 @@ const AdminsTab = () => {
             People with full platform administration access
           </CardDescription>
         </div>
-        <Button onClick={() => setInviteOpen(true)} className="gap-2 shrink-0">
+        <Button onClick={() => setInviteOpen(true)} className="gap-2 shrink-0 w-full sm:w-auto">
           <UserPlus className="h-4 w-4" />
           Add Super Admin
         </Button>

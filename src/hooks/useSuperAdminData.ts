@@ -119,7 +119,7 @@ export const usePlatformStats = () => {
 
       // Fetch total properties
       const { count: propertiesCount, error: propertiesError } = await supabase
-        .from('houses')
+        .from('properties')
         .select('*', { count: 'exact', head: true });
 
       if (propertiesError) throw propertiesError;
@@ -220,13 +220,13 @@ export const usePlatformTrends = () => {
       const [
         { data: profiles, error: profilesError },
         { data: payments, error: paymentsError },
-        { data: houses, error: housesError },
+        { data: properties, error: housesError },
         { data: tenants, error: tenantsError },
         { data: onboardingRequests, error: onboardingError },
       ] = await Promise.all([
         supabase.from('profiles').select('id, created_at').gte('created_at', rangeStart.toISOString()),
         supabase.from('payments').select('amount, payment_date').gte('payment_date', rangeStart.toISOString()),
-        supabase.from('houses').select('created_at').gte('created_at', rangeStart.toISOString()),
+        supabase.from('properties').select('created_at').gte('created_at', rangeStart.toISOString()),
         supabase.from('tenants').select('created_at').gte('created_at', rangeStart.toISOString()),
         supabase.from('onboarding_requests').select('created_at').gte('created_at', rangeStart.toISOString()),
       ]);
@@ -263,7 +263,7 @@ export const usePlatformTrends = () => {
         if (point) point.landlordSignups += 1;
       }
 
-      for (const h of houses ?? []) {
+      for (const h of properties ?? []) {
         const key = format(new Date(h.created_at), 'yyyy-MM');
         const point = points.get(key);
         if (point) point.newProperties += 1;
