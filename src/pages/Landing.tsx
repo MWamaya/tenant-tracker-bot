@@ -626,7 +626,7 @@ const HowItWorksStepper = () => {
               Step {active + 1} of {STEPS.length}
             </span>
           </div>
-          <div key={active} className="animate-fade-in p-5">
+          <div key={active} className="animate-fade-in p-5 min-h-[210px] flex flex-col justify-center">
             <ActiveVisual />
           </div>
         </div>
@@ -661,17 +661,20 @@ const Landing = () => {
         path="/"
       />
       <div className="min-h-screen pb-24 sm:pb-0">
-        {/* Fixed top — desktop: pill nav (logo, links, sign up). Mobile: no bar, just a free-floating logo + colored log in button */}
-        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-between sm:justify-center pointer-events-none">
-          <Link to={ROUTES.LANDING} className="sm:hidden pointer-events-auto rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <img src={kodiPapLogo} alt="KODI PAP" className="h-7 w-auto drop-shadow" />
-          </Link>
+        {/* Logo floats top-left on its own, pinned above the hero photo and
+            independent of the nav pill so it never scrolls away. Desktop nav
+            pill: links + sign up, centered. Mobile: colored log in/get
+            started buttons, top-right. */}
+        <Link
+          to={ROUTES.LANDING}
+          className="fixed top-4 left-4 sm:top-6 sm:left-8 z-50 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <img src={kodiPapLogo} alt="KODI PAP" className="h-8 sm:h-9 w-auto drop-shadow" />
+        </Link>
 
+        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-end sm:justify-center pointer-events-none">
           <nav className="hidden sm:block pointer-events-auto w-fit rounded-full border bg-background/70 backdrop-blur-xl shadow-lg">
             <div className="flex items-center gap-2 px-2 py-1.5">
-              <Link to={ROUTES.LANDING} className="ml-1.5 mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto" />
-              </Link>
               <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 How it works
               </a>

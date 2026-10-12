@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useReconciliation } from '@/hooks/useReconciliation';
 import { toast } from 'sonner';
-import kodiPapLogo from '@/assets/kodi-pap-logo.png';
+import kodiPapLogo from '@/assets/kodi-pap-logo-dark.png';
 import { ROUTES } from '@/lib/routes';
 
 const navigation = [

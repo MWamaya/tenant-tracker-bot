@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import kodiPapLogo from '@/assets/kodi-pap-logo.png';
+import kodiPapLogo from '@/assets/kodi-pap-logo-dark.png';
 import { ROUTES } from '@/lib/routes';
 
 interface MobileTopBarProps {
