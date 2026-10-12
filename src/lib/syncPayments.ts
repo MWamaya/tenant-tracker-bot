@@ -127,7 +127,7 @@ export async function clearMatchedEmailLogs(landlordId: string, mpesaRefs: strin
 export async function syncPaymentsToTenants(landlordId: string): Promise<SyncResult> {
   // 1. Load tenants + unlinked payments
   const [{ data: tenants }, { data: unlinkedPayments }] = await Promise.all([
-    supabase.from('tenants').select('id, name, house_id').eq('landlord_id', landlordId),
+    supabase.from('tenants').select('id, name, house_id').eq('landlord_id', landlordId).is('moved_out_at', null),
     supabase
       .from('payments')
       .select('id, sender_name, payment_date, amount, house_id')

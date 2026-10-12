@@ -11,6 +11,7 @@ export interface Tenant {
   phone: string;
   secondary_phone: string | null;
   move_in_date: string | null;
+  moved_out_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -64,6 +65,7 @@ export const useTenants = () => {
           )
         `)
         .eq('landlord_id', landlordId)
+        .is('moved_out_at', null)
         .order('name', { ascending: true });
 
       if (error) throw error;
@@ -206,9 +208,13 @@ export const useTenants = () => {
           .is('end_date', null);
       }
 
+      // Soft-delete: keep the row (and every payment's tenant_id link to
+      // it) so payment history never gets orphaned into Needs Review.
+      // House is unassigned here too, so the row no longer shows up in any
+      // active list or future payment matching.
       const { error } = await supabase
         .from('tenants')
-        .delete()
+        .update({ moved_out_at: new Date().toISOString(), house_id: null })
         .eq('id', id);
 
       if (error) throw error;
@@ -223,10 +229,10 @@ export const useTenants = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       queryClient.invalidateQueries({ queryKey: ['houses'] });
-      toast.success('Tenant deleted successfully');
+      toast.success('Tenant marked as moved out');
     },
     onError: (error: Error) => {
-      toast.error(`Failed to delete tenant: ${error.message}`);
+      toast.error(`Failed to mark tenant as moved out: ${error.message}`);
     },
   });
 

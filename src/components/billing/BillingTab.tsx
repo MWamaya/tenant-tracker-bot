@@ -49,7 +49,7 @@ const useUsageCounts = (landlordId: string | null) =>
     queryFn: async () => {
       const [properties, tenants] = await Promise.all([
         supabase.from('properties').select('id').eq('landlord_id', landlordId!),
-        supabase.from('tenants').select('id').eq('landlord_id', landlordId!),
+        supabase.from('tenants').select('id').eq('landlord_id', landlordId!).is('moved_out_at', null),
       ]);
       if (properties.error) throw properties.error;
       if (tenants.error) throw tenants.error;
@@ -122,15 +122,17 @@ export const BillingTab = () => {
   );
   const nextPlan = currentIndex >= 0 && currentIndex < PUBLIC_PLANS.length - 1 ? PUBLIC_PLANS[currentIndex + 1] : null;
 
-  const handleRenew = (plan: PublicPlan, months = 1) => {
-    setSelectedMonths(months);
+  const handleRenew = (plan: PublicPlan) => {
+    setSelectedMonths(prepayMonths);
     setSelectedPlan(plan);
   };
 
   const handleSwitch = (plan: PublicPlan) => {
-    setSelectedMonths(1);
+    setSelectedMonths(prepayMonths);
     setSelectedPlan(plan);
   };
+
+  const cycleLabel = prepayMonths === 1 ? '1 month' : `${prepayMonths} months`;
 
   return (
     <div className="space-y-6">
@@ -181,41 +183,9 @@ export const BillingTab = () => {
               )}
 
               {currentPlan && (
-                <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <CalendarClock className="h-4 w-4 text-primary" />
-                    Pay months in advance
-                  </div>
-                  <p className="text-xs text-muted-foreground -mt-2">
-                    Skip the monthly reminder — pay now for several months at once, added onto your renewal date.
-                  </p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {PREPAY_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.months}
-                        type="button"
-                        onClick={() => setPrepayMonths(opt.months)}
-                        className={cn(
-                          'relative rounded-md border px-2 py-2 text-center transition-colors',
-                          prepayMonths === opt.months
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-border bg-background hover:border-primary/40',
-                        )}
-                      >
-                        {opt.months === 12 && (
-                          <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-success text-success-foreground text-[9px] font-bold px-1.5 py-0.5 whitespace-nowrap">
-                            Save 20%
-                          </span>
-                        )}
-                        <div className="text-sm font-semibold">{opt.months === 1 ? '1 mo' : `${opt.months} mo`}</div>
-                        <div className={cn('text-xs', prepayMonths === opt.months ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
-                          KES {calcPrepayTotal(currentPlan.price, opt.months).toLocaleString()}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                  <Button className="w-full" disabled={viewOnly} onClick={() => handleRenew(currentPlan, prepayMonths)}>
-                    Pay KES {calcPrepayTotal(currentPlan.price, prepayMonths).toLocaleString()} with M-Pesa
+                <div className="rounded-lg border bg-muted/30 p-4">
+                  <Button className="w-full" disabled={viewOnly} onClick={() => handleRenew(currentPlan)}>
+                    Renew {currentPlan.name} — {cycleLabel} — KES {calcPrepayTotal(currentPlan.price, prepayMonths).toLocaleString()} with M-Pesa
                   </Button>
                 </div>
               )}
@@ -223,6 +193,44 @@ export const BillingTab = () => {
           ) : (
             <p className="text-sm text-muted-foreground">No active subscription.</p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="pt-6 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <CalendarClock className="h-4 w-4 text-primary" />
+            Billing cycle
+          </div>
+          <p className="text-xs text-muted-foreground -mt-2">
+            Pay for several months at once — including 12 for 20% off. Applies to renewing, switching,
+            or upgrading below.
+          </p>
+          <div className="grid grid-cols-4 gap-2 max-w-md">
+            {PREPAY_OPTIONS.map((opt) => (
+              <button
+                key={opt.months}
+                type="button"
+                onClick={() => setPrepayMonths(opt.months)}
+                className={cn(
+                  'relative rounded-md border px-2 py-2 text-center transition-colors',
+                  prepayMonths === opt.months
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-background hover:border-primary/40',
+                )}
+              >
+                {opt.months === 12 && (
+                  <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded-full bg-success text-success-foreground text-[9px] font-bold px-1.5 py-0.5 whitespace-nowrap">
+                    Save 20%
+                  </span>
+                )}
+                <div className="text-sm font-semibold">{opt.months === 1 ? '1 mo' : `${opt.months} mo`}</div>
+                <div className={cn('text-xs', prepayMonths === opt.months ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
+                  {opt.months === 1 ? 'no discount' : opt.months === 12 ? '20% off' : 'standard rate'}
+                </div>
+              </button>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
@@ -248,9 +256,16 @@ export const BillingTab = () => {
                   {isUpgrade && <Badge variant="outline" className="border-success/40 text-success">Upgrade</Badge>}
                 </div>
                 <div className="pt-1">
-                  <span className="text-2xl font-bold">KES {plan.price.toLocaleString()}</span>
-                  <span className="text-sm text-muted-foreground">/month</span>
+                  <span className="text-2xl font-bold">
+                    KES {calcPrepayTotal(plan.price, prepayMonths).toLocaleString()}
+                  </span>
+                  <span className="text-sm text-muted-foreground">/{cycleLabel}</span>
                 </div>
+                {prepayMonths === 12 && (
+                  <p className="text-xs text-success font-medium">
+                    KES {Math.round(calcPrepayTotal(plan.price, 12) / 12).toLocaleString()}/month
+                  </p>
+                )}
               </CardHeader>
 
               <CardContent className="space-y-4">
@@ -310,10 +325,10 @@ export const BillingTab = () => {
                   className="w-full"
                   variant={isCurrent ? 'outline' : isDowngrade ? 'ghost' : 'default'}
                   disabled={viewOnly}
-                  onClick={() => (isCurrent ? handleRenew(plan, 1) : handleSwitch(plan))}
+                  onClick={() => (isCurrent ? handleRenew(plan) : handleSwitch(plan))}
                 >
                   {isCurrent ? (
-                    'Renew 1 month'
+                    `Renew — ${cycleLabel}`
                   ) : isUpgrade ? (
                     <>Upgrade to {plan.name} <ArrowRight className="h-4 w-4 ml-1.5" /></>
                   ) : (

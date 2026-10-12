@@ -43,7 +43,8 @@ export async function importPaymentRows(
   const { data: tenants } = await supabase
     .from('tenants')
     .select('id, name, house_id')
-    .eq('landlord_id', landlordId);
+    .eq('landlord_id', landlordId)
+    .is('moved_out_at', null);
   const tenantByHouse = new Map(
     (tenants || []).filter((t) => t.house_id).map((t) => [t.house_id, t.id])
   );

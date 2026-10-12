@@ -162,10 +162,12 @@ export const useProperties = () => {
       const houseIds = (houses || []).map((h) => h.id);
 
       if (houseIds.length > 0) {
-        // Delete tenants assigned to those houses
+        // Soft-delete tenants assigned to those houses — keeps their
+        // payment history's tenant_id link intact instead of nulling it
+        // out (see 20261012150000_soft_delete_tenants.sql).
         const { error: tenantsErr } = await supabase
           .from('tenants')
-          .delete()
+          .update({ moved_out_at: new Date().toISOString(), house_id: null })
           .in('house_id', houseIds);
         if (tenantsErr) throw tenantsErr;
 

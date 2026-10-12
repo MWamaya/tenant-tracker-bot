@@ -124,7 +124,8 @@ export const usePlatformStats = () => {
       // Fetch total tenants
       const { count: tenantsCount, error: tenantsError } = await supabase
         .from('tenants')
-        .select('*', { count: 'exact', head: true });
+        .select('*', { count: 'exact', head: true })
+        .is('moved_out_at', null);
 
       if (tenantsError) throw tenantsError;
 
@@ -431,7 +432,8 @@ export const useLandlordTenantCount = (landlordId: string | null) =>
       const { count, error } = await supabase
         .from('tenants')
         .select('*', { count: 'exact', head: true })
-        .eq('landlord_id', landlordId as string);
+        .eq('landlord_id', landlordId as string)
+        .is('moved_out_at', null);
       if (error) throw error;
       return count || 0;
     },

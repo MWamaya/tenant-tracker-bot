@@ -204,7 +204,8 @@ export const PaymentStatementUploadDialog = ({ open, onOpenChange, landlordId, s
       const { data: tenants } = await supabase
         .from('tenants')
         .select('id, name, house_id')
-        .eq('landlord_id', landlordId);
+        .eq('landlord_id', landlordId)
+        .is('moved_out_at', null);
       const tenantsWithHouse = (tenants || []).filter((t) => t.house_id);
       const tenantByHouse = new Map(tenantsWithHouse.map((t) => [t.house_id as string, t]));
 

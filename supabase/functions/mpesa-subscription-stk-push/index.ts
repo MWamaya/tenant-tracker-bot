@@ -62,28 +62,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Prepaying multiple cycles is fine for a first-ever subscription (e.g.
-    // choosing Annual at signup) or when renewing the plan you're already
-    // on — but not as a way to prepay while also switching to a different
-    // plan, which stays a single-month action.
-    if (months > 1) {
-      const { data: currentSub } = await supabase
-        .from('landlord_subscriptions')
-        .select('plan_id')
-        .eq('landlord_id', auth.user.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (currentSub && currentSub.plan_id !== plan.id) {
-        return new Response(
-          JSON.stringify({ error: 'Prepaying multiple months is only available when renewing your current plan.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
     // Free plans activate immediately — no M-Pesa round trip needed.
     if (plan.price <= 0) {
       await activateLandlordSubscription(supabase, {

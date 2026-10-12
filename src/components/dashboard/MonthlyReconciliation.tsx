@@ -26,7 +26,7 @@ export const MonthlyReconciliation = () => {
     queryFn: async () => {
       const [{ data: houses }, { data: tenants }, { data: payments }] = await Promise.all([
         supabase.from('houses').select('id, house_no, expected_rent').eq('landlord_id', landlordId!),
-        supabase.from('tenants').select('id, name, house_id').eq('landlord_id', landlordId!),
+        supabase.from('tenants').select('id, name, house_id').eq('landlord_id', landlordId!).is('moved_out_at', null),
         supabase
           .from('payments')
           .select('id, amount, house_id, mpesa_ref, payment_date')

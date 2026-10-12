@@ -55,7 +55,8 @@ Deno.serve(async (req) => {
     const { data: tenants } = await supabase
       .from('tenants')
       .select('id, name, phone, secondary_phone, house_id')
-      .eq('landlord_id', landlordId);
+      .eq('landlord_id', landlordId)
+      .is('moved_out_at', null);
 
     const { data: houses } = await supabase
       .from('houses')

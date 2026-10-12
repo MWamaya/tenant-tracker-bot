@@ -66,7 +66,8 @@ export const useDashboardStats = (month?: string) => {
       const { data: tenants, error: tenantsError } = await supabase
         .from('tenants')
         .select('id, name, phone, house_id')
-        .eq('landlord_id', landlordId);
+        .eq('landlord_id', landlordId)
+        .is('moved_out_at', null);
 
       if (tenantsError) throw tenantsError;
 

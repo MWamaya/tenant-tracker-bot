@@ -472,8 +472,9 @@ const Tenants = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Mark Tenant as Moved Out</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove <strong>{tenantToDelete?.name}</strong>'s details and mark house{' '}
-              <strong>{tenantToDelete?.houses?.house_no || 'N/A'}</strong> as vacant. This action cannot be undone.
+              This will remove <strong>{tenantToDelete?.name}</strong> from your active tenant list and mark house{' '}
+              <strong>{tenantToDelete?.houses?.house_no || 'N/A'}</strong> as vacant. Their payment history and
+              statements are kept.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
