@@ -540,7 +540,7 @@ const LandlordDetailPage = () => {
               ) : !platformPayments || platformPayments.length === 0 ? (
                 <p className="text-[#64748B] text-sm py-4 text-center">No subscription payments yet</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                   {platformPayments.map((p) => (
                     <div key={p.id} className={cn('flex items-center justify-between p-3', ADMIN_SURFACE)}>
                       <div>
