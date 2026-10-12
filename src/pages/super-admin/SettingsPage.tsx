@@ -586,7 +586,7 @@ const SettingsPage = () => {
           onValueChange={(value) => setSearchParams({ tab: value }, { replace: true })}
           className="w-full"
         >
-          <TabsList>
+          <TabsList className="h-auto flex-wrap p-1.5 gap-1">
             <TabsTrigger value="profile" className="gap-1.5">
               <User className="h-3.5 w-3.5" />
               Profile
