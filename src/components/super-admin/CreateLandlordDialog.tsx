@@ -17,7 +17,7 @@ interface CreateLandlordDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Pre-fill when creating an account from an onboarding request. */
   initial?: { fullName?: string; email?: string; phone?: string };
-  /** When set, the request is marked 'converted' on success. */
+  /** When set, the request is marked 'activated' on success. */
   onboardingRequestId?: string;
 }
 

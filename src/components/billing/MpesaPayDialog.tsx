@@ -23,9 +23,23 @@ interface MpesaPayDialogProps {
   /** Billing cycles this payment covers (1, 3, 6, or 12). Defaults to 1. */
   months?: number;
   onActivated: () => void;
+  /** Extra line shown under the success message — e.g. pointing a
+   * first-time signup at payment-forwarding setup. Omit for renewals. */
+  successNote?: string;
+  /** Label for the button on the success screen. Defaults to "Continue". */
+  continueLabel?: string;
 }
 
-export const MpesaPayDialog = ({ open, onOpenChange, planName, amount, months = 1, onActivated }: MpesaPayDialogProps) => {
+export const MpesaPayDialog = ({
+  open,
+  onOpenChange,
+  planName,
+  amount,
+  months = 1,
+  onActivated,
+  successNote,
+  continueLabel = 'Continue',
+}: MpesaPayDialogProps) => {
   const { user } = useAuth();
   const { status, failureReason, pay, reset } = useSubscriptionPayment();
   const [phone, setPhone] = useState((user?.user_metadata?.phone as string) || '');
@@ -73,11 +87,14 @@ export const MpesaPayDialog = ({ open, onOpenChange, planName, amount, months = 
                 <p className="text-sm text-muted-foreground mt-1">
                   {planLabel} is now active. Receipt for KES {amount.toLocaleString()} confirmed.
                 </p>
+                {successNote && (
+                  <p className="text-sm text-muted-foreground mt-3 border-t pt-3">{successNote}</p>
+                )}
               </div>
             </div>
             <DialogFooter>
               <Button className="w-full" onClick={handleDone}>
-                Continue
+                {continueLabel}
               </Button>
             </DialogFooter>
           </>

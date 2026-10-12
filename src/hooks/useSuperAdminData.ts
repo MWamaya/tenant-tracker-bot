@@ -8,9 +8,12 @@ export interface OnboardingRequest {
   full_name: string;
   email: string;
   phone: string;
-  plan: string;
+  plan: string | null;
   status: string;
   created_at: string;
+  /** Set once an account exists for this request — either an admin created
+   * it from here, or it was a self-serve signup that auto-created this row. */
+  landlord_id: string | null;
 }
 
 // Types for Super Admin data
@@ -840,8 +843,8 @@ export const useOnboardingRequests = () => {
   });
 };
 
-// Hook to fetch the count of untriaged ("new") onboarding requests, for the
-// dashboard stat card — cheap exact count rather than fetching full rows.
+// Hook to fetch the count of untriaged ("pending") onboarding requests, for
+// the dashboard stat card — cheap exact count rather than fetching full rows.
 export const useNewOnboardingRequestsCount = () => {
   return useQuery({
     queryKey: ['onboarding-requests-new-count'],
@@ -849,7 +852,7 @@ export const useNewOnboardingRequestsCount = () => {
       const { count, error } = await supabase
         .from('onboarding_requests')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'new');
+        .eq('status', 'pending');
 
       if (error) throw error;
       return count || 0;

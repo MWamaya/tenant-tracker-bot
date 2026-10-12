@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { useOnboardingRequests, useUpdateOnboardingStatus, useDeleteOnboardingRequest } from '@/hooks/useSuperAdminData';
+import { useOnboardingRequests, useUpdateOnboardingStatus, useDeleteOnboardingRequest, useUpdateLandlordStatus } from '@/hooks/useSuperAdminData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   AlertDialog,
@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, X, UserPlus, MoreVertical, Trash2 } from 'lucide-react';
+import { Search, X, UserPlus, MoreVertical, Trash2, CheckCircle2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/dates';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
@@ -38,15 +38,13 @@ import type { CsvColumn } from '@/lib/csvExport';
 import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
-const STATUS_OPTIONS = ['new', 'contacted', 'converted', 'dismissed'];
+const STATUS_OPTIONS = ['pending', 'activated', 'dismissed'];
 
 const getStatusBadgeColor = (status: string) => {
   switch (status) {
-    case 'new':
+    case 'pending':
       return STATUS_BADGE_CLASSES.info;
-    case 'contacted':
-      return STATUS_BADGE_CLASSES.warning;
-    case 'converted':
+    case 'activated':
       return STATUS_BADGE_CLASSES.success;
     case 'dismissed':
       return STATUS_BADGE_CLASSES.neutral;
@@ -59,6 +57,7 @@ const OnboardingRequestsPage = () => {
   const { data: requests, isLoading } = useOnboardingRequests();
   const updateStatus = useUpdateOnboardingStatus();
   const deleteRequest = useDeleteOnboardingRequest();
+  const activateLandlord = useUpdateLandlordStatus();
 
   const {
     search: searchQuery,
@@ -69,7 +68,7 @@ const OnboardingRequestsPage = () => {
     setSorting,
     columnVisibility,
     setColumnVisibility,
-  } = useTableViewState('super-admin-onboarding-requests', 'new');
+  } = useTableViewState('super-admin-onboarding-requests', 'pending');
   const [createAccountFor, setCreateAccountFor] = useState<OnboardingRequest | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<OnboardingRequest | null>(null);
 
@@ -102,11 +101,14 @@ const OnboardingRequestsPage = () => {
         id: 'Plan',
         accessorKey: 'plan',
         header: 'Plan',
-        cell: ({ row }) => (
-          <Badge variant="outline" className={STATUS_BADGE_CLASSES.info}>
-            {row.original.plan}
-          </Badge>
-        ),
+        cell: ({ row }) =>
+          row.original.plan ? (
+            <Badge variant="outline" className={STATUS_BADGE_CLASSES.info}>
+              {row.original.plan}
+            </Badge>
+          ) : (
+            <span className="text-[#64748B] text-sm">Not chosen yet</span>
+          ),
       },
       {
         id: 'Status',
@@ -139,13 +141,19 @@ const OnboardingRequestsPage = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {request.status !== 'converted' && (
+                {request.status !== 'activated' && request.landlord_id && (
+                  <DropdownMenuItem onClick={() => activateLandlord.mutate({ landlordId: request.landlord_id as string, status: 'active' })}>
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                    Activate account
+                  </DropdownMenuItem>
+                )}
+                {request.status !== 'activated' && !request.landlord_id && (
                   <DropdownMenuItem onClick={() => setCreateAccountFor(request)}>
                     <UserPlus className="h-4 w-4 mr-2" />
                     Create &amp; activate account
                   </DropdownMenuItem>
                 )}
-                {request.status !== 'dismissed' && request.status !== 'converted' && (
+                {request.status !== 'dismissed' && request.status !== 'activated' && (
                   <DropdownMenuItem onClick={() => handleStatusChange(request.id, 'dismissed')}>
                     <X className="h-4 w-4 mr-2 text-red-600" />
                     Dismiss
@@ -161,7 +169,7 @@ const OnboardingRequestsPage = () => {
         },
       },
     ],
-    [handleStatusChange]
+    [handleStatusChange, activateLandlord]
   );
 
   const csvColumns: CsvColumn<OnboardingRequest>[] = [
@@ -180,7 +188,7 @@ const OnboardingRequestsPage = () => {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">Onboarding Requests</h1>
           <p className="text-[#64748B]">
-            Leads from the public "Get started" form — reach out and onboard them.
+            Leads from the public "Get started" form, plus self-serve signups that haven't activated yet.
           </p>
         </div>
 
