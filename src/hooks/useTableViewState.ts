@@ -19,9 +19,12 @@ const DEFAULT_VIEW_STATE: TableViewState = {
 // Auto-persists a table's search/status-filter/sort/column-visibility to
 // localStorage, keyed by storageKey, so a page remembers its last-used
 // view between visits. Not a named/multi-view feature — one slot per page.
-export const useTableViewState = (storageKey: string) => {
+export const useTableViewState = (
+  storageKey: string,
+  defaultStatusFilter: string = DEFAULT_VIEW_STATE.statusFilter
+) => {
   const [state, setState] = useState<TableViewState>(() =>
-    loadViewState(window.localStorage, storageKey, DEFAULT_VIEW_STATE)
+    loadViewState(window.localStorage, storageKey, { ...DEFAULT_VIEW_STATE, statusFilter: defaultStatusFilter })
   );
 
   useEffect(() => {
