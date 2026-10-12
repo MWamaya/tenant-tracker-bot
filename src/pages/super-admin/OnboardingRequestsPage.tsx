@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { useOnboardingRequests, useUpdateOnboardingStatus, useDeleteOnboardingRequest } from '@/hooks/useSuperAdminData';
+import { useOnboardingRequests, useUpdateOnboardingStatus, useDeleteOnboardingRequest, useUpdateLandlordStatus } from '@/hooks/useSuperAdminData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   AlertDialog,
@@ -28,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, X, UserPlus, MoreVertical, Trash2 } from 'lucide-react';
+import { Search, X, UserPlus, MoreVertical, Trash2, CheckCircle2, Clock, XCircle, Users } from 'lucide-react';
 import { formatDateTime } from '@/lib/dates';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
@@ -38,27 +38,22 @@ import type { CsvColumn } from '@/lib/csvExport';
 import { STATUS_BADGE_CLASSES, ADMIN_CARD, ADMIN_SURFACE_HOVER } from '@/lib/adminStatusColors';
 import { cn } from '@/lib/utils';
 
-const STATUS_OPTIONS = ['new', 'contacted', 'converted', 'dismissed'];
+const STATUS_OPTIONS = ['pending', 'activated', 'dismissed'];
 
-const getStatusBadgeColor = (status: string) => {
-  switch (status) {
-    case 'new':
-      return STATUS_BADGE_CLASSES.info;
-    case 'contacted':
-      return STATUS_BADGE_CLASSES.warning;
-    case 'converted':
-      return STATUS_BADGE_CLASSES.success;
-    case 'dismissed':
-      return STATUS_BADGE_CLASSES.neutral;
-    default:
-      return STATUS_BADGE_CLASSES.neutral;
-  }
-};
+const STATUS_META = {
+  pending: { label: 'Pending', icon: Clock, badge: STATUS_BADGE_CLASSES.info },
+  activated: { label: 'Activated', icon: CheckCircle2, badge: STATUS_BADGE_CLASSES.success },
+  dismissed: { label: 'Dismissed', icon: XCircle, badge: STATUS_BADGE_CLASSES.neutral },
+} as const;
+
+const getStatusBadgeColor = (status: string) =>
+  STATUS_META[status as keyof typeof STATUS_META]?.badge ?? STATUS_BADGE_CLASSES.neutral;
 
 const OnboardingRequestsPage = () => {
   const { data: requests, isLoading } = useOnboardingRequests();
   const updateStatus = useUpdateOnboardingStatus();
   const deleteRequest = useDeleteOnboardingRequest();
+  const activateLandlord = useUpdateLandlordStatus();
 
   const {
     search: searchQuery,
@@ -69,9 +64,17 @@ const OnboardingRequestsPage = () => {
     setSorting,
     columnVisibility,
     setColumnVisibility,
-  } = useTableViewState('super-admin-onboarding-requests', 'new');
+  } = useTableViewState('super-admin-onboarding-requests-v2', 'pending');
   const [createAccountFor, setCreateAccountFor] = useState<OnboardingRequest | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<OnboardingRequest | null>(null);
+
+  const statusCounts = (requests ?? []).reduce(
+    (acc, r) => {
+      acc[r.status] = (acc[r.status] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 
   const filteredRequests = requests?.filter((r) => {
     const q = searchQuery.toLowerCase();
@@ -102,21 +105,28 @@ const OnboardingRequestsPage = () => {
         id: 'Plan',
         accessorKey: 'plan',
         header: 'Plan',
-        cell: ({ row }) => (
-          <Badge variant="outline" className={STATUS_BADGE_CLASSES.info}>
-            {row.original.plan}
-          </Badge>
-        ),
+        cell: ({ row }) =>
+          row.original.plan ? (
+            <Badge variant="outline" className={STATUS_BADGE_CLASSES.info}>
+              {row.original.plan}
+            </Badge>
+          ) : (
+            <span className="text-[#64748B] text-sm">Not chosen yet</span>
+          ),
       },
       {
         id: 'Status',
         accessorKey: 'status',
         header: 'Status',
-        cell: ({ row }) => (
-          <Badge variant="outline" className={getStatusBadgeColor(row.original.status)}>
-            {row.original.status}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const meta = STATUS_META[row.original.status as keyof typeof STATUS_META];
+          return (
+            <Badge variant="outline" className={cn('gap-1.5 font-medium', getStatusBadgeColor(row.original.status))}>
+              {meta && <meta.icon className="h-3 w-3" />}
+              {meta?.label ?? row.original.status}
+            </Badge>
+          );
+        },
       },
       {
         id: 'Created',
@@ -139,13 +149,19 @@ const OnboardingRequestsPage = () => {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {request.status !== 'converted' && (
+                {request.status !== 'activated' && request.landlord_id && (
+                  <DropdownMenuItem onClick={() => activateLandlord.mutate({ landlordId: request.landlord_id as string, status: 'active' })}>
+                    <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" />
+                    Activate account
+                  </DropdownMenuItem>
+                )}
+                {request.status !== 'activated' && !request.landlord_id && (
                   <DropdownMenuItem onClick={() => setCreateAccountFor(request)}>
                     <UserPlus className="h-4 w-4 mr-2" />
                     Create &amp; activate account
                   </DropdownMenuItem>
                 )}
-                {request.status !== 'dismissed' && request.status !== 'converted' && (
+                {request.status !== 'dismissed' && request.status !== 'activated' && (
                   <DropdownMenuItem onClick={() => handleStatusChange(request.id, 'dismissed')}>
                     <X className="h-4 w-4 mr-2 text-red-600" />
                     Dismiss
@@ -161,7 +177,7 @@ const OnboardingRequestsPage = () => {
         },
       },
     ],
-    [handleStatusChange]
+    [handleStatusChange, activateLandlord]
   );
 
   const csvColumns: CsvColumn<OnboardingRequest>[] = [
@@ -177,11 +193,51 @@ const OnboardingRequestsPage = () => {
     <SuperAdminLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">Onboarding Requests</h1>
-          <p className="text-[#64748B]">
-            Leads from the public "Get started" form — reach out and onboard them.
-          </p>
+        <div className="flex items-center gap-3.5">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#1E3A5F] text-white shrink-0 shadow-sm">
+            <Users className="h-5 w-5" />
+          </span>
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A]">Onboarding Requests</h1>
+            <p className="text-[#64748B] text-sm">
+              Leads from the public "Get started" form, plus self-serve signups that haven't activated yet.
+            </p>
+          </div>
+        </div>
+
+        {/* Status overview — click a card to filter by it */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {STATUS_OPTIONS.map((s) => {
+            const meta = STATUS_META[s as keyof typeof STATUS_META];
+            const isActive = statusFilter === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setStatusFilter(isActive ? 'all' : s)}
+                className={cn(
+                  ADMIN_CARD,
+                  'flex items-center gap-3.5 p-4 text-left transition-all',
+                  isActive ? 'ring-2 ring-[#1E3A5F]/70 ring-offset-1' : ADMIN_SURFACE_HOVER
+                )}
+              >
+                <span
+                  className={cn(
+                    'flex h-9 w-9 items-center justify-center rounded-lg shrink-0',
+                    s === 'pending' && 'bg-[#16A34A]/10 text-[#16A34A]',
+                    s === 'activated' && 'bg-success/10 text-success',
+                    s === 'dismissed' && 'bg-slate-100 text-slate-500'
+                  )}
+                >
+                  <meta.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-2xl font-semibold tracking-tight text-[#0F172A]">{statusCounts[s] ?? 0}</p>
+                  <p className="text-sm text-[#64748B]">{meta.label}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* Filters */}
@@ -205,7 +261,7 @@ const OnboardingRequestsPage = () => {
                   <SelectItem value="all">All Status</SelectItem>
                   {STATUS_OPTIONS.map((s) => (
                     <SelectItem key={s} value={s} className="capitalize">
-                      {s}
+                      {STATUS_META[s as keyof typeof STATUS_META].label}
                     </SelectItem>
                   ))}
                 </SelectContent>

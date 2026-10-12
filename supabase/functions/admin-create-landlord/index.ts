@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   if (onboardingRequestId) {
     await serviceClient
       .from('onboarding_requests')
-      .update({ status: 'converted' })
+      .update({ status: 'activated', landlord_id: invited.user.id })
       .eq('id', onboardingRequestId);
   }
 

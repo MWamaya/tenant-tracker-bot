@@ -163,9 +163,11 @@ const ChoosePlan = () => {
           planName={selectedPlan.name}
           amount={calcPrepayTotal(selectedPlan.price, months)}
           months={months}
+          successNote="One last step: check your email for your payment forwarding address and setup steps — you'll land on that page now too."
+          continueLabel="Set up payment forwarding"
           onActivated={async () => {
             await queryClient.invalidateQueries({ queryKey: ['account-status', user?.id] });
-            navigate(ROUTES.DASHBOARD);
+            navigate(`${ROUTES.SETTINGS}?tab=email`);
           }}
         />
       )}

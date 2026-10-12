@@ -8,9 +8,12 @@ export interface OnboardingRequest {
   full_name: string;
   email: string;
   phone: string;
-  plan: string;
+  plan: string | null;
   status: string;
   created_at: string;
+  /** Set once an account exists for this request — either an admin created
+   * it from here, or it was a self-serve signup that auto-created this row. */
+  landlord_id: string | null;
 }
 
 // Types for Super Admin data
@@ -138,10 +141,12 @@ export const usePlatformStats = () => {
 
       const totalRentCollected = payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0;
 
-      // Fetch unmatched payments (payments without tenant_id or house_id)
+      // Fetch unmatched payments (payments without tenant_id or house_id,
+      // excluding ones a landlord already dismissed from their own queue)
       const { count: unmatchedCount, error: unmatchedError } = await supabase
         .from('payments')
         .select('*', { count: 'exact', head: true })
+        .eq('reconciliation_dismissed', false)
         .or('tenant_id.is.null,house_id.is.null');
 
       if (unmatchedError) throw unmatchedError;
@@ -344,6 +349,7 @@ export const useUnmatchedPaymentCountsByLandlord = () => {
       const { data, error } = await supabase
         .from('payments')
         .select('landlord_id')
+        .eq('reconciliation_dismissed', false)
         .or('tenant_id.is.null,house_id.is.null');
 
       if (error) throw error;
@@ -840,8 +846,8 @@ export const useOnboardingRequests = () => {
   });
 };
 
-// Hook to fetch the count of untriaged ("new") onboarding requests, for the
-// dashboard stat card — cheap exact count rather than fetching full rows.
+// Hook to fetch the count of untriaged ("pending") onboarding requests, for
+// the dashboard stat card — cheap exact count rather than fetching full rows.
 export const useNewOnboardingRequestsCount = () => {
   return useQuery({
     queryKey: ['onboarding-requests-new-count'],
@@ -849,7 +855,7 @@ export const useNewOnboardingRequestsCount = () => {
       const { count, error } = await supabase
         .from('onboarding_requests')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'new');
+        .eq('status', 'pending');
 
       if (error) throw error;
       return count || 0;

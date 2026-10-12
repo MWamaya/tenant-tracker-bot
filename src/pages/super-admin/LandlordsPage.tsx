@@ -88,14 +88,18 @@ const LandlordsPage = () => {
     setSorting,
     columnVisibility,
     setColumnVisibility,
-  } = useTableViewState('super-admin-landlords');
+  } = useTableViewState('super-admin-landlords', 'active_suspended');
 
   const filteredLandlords = landlords?.filter((landlord) => {
     const matchesSearch =
       landlord.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       landlord.company_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       landlord.phone?.includes(searchQuery);
-    const matchesStatus = statusFilter === 'all' || landlord.account_status === statusFilter;
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'active_suspended'
+        ? landlord.account_status === 'active' || landlord.account_status === 'suspended'
+        : landlord.account_status === statusFilter);
     const matchesPlan =
       !planFilter ||
       (planFilter === '__none__' ? !landlord.subscription : landlord.subscription?.plan_name === planFilter);
@@ -367,6 +371,7 @@ const LandlordsPage = () => {
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="active_suspended">Active &amp; Suspended</SelectItem>
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
                   <SelectItem value="suspended">Suspended</SelectItem>
