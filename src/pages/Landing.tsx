@@ -150,6 +150,47 @@ const Kicker = ({
   <div className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${className}`}>{children}</div>
 );
 
+/** Types out a sequence of lines on mount, one character at a time, then blinks a cursor. */
+const TypedHeadline = ({
+  lines,
+}: {
+  lines: { text: string; className?: string }[];
+}) => {
+  const [lineIdx, setLineIdx] = useState(0);
+  const [charIdx, setCharIdx] = useState(0);
+  const done = lineIdx >= lines.length;
+
+  useEffect(() => {
+    if (done) return;
+    const current = lines[lineIdx].text;
+    if (charIdx < current.length) {
+      const t = setTimeout(() => setCharIdx((c) => c + 1), 35);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => {
+      setLineIdx((i) => i + 1);
+      setCharIdx(0);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [charIdx, lineIdx, done]);
+
+  return (
+    <>
+      {lines.map((line, i) => {
+        const text =
+          i < lineIdx ? line.text : i === lineIdx ? line.text.slice(0, charIdx) : '';
+        const showCursor = i === lineIdx && !done;
+        return (
+          <span key={i} className={`block min-h-[1em] ${line.className ?? ''}`}>
+            {text}
+            {showCursor && <span className="inline-block w-[0.06em] h-[0.85em] -mb-0.5 ml-1 bg-current animate-pulse" />}
+          </span>
+        );
+      })}
+    </>
+  );
+};
+
 /** Section wrapper that fades/slides up the first time it scrolls into view. */
 const Reveal = ({
   children,
@@ -462,9 +503,9 @@ const DashboardMockup = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] min-h-[340px] sm:min-h-[390px]">
-        <aside className="hidden sm:block bg-muted/40 border-r px-3 py-4 text-xs">
-          <strong className="block mb-4 px-2 text-sm">KODI PAP</strong>
+      <div className="grid grid-cols-1 sm:grid-cols-[150px_1fr] min-h-[390px] sm:min-h-[450px]">
+        <aside className="hidden sm:block bg-muted/40 border-r px-3 py-5 text-sm">
+          <strong className="block mb-4 px-2 text-base">KODI PAP</strong>
           {DASHBOARD_TABS.map((tab, i) => (
             <button
               key={tab}
@@ -485,7 +526,7 @@ const DashboardMockup = () => {
             </button>
           ))}
         </aside>
-        <div className="p-4 sm:p-5">
+        <div className="p-4 sm:p-6">
           <div key={active} className="animate-fade-in">
             <ActivePanel />
           </div>
@@ -743,40 +784,43 @@ const Landing = () => {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
           </div>
 
-          <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-6xl mx-auto w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-7xl mx-auto w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <div className="animate-slide-up">
-                <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-3 py-1 text-xs font-bold">
+                <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-4 py-1.5 text-sm font-bold">
                   🇰🇪 Built for Kenyan landlords
                 </span>
 
-                <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[0.98] text-foreground drop-shadow-sm">
-                  Stop chasing rent.
-                  <br />
-                  <span className="text-primary">Start managing it.</span>
+                <h1 className="mt-6 text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[0.97] text-foreground drop-shadow-sm">
+                  <TypedHeadline
+                    lines={[
+                      { text: 'Stop chasing rent.' },
+                      { text: 'Start managing it.', className: 'text-primary' },
+                    ]}
+                  />
                 </h1>
 
-                <p className="mt-5 text-base sm:text-lg text-foreground/80 max-w-lg drop-shadow-sm">
+                <p className="mt-6 text-lg sm:text-xl text-foreground/80 max-w-xl drop-shadow-sm">
                   KODI PAP automatically matches M-Pesa and bank payments to your tenants,
                   tracks arrears, and gives you a clear view of your entire rental business.
                 </p>
 
-                <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                  <Button asChild size="lg" className="gap-2">
+                <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                  <Button asChild size="lg" className="gap-2 text-base px-7 py-6">
                     <Link to={ROUTES.GET_STARTED}>
                       Start managing your properties <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="bg-card/80 backdrop-blur">
+                  <Button asChild size="lg" variant="outline" className="bg-card/80 backdrop-blur text-base px-7 py-6">
                     <a href="#how">See how it works</a>
                   </Button>
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-foreground/80 drop-shadow-sm">
+                <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-foreground/80 drop-shadow-sm">
                   <span className="font-semibold text-foreground">🇰🇪 Kenya-first</span>
-                  <span className="flex items-center gap-1"><Smartphone className="h-3.5 w-3.5 text-success" /> M-Pesa</span>
-                  <span className="flex items-center gap-1"><Landmark className="h-3.5 w-3.5 text-success" /> Bank payments</span>
-                  <span className="flex items-center gap-1"><Bell className="h-3.5 w-3.5 text-success" /> Automated reminders</span>
+                  <span className="flex items-center gap-1.5"><Smartphone className="h-4 w-4 text-success" /> M-Pesa</span>
+                  <span className="flex items-center gap-1.5"><Landmark className="h-4 w-4 text-success" /> Bank payments</span>
+                  <span className="flex items-center gap-1.5"><Bell className="h-4 w-4 text-success" /> Automated reminders</span>
                 </div>
               </div>
 
