@@ -190,6 +190,7 @@ export const useEmailLogs = () => {
             .from('tenants')
             .select('id')
             .eq('house_id', houseId)
+            .is('moved_out_at', null)
             .limit(1);
 
           if (tenants && tenants.length > 0) {

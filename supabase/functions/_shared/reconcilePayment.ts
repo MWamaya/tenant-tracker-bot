@@ -51,6 +51,7 @@ export async function reconcilePayment(
     .from('tenants')
     .select('id')
     .eq('house_id', houseId)
+    .is('moved_out_at', null)
     .maybeSingle();
   const tenantId: string | null = tenant?.id ?? null;
 

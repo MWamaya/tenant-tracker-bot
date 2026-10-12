@@ -30,6 +30,7 @@ export async function matchHouseAndTenant(
         .from('tenants')
         .select('id, name, phone')
         .eq('house_id', h.id)
+        .is('moved_out_at', null)
         .maybeSingle();
 
       if (t) {
@@ -50,6 +51,7 @@ export async function matchHouseAndTenant(
       .select('id, name, phone, house_id')
       .eq('landlord_id', input.landlordId)
       .or(`phone.eq.${searchPhone},phone.eq.${input.phone},secondary_phone.eq.${searchPhone}`)
+      .is('moved_out_at', null)
       .maybeSingle();
 
     if (t) {

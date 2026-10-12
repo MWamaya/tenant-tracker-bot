@@ -49,7 +49,7 @@ const useUsageCounts = (landlordId: string | null) =>
     queryFn: async () => {
       const [properties, tenants] = await Promise.all([
         supabase.from('properties').select('id').eq('landlord_id', landlordId!),
-        supabase.from('tenants').select('id').eq('landlord_id', landlordId!),
+        supabase.from('tenants').select('id').eq('landlord_id', landlordId!).is('moved_out_at', null),
       ]);
       if (properties.error) throw properties.error;
       if (tenants.error) throw tenants.error;
