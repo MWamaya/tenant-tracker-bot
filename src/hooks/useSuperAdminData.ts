@@ -923,6 +923,36 @@ export const useUpdateOnboardingStatus = () => {
   });
 };
 
+export const useDeleteOnboardingRequest = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (requestId: string) => {
+      const { error } = await supabase
+        .from('onboarding_requests')
+        .delete()
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      await supabase.from('audit_logs').insert({
+        admin_id: (await supabase.auth.getUser()).data.user?.id || '',
+        action: 'DELETE_ONBOARDING_REQUEST',
+        entity_type: 'onboarding_request',
+        entity_id: requestId,
+        new_values: {},
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['onboarding-requests'] });
+      toast.success('Request deleted');
+    },
+    onError: (error) => {
+      toast.error(`Failed to delete request: ${error.message}`);
+    },
+  });
+};
+
 // Mutation to create a landlord account from the admin UI (blank "Add
 // Landlord" form, or "Create account" on an onboarding request). Goes
 // through the admin-create-landlord edge function since creating an auth

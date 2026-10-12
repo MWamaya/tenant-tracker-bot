@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
           <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;width:90px;">Name</td><td style="padding:10px 16px;color:#0F172A;font-weight:600;">${escapeHtml(fullName)}</td></tr>
           <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;">Email</td><td style="padding:10px 16px;color:#0F172A;">${escapeHtml(email)}</td></tr>
           <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;">Phone</td><td style="padding:10px 16px;color:#0F172A;">${escapeHtml(phone)}</td></tr>
-          <tr><td style="padding:10px 16px;color:#64748B;">Plan</td><td style="padding:10px 16px;"><span style="background-color:#0F766E1A;border:1px solid #0F766E40;color:#0F766E;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">${escapeHtml(plan)}</span></td></tr>
+          <tr><td style="padding:10px 16px;color:#64748B;">Plan</td><td style="padding:10px 16px;"><span style="background-color:#16A34A1A;border:1px solid #16A34A40;color:#16A34A;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">${escapeHtml(plan)}</span></td></tr>
         </table>
         <p style="margin:20px 0 0;color:#64748B;font-size:13px;">Review and follow up from Super Admin → Onboarding Requests.</p>
       `,

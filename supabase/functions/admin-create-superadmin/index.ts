@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
 
   const { data: invited, error: inviteError } = await serviceClient.auth.admin.inviteUserByEmail(
     email,
-    { data: { full_name: fullName } },
+    { data: { full_name: fullName }, redirectTo: 'https://www.kodipap.com/app/reset-password' },
   );
 
   if (inviteError || !invited.user) {

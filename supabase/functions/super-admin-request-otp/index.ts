@@ -120,8 +120,8 @@ Deno.serve(async (req) => {
       <p style="margin:0 0 20px;color:#64748B;">Enter this code to finish signing in to the Super Admin Portal. It expires in ${OTP_TTL_MINUTES} minutes.</p>
       <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
         <tr>
-          <td style="background-color:#F0FDFA;border:1px solid #CCFBF1;border-radius:10px;padding:16px 28px;">
-            <span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#0F766E;font-family:monospace;">${code}</span>
+          <td style="background-color:#F0FDF4;border:1px solid #DCFCE7;border-radius:10px;padding:16px 28px;">
+            <span style="font-size:32px;font-weight:700;letter-spacing:8px;color:#16A34A;font-family:monospace;">${code}</span>
           </td>
         </tr>
       </table>

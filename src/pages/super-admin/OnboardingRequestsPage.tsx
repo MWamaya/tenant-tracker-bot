@@ -1,8 +1,18 @@
 import { useMemo, useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
 import SuperAdminLayout from '@/components/super-admin/SuperAdminLayout';
-import { useOnboardingRequests, useUpdateOnboardingStatus } from '@/hooks/useSuperAdminData';
+import { useOnboardingRequests, useUpdateOnboardingStatus, useDeleteOnboardingRequest } from '@/hooks/useSuperAdminData';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -18,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Check, X, PhoneCall, UserPlus, MoreVertical } from 'lucide-react';
+import { Search, Check, X, PhoneCall, UserPlus, MoreVertical, Trash2 } from 'lucide-react';
 import { formatDateTime } from '@/lib/dates';
 import { CreateLandlordDialog } from '@/components/super-admin/CreateLandlordDialog';
 import type { OnboardingRequest } from '@/hooks/useSuperAdminData';
@@ -48,6 +58,7 @@ const getStatusBadgeColor = (status: string) => {
 const OnboardingRequestsPage = () => {
   const { data: requests, isLoading } = useOnboardingRequests();
   const updateStatus = useUpdateOnboardingStatus();
+  const deleteRequest = useDeleteOnboardingRequest();
 
   const {
     search: searchQuery,
@@ -58,8 +69,9 @@ const OnboardingRequestsPage = () => {
     setSorting,
     columnVisibility,
     setColumnVisibility,
-  } = useTableViewState('super-admin-onboarding-requests');
+  } = useTableViewState('super-admin-onboarding-requests', 'new');
   const [createAccountFor, setCreateAccountFor] = useState<OnboardingRequest | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<OnboardingRequest | null>(null);
 
   const filteredRequests = requests?.filter((r) => {
     const q = searchQuery.toLowerCase();
@@ -73,6 +85,12 @@ const OnboardingRequestsPage = () => {
 
   const handleStatusChange = (requestId: string, status: string) => {
     updateStatus.mutate({ requestId, status });
+  };
+
+  const handleConfirmDelete = () => {
+    if (!deleteTarget) return;
+    deleteRequest.mutate(deleteTarget.id);
+    setDeleteTarget(null);
   };
 
   const columns = useMemo<ColumnDef<OnboardingRequest>[]>(
@@ -145,6 +163,10 @@ const OnboardingRequestsPage = () => {
                     Dismiss
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuItem onClick={() => setDeleteTarget(request)}>
+                  <Trash2 className="h-4 w-4 mr-2 text-red-600" />
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           );
@@ -243,6 +265,27 @@ const OnboardingRequestsPage = () => {
         }
         onboardingRequestId={createAccountFor?.id}
       />
+
+      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete onboarding request</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the request from <strong>{deleteTarget?.full_name}</strong>{' '}
+              ({deleteTarget?.email}). This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SuperAdminLayout>
   );
 };

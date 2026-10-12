@@ -14,7 +14,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useReconciliation } from '@/hooks/useReconciliation';
 import { toast } from 'sonner';
-import kodiPapLogo from '@/assets/kodi-pap-logo.png';
+import kodiPapLogo from '@/assets/kodi-pap-logo-dark.png';
 import { ROUTES } from '@/lib/routes';
 
 const navigation = [
@@ -45,13 +45,9 @@ const SidebarContent = () => {
       {/* Logo */}
       <NavLink
         to={ROUTES.DASHBOARD}
-        className="flex h-16 items-center gap-3 border-b border-sidebar-border px-6 hover:bg-sidebar-accent/50 transition-colors"
+        className="flex h-16 items-center border-b border-sidebar-border px-6 hover:bg-sidebar-accent/50 transition-colors"
       >
-        <img src={kodiPapLogo} alt="Kodi Pap Logo" className="h-10 w-auto" />
-        <div>
-          <h1 className="text-lg font-bold text-sidebar-foreground tracking-tight">KODI PAP</h1>
-          <p className="text-xs text-sidebar-foreground/60">Collection Manager</p>
-        </div>
+        <img src={kodiPapLogo} alt="Kodi Pap" className="h-11 w-auto" />
       </NavLink>
 
       {/* Navigation */}

@@ -46,6 +46,7 @@ import {
   Filter,
   FileText,
   Zap,
+  ShieldCheck,
 } from 'lucide-react';
 import { BillingTab } from '@/components/billing/BillingTab';
 import { ProfileTab } from '@/components/settings/ProfileTab';
@@ -357,21 +358,41 @@ const Settings = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2.5">
                   <SectionIcon icon={Mail} />
-                  Bank Email Forwarding
+                  M-Pesa & Bank Email Forwarding
                 </CardTitle>
                 <CardDescription>
-                  Forward your bank's transaction notification emails to this address to have payments recorded automatically.
+                  Forward your M-Pesa and bank payment confirmation emails to this address to have payments matched and recorded automatically.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 {inboundEmail ? (
-                  <div className="p-4 rounded-lg bg-muted/50 border border-border">
-                    <p className="text-sm text-muted-foreground">Your forwarding email</p>
-                    <p className="font-mono text-base font-medium mt-1">{inboundEmail}</p>
-                  </div>
+                  <>
+                    <div className="p-4 rounded-lg bg-muted/50 border border-border">
+                      <p className="text-sm text-muted-foreground">Your forwarding address</p>
+                      <p className="font-mono text-base font-medium mt-1 break-all">{inboundEmail}</p>
+                    </div>
+                    <div className="rounded-lg border border-border overflow-hidden text-sm">
+                      {[
+                        'Open the inbox that already receives your M-Pesa and/or bank payment confirmations.',
+                        'Create a forwarding rule there (Gmail: Settings → Forwarding and POP/IMAP. Outlook: Settings → Mail → Forwarding) pointing to the address above.',
+                        "That's it — every matching confirmation from then on gets matched to the right tenant automatically.",
+                      ].map((step, i) => (
+                        <div key={step} className={`flex gap-3 p-3 ${i > 0 ? 'border-t border-border' : ''}`}>
+                          <span className="shrink-0 h-5 w-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
+                            {i + 1}
+                          </span>
+                          <span className="text-muted-foreground">{step}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-medium text-success">
+                      <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                      We never touch your money — it keeps going straight to your own M-Pesa or bank account.
+                    </div>
+                  </>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    Your forwarding email will appear here once your account is activated by an admin.
+                    Your forwarding address will appear here once your account is activated by an admin.
                   </p>
                 )}
               </CardContent>

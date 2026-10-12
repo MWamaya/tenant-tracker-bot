@@ -19,6 +19,7 @@ import {
   MessageSquare,
   ChevronDown,
   ChevronUp,
+  Mail,
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
@@ -50,6 +51,12 @@ const STEPS = [
     icon: UserPlus,
     title: 'Add your properties',
     description: 'Set up houses, units and tenants in minutes — no spreadsheets required.',
+  },
+  {
+    icon: Mail,
+    title: 'Connect your payment channel',
+    description:
+      "Forward M-Pesa and bank confirmations to your KODI PAP address. We never touch your money.",
   },
   {
     icon: Smartphone,
@@ -113,6 +120,11 @@ const FEATURES = [
 
 const FAQS = [
   {
+    question: 'Does KODI PAP ever hold or touch my rent money?',
+    answer:
+      'No. Your tenants pay rent directly into your own M-Pesa or bank account, exactly as they do today — we never receive, hold, or move that money. KODI PAP only reads the payment confirmation and matches it to the right tenant for you.',
+  },
+  {
     question: 'Is my M-Pesa and tenant data safe?',
     answer:
       'Yes. Your rental and tenant data is kept separate per landlord account, and access is restricted to authorised users. We never sell your information — see our Privacy Policy for details.',
@@ -149,6 +161,48 @@ const Kicker = ({
 }) => (
   <div className={`text-xs font-bold uppercase tracking-wider mb-2.5 ${className}`}>{children}</div>
 );
+
+/** Types out a sequence of lines on mount, one character at a time, then blinks a cursor. */
+const TypedHeadline = ({
+  lines,
+}: {
+  lines: { text: string; className?: string }[];
+}) => {
+  const [lineIdx, setLineIdx] = useState(0);
+  const [charIdx, setCharIdx] = useState(0);
+  const done = lineIdx >= lines.length;
+
+  useEffect(() => {
+    if (done) return;
+    const current = lines[lineIdx].text;
+    if (charIdx < current.length) {
+      const t = setTimeout(() => setCharIdx((c) => c + 1), 35);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => {
+      setLineIdx((i) => i + 1);
+      setCharIdx(0);
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `lines` is a literal passed by the caller; including it would re-trigger on every render
+  }, [charIdx, lineIdx, done]);
+
+  return (
+    <>
+      {lines.map((line, i) => {
+        const text =
+          i < lineIdx ? line.text : i === lineIdx ? line.text.slice(0, charIdx) : '';
+        const showCursor = i === lineIdx && !done;
+        return (
+          <span key={i} className={`block min-h-[1em] ${line.className ?? ''}`}>
+            {text}
+            {showCursor && <span className="inline-block w-[0.06em] h-[0.85em] -mb-0.5 ml-1 bg-current animate-pulse" />}
+          </span>
+        );
+      })}
+    </>
+  );
+};
 
 /** Section wrapper that fades/slides up the first time it scrolls into view. */
 const Reveal = ({
@@ -462,9 +516,9 @@ const DashboardMockup = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-[130px_1fr] min-h-[340px] sm:min-h-[390px]">
-        <aside className="hidden sm:block bg-muted/40 border-r px-3 py-4 text-xs">
-          <strong className="block mb-4 px-2 text-sm">KODI PAP</strong>
+      <div className="grid grid-cols-1 sm:grid-cols-[150px_1fr] min-h-[390px] sm:min-h-[450px]">
+        <aside className="hidden sm:block bg-muted/40 border-r px-3 py-5 text-sm">
+          <strong className="block mb-4 px-2 text-base">KODI PAP</strong>
           {DASHBOARD_TABS.map((tab, i) => (
             <button
               key={tab}
@@ -485,7 +539,7 @@ const DashboardMockup = () => {
             </button>
           ))}
         </aside>
-        <div className="p-4 sm:p-5">
+        <div className="p-4 sm:p-6">
           <div key={active} className="animate-fade-in">
             <ActivePanel />
           </div>
@@ -512,6 +566,23 @@ const STEP_VISUALS = [
       ))}
       <div className="flex items-center gap-1.5 text-success text-xs font-semibold pt-1 border-t">
         <Check className="h-3.5 w-3.5" /> Saved
+      </div>
+    </div>
+  ),
+  () => (
+    <div className="rounded-xl border bg-card p-4 text-xs space-y-3">
+      <div className="flex items-center gap-2 text-muted-foreground">
+        <Mail className="h-4 w-4 text-success" />
+        Bank &amp; M-Pesa Email Forwarding
+      </div>
+      <p className="leading-relaxed text-foreground">
+        Forward your M-Pesa and bank payment confirmations to your forwarding address:
+      </p>
+      <div className="p-2.5 rounded-lg bg-muted/50 border border-border font-mono text-[11px] break-all">
+        yourname@payments.kodipap.com
+      </div>
+      <div className="flex items-center gap-1.5 text-success text-xs font-semibold pt-1 border-t">
+        <ShieldCheck className="h-3.5 w-3.5" /> Money still goes straight to you
       </div>
     </div>
   ),
@@ -626,7 +697,7 @@ const HowItWorksStepper = () => {
               Step {active + 1} of {STEPS.length}
             </span>
           </div>
-          <div key={active} className="animate-fade-in p-5">
+          <div key={active} className="animate-fade-in p-5 min-h-[210px] flex flex-col justify-center">
             <ActiveVisual />
           </div>
         </div>
@@ -661,17 +732,20 @@ const Landing = () => {
         path="/"
       />
       <div className="min-h-screen pb-24 sm:pb-0">
-        {/* Fixed top — desktop: pill nav (logo, links, sign up). Mobile: no bar, just a free-floating logo + colored log in button */}
-        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-between sm:justify-center pointer-events-none">
-          <Link to={ROUTES.LANDING} className="sm:hidden pointer-events-auto rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <img src={kodiPapLogo} alt="KODI PAP" className="h-7 w-auto drop-shadow" />
-          </Link>
+        {/* Logo floats top-left on its own, pinned above the hero photo and
+            independent of the nav pill so it never scrolls away. Desktop nav
+            pill: links + sign up, centered. Mobile: colored log in/get
+            started buttons, top-right. */}
+        <Link
+          to={ROUTES.LANDING}
+          className="fixed top-4 left-4 sm:top-6 sm:left-8 z-50 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <img src={kodiPapLogo} alt="KODI PAP" className="h-12 sm:h-14 w-auto drop-shadow" />
+        </Link>
 
+        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-end sm:justify-center pointer-events-none">
           <nav className="hidden sm:block pointer-events-auto w-fit rounded-full border bg-background/70 backdrop-blur-xl shadow-lg">
             <div className="flex items-center gap-2 px-2 py-1.5">
-              <Link to={ROUTES.LANDING} className="ml-1.5 mr-1 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto" />
-              </Link>
               <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 How it works
               </a>
@@ -698,6 +772,16 @@ const Landing = () => {
             </Button>
           </div>
         </header>
+
+        <Button
+          asChild
+          size="sm"
+          className="group hidden sm:inline-flex fixed top-6 right-8 z-50 rounded-full gap-1.5 shadow-lg bg-[#16a34a] hover:bg-[#15803d] text-white hover:scale-105 transition-all duration-200"
+        >
+          <Link to={ROUTES.AUTH}>
+            Log in <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </Button>
 
         {/* Fixed bottom nav — mobile-only floating glass pill with section links + log in + primary CTA */}
         <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none">
@@ -730,50 +814,49 @@ const Landing = () => {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
           </div>
 
-          <Button
-            asChild
-            size="sm"
-            className="hidden sm:inline-flex absolute top-6 right-8 z-10 gap-1.5 shadow-lg"
-          >
-            <Link to={ROUTES.AUTH}>
-              Log in <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </Button>
-
-          <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-6xl mx-auto w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-7xl mx-auto w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <div className="animate-slide-up">
-                <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-3 py-1 text-xs font-bold">
+                <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-4 py-1.5 text-sm font-bold">
                   🇰🇪 Built for Kenyan landlords
                 </span>
 
-                <h1 className="mt-5 text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[0.98] text-foreground drop-shadow-sm">
-                  Stop chasing rent.
-                  <br />
-                  <span className="text-primary">Start managing it.</span>
+                <h1 className="mt-6 text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[0.97] text-foreground drop-shadow-sm">
+                  <TypedHeadline
+                    lines={[
+                      { text: 'Stop chasing rent.' },
+                      { text: 'Start managing it.', className: 'text-primary' },
+                    ]}
+                  />
                 </h1>
 
-                <p className="mt-5 text-base sm:text-lg text-foreground/80 max-w-lg drop-shadow-sm">
+                <p className="mt-6 text-lg sm:text-xl text-foreground/80 max-w-xl drop-shadow-sm">
                   KODI PAP automatically matches M-Pesa and bank payments to your tenants,
                   tracks arrears, and gives you a clear view of your entire rental business.
                 </p>
 
-                <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                  <Button asChild size="lg" className="gap-2">
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-4 py-1.5 text-sm font-semibold">
+                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  We never touch your money — it goes straight to your M-Pesa or bank
+                </div>
+
+                <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                  <Button asChild size="lg" className="gap-2 text-base px-7 py-6">
                     <Link to={ROUTES.GET_STARTED}>
                       Start managing your properties <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="bg-card/80 backdrop-blur">
+                  <Button asChild size="lg" variant="outline" className="bg-card/80 backdrop-blur text-base px-7 py-6">
                     <a href="#how">See how it works</a>
                   </Button>
                 </div>
 
-                <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-foreground/80 drop-shadow-sm">
+                <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-foreground/80 drop-shadow-sm">
                   <span className="font-semibold text-foreground">🇰🇪 Kenya-first</span>
-                  <span className="flex items-center gap-1"><Smartphone className="h-3.5 w-3.5 text-success" /> M-Pesa</span>
-                  <span className="flex items-center gap-1"><Landmark className="h-3.5 w-3.5 text-success" /> Bank payments</span>
-                  <span className="flex items-center gap-1"><Bell className="h-3.5 w-3.5 text-success" /> Automated reminders</span>
+                  <span className="flex items-center gap-1.5"><Smartphone className="h-4 w-4 text-success" /> M-Pesa</span>
+                  <span className="flex items-center gap-1.5"><Landmark className="h-4 w-4 text-success" /> Bank payments</span>
+                  <span className="flex items-center gap-1.5"><Bell className="h-4 w-4 text-success" /> Automated reminders</span>
+                  <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-success" /> We never hold your money</span>
                 </div>
               </div>
 
