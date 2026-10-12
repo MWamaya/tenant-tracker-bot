@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
         phone: phone || null,
         company_name: companyName || null,
       },
+      redirectTo: 'https://www.kodipap.com/app/reset-password',
     },
   );
 

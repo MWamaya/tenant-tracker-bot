@@ -44,8 +44,8 @@ const ResetPassword = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success('Password updated successfully. Please log in.');
-      navigate(ROUTES.AUTH);
+      toast.success('Password set. Taking you to your dashboard...');
+      navigate(ROUTES.DASHBOARD);
     }
   };
 
