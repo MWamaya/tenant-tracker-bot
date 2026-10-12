@@ -1,7 +1,7 @@
 // Shared branded HTML wrapper for every outbound transactional email.
 // Email clients don't support real stylesheets, so this stays table-based
 // with inline styles — the safest baseline across Outlook/Gmail/Apple Mail.
-// Matches the app's navy (#1E3A5F) + teal (#0F766E/#2DD4BF) identity.
+// Matches the app's navy (#1E3A5F) + green (#16A34A) identity.
 
 export interface EmailLayoutOptions {
   /** Short line shown in the inbox preview, before the subject is opened. */
@@ -38,7 +38,7 @@ export function renderEmailLayout({ preheader, bodyHtml }: EmailLayoutOptions): 
                 <table role="presentation" cellpadding="0" cellspacing="0">
                   <tr>
                     <td style="background-color:#ffffff;border-radius:8px;padding:6px 10px;">
-                      <img src="https://kodipap.com/kodi-pap-logo.png" width="96" height="28" alt="KODI PAP" style="display:block;height:28px;width:auto;" />
+                      <img src="https://kodipap.com/kodi-pap-logo-email.png" width="70" height="32" alt="KODI PAP" style="display:block;height:32px;width:auto;" />
                     </td>
                   </tr>
                 </table>
@@ -67,7 +67,7 @@ export function renderEmailLayout({ preheader, bodyHtml }: EmailLayoutOptions): 
 export function emailButton(label: string, href: string): string {
   return `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:20px 0;">
     <tr>
-      <td style="background-color:#0F766E;border-radius:8px;">
+      <td style="background-color:#16A34A;border-radius:8px;">
         <a href="${href}" style="display:inline-block;padding:12px 24px;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;">${escapeHtml(label)}</a>
       </td>
     </tr>

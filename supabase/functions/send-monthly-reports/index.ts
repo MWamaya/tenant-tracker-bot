@@ -119,10 +119,10 @@ async function sendReportEmail(
       </tr>
     </table>
 
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0FDFA;border:1px solid #CCFBF1;border-radius:10px;margin:0 0 8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F0FDF4;border:1px solid #DCFCE7;border-radius:10px;margin:0 0 8px;">
       <tr>
         <td style="padding:16px 20px;">
-          <div style="font-size:12px;color:#0F766E;font-weight:600;letter-spacing:0.02em;text-transform:uppercase;">Rent covered</div>
+          <div style="font-size:12px;color:#16A34A;font-weight:600;letter-spacing:0.02em;text-transform:uppercase;">Rent covered</div>
           <div style="font-size:22px;font-weight:700;color:#0F172A;margin-top:4px;">KES ${report.totalCollected.toLocaleString()} <span style="font-size:13px;font-weight:400;color:#64748B;">of KES ${report.totalExpected.toLocaleString()} expected</span></div>
           <div style="font-size:13px;color:#dc2626;margin-top:2px;">KES ${report.totalOutstanding.toLocaleString()} outstanding</div>
         </td>
