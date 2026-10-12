@@ -121,24 +121,34 @@ Deno.serve(async (req) => {
 
   try {
     const payload = await req.json();
-    
-    // Log incoming webhook
-    await supabase.from('webhooks_log').insert({
-      webhook_type: 'mpesa_callback',
-      endpoint: req.url,
-      method: req.method,
-      headers: Object.fromEntries(req.headers.entries()),
-      payload,
-      processed: false,
-    });
+
+    // Log incoming webhook, keeping the row's own id so every downstream
+    // handler can mark it processed by id — matching back via a JSON path
+    // into payload (the old approach) silently fails for STK callbacks,
+    // which have no top-level TransID (that's a C2B-only field, nested
+    // under Body.stkCallback for STK), leaving successful STK payments
+    // stuck "unprocessed" forever even though they were handled correctly.
+    const { data: webhookLog } = await supabase
+      .from('webhooks_log')
+      .insert({
+        webhook_type: 'mpesa_callback',
+        endpoint: req.url,
+        method: req.method,
+        headers: Object.fromEntries(req.headers.entries()),
+        payload,
+        processed: false,
+      })
+      .select('id')
+      .single();
+    const webhookLogId = webhookLog?.id as string | undefined;
 
     // Determine callback type
     if (payload.Body?.stkCallback) {
       // STK Push callback
-      return await handleSTKCallback(supabase, payload as STKCallbackPayload);
+      return await handleSTKCallback(supabase, payload as STKCallbackPayload, webhookLogId);
     } else if (payload.TransID) {
       // C2B callback
-      return await handleC2BCallback(supabase, payload as C2BPayload);
+      return await handleC2BCallback(supabase, payload as C2BPayload, webhookLogId);
     } else {
       console.log('Unknown callback format:', payload);
       return new Response(
@@ -157,7 +167,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function handleSTKCallback(supabase: any, payload: STKCallbackPayload) {
+async function handleSTKCallback(supabase: any, payload: STKCallbackPayload, webhookLogId: string | undefined) {
   const callback = payload.Body.stkCallback;
 
   // A subscription STK push (mpesa-subscription-stk-push) records its
@@ -172,20 +182,18 @@ async function handleSTKCallback(supabase: any, payload: STKCallbackPayload) {
     .maybeSingle();
 
   if (subRequest) {
-    return await handleSubscriptionSTKCallback(supabase, callback, subRequest);
+    return await handleSubscriptionSTKCallback(supabase, callback, subRequest, webhookLogId);
   }
 
   if (callback.ResultCode !== 0) {
     // Payment failed or cancelled
     console.log('STK Push failed:', callback.ResultDesc);
 
-    // Update webhook log
-    await supabase.from('webhooks_log')
-      .update({
-        processed: true,
-        error_message: callback.ResultDesc
-      })
-      .eq('payload->Body->stkCallback->CheckoutRequestID', callback.CheckoutRequestID);
+    if (webhookLogId) {
+      await supabase.from('webhooks_log')
+        .update({ processed: true, error_message: callback.ResultDesc })
+        .eq('id', webhookLogId);
+    }
 
     return new Response(
       JSON.stringify({ ResultCode: 0, ResultDesc: 'Accepted' }),
@@ -195,7 +203,7 @@ async function handleSTKCallback(supabase: any, payload: STKCallbackPayload) {
 
   // Extract payment details from metadata
   const metadata = callback.CallbackMetadata?.Item || [];
-  const getMetaValue = (name: string) => 
+  const getMetaValue = (name: string) =>
     metadata.find(item => item.Name === name)?.Value;
 
   const transactionId = getMetaValue('MpesaReceiptNumber') as string;
@@ -211,7 +219,14 @@ async function handleSTKCallback(supabase: any, payload: STKCallbackPayload) {
       phone: phone?.toString(),
       bill_ref_number: callback.CheckoutRequestID,
       raw_payload: payload,
+      webhook_log_id: webhookLogId,
     });
+  } else if (webhookLogId) {
+    // Success callback but no usable metadata — still resolve the log row
+    // instead of leaving it stuck "unprocessed" forever.
+    await supabase.from('webhooks_log')
+      .update({ processed: true, error_message: 'Missing MpesaReceiptNumber/Amount in callback metadata' })
+      .eq('id', webhookLogId);
   }
 
   return new Response(
@@ -224,6 +239,7 @@ async function handleSubscriptionSTKCallback(
   supabase: any,
   callback: STKCallbackPayload['Body']['stkCallback'],
   subRequest: any,
+  webhookLogId: string | undefined,
 ) {
   if (callback.ResultCode !== 0) {
     console.log('Subscription STK Push failed:', callback.ResultDesc);
@@ -233,9 +249,11 @@ async function handleSubscriptionSTKCallback(
       .update({ status: 'failed', failure_reason: callback.ResultDesc })
       .eq('id', subRequest.id);
 
-    await supabase.from('webhooks_log')
-      .update({ processed: true, error_message: callback.ResultDesc })
-      .eq('payload->Body->stkCallback->CheckoutRequestID', callback.CheckoutRequestID);
+    if (webhookLogId) {
+      await supabase.from('webhooks_log')
+        .update({ processed: true, error_message: callback.ResultDesc })
+        .eq('id', webhookLogId);
+    }
 
     return new Response(
       JSON.stringify({ ResultCode: 0, ResultDesc: 'Accepted' }),
@@ -275,9 +293,11 @@ async function handleSubscriptionSTKCallback(
       .eq('id', subRequest.id);
   }
 
-  await supabase.from('webhooks_log')
-    .update({ processed: true })
-    .eq('payload->Body->stkCallback->CheckoutRequestID', callback.CheckoutRequestID);
+  if (webhookLogId) {
+    await supabase.from('webhooks_log')
+      .update({ processed: true })
+      .eq('id', webhookLogId);
+  }
 
   return new Response(
     JSON.stringify({ ResultCode: 0, ResultDesc: 'Accepted' }),
@@ -285,7 +305,7 @@ async function handleSubscriptionSTKCallback(
   );
 }
 
-async function handleC2BCallback(supabase: any, payload: C2BPayload) {
+async function handleC2BCallback(supabase: any, payload: C2BPayload, webhookLogId: string | undefined) {
   await processPayment(supabase, {
     transaction_type: 'c2b',
     transaction_id: payload.TransID,
@@ -301,6 +321,7 @@ async function handleC2BCallback(supabase: any, payload: C2BPayload) {
     last_name: payload.LastName,
     trans_time: parseTransTime(payload.TransTime),
     raw_payload: payload,
+    webhook_log_id: webhookLogId,
   });
 
   return new Response(
@@ -336,6 +357,7 @@ async function processPayment(supabase: any, data: {
   last_name?: string;
   trans_time?: Date;
   raw_payload: any;
+  webhook_log_id?: string;
 }) {
   // Check for duplicate transaction
   const { data: existing } = await supabase
@@ -346,6 +368,11 @@ async function processPayment(supabase: any, data: {
 
   if (existing) {
     console.log('Duplicate transaction:', data.transaction_id);
+    if (data.webhook_log_id) {
+      await supabase.from('webhooks_log')
+        .update({ processed: true, error_message: 'Duplicate transaction' })
+        .eq('id', data.webhook_log_id);
+    }
     return;
   }
 
@@ -394,6 +421,11 @@ async function processPayment(supabase: any, data: {
 
   if (!landlordId) {
     console.error('Could not determine landlord for transaction:', data.transaction_id);
+    if (data.webhook_log_id) {
+      await supabase.from('webhooks_log')
+        .update({ processed: true, error_message: 'Could not determine landlord for transaction' })
+        .eq('id', data.webhook_log_id);
+    }
     return;
   }
 
@@ -423,6 +455,11 @@ async function processPayment(supabase: any, data: {
 
   if (insertError) {
     console.error('Failed to insert mpesa transaction:', insertError);
+    if (data.webhook_log_id) {
+      await supabase.from('webhooks_log')
+        .update({ processed: true, error_message: `Failed to insert mpesa transaction: ${insertError.message}` })
+        .eq('id', data.webhook_log_id);
+    }
     return;
   }
 
@@ -430,9 +467,11 @@ async function processPayment(supabase: any, data: {
   await attemptAutoMatch(supabase, mpesaTx);
 
   // Update webhook log as processed
-  await supabase.from('webhooks_log')
-    .update({ processed: true })
-    .eq('payload->TransID', data.transaction_id);
+  if (data.webhook_log_id) {
+    await supabase.from('webhooks_log')
+      .update({ processed: true })
+      .eq('id', data.webhook_log_id);
+  }
 }
 
 async function attemptAutoMatch(supabase: any, mpesaTx: any) {
