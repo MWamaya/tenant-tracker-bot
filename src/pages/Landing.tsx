@@ -113,6 +113,11 @@ const FEATURES = [
 
 const FAQS = [
   {
+    question: 'Does KODI PAP ever hold or touch my rent money?',
+    answer:
+      'No. Your tenants pay rent directly into your own M-Pesa or bank account, exactly as they do today — we never receive, hold, or move that money. KODI PAP only reads the payment confirmation and matches it to the right tenant for you.',
+  },
+  {
     question: 'Is my M-Pesa and tenant data safe?',
     answer:
       'Yes. Your rental and tenant data is kept separate per landlord account, and access is restricted to authorised users. We never sell your information — see our Privacy Policy for details.',
@@ -172,6 +177,7 @@ const TypedHeadline = ({
       setCharIdx(0);
     }, 300);
     return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `lines` is a literal passed by the caller; including it would re-trigger on every render
   }, [charIdx, lineIdx, done]);
 
   return (
@@ -805,6 +811,11 @@ const Landing = () => {
                   tracks arrears, and gives you a clear view of your entire rental business.
                 </p>
 
+                <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-4 py-1.5 text-sm font-semibold">
+                  <ShieldCheck className="h-4 w-4 shrink-0" />
+                  We never touch your money — it goes straight to your M-Pesa or bank
+                </div>
+
                 <div className="mt-8 flex flex-col sm:flex-row gap-3">
                   <Button asChild size="lg" className="gap-2 text-base px-7 py-6">
                     <Link to={ROUTES.GET_STARTED}>
@@ -821,6 +832,7 @@ const Landing = () => {
                   <span className="flex items-center gap-1.5"><Smartphone className="h-4 w-4 text-success" /> M-Pesa</span>
                   <span className="flex items-center gap-1.5"><Landmark className="h-4 w-4 text-success" /> Bank payments</span>
                   <span className="flex items-center gap-1.5"><Bell className="h-4 w-4 text-success" /> Automated reminders</span>
+                  <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-success" /> We never hold your money</span>
                 </div>
               </div>
 
