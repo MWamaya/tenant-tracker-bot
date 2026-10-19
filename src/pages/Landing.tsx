@@ -644,18 +644,18 @@ const HowItWorksStepper = () => {
           const isDone = i < active;
           return (
             <div key={step.title} className="contents">
-              <div className="flex flex-col items-center text-center w-20 sm:w-28 shrink-0">
+              <div className="flex flex-col items-center text-center w-14 sm:w-20 lg:w-28 shrink-0">
                 <button
                   type="button"
                   onClick={() => setActive(i)}
                   aria-label={step.title}
-                  className="relative flex items-center justify-center h-10 w-10 rounded-full"
+                  className="relative flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full"
                 >
                   {isActive && (
                     <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
                   )}
                   <span
-                    className={`relative flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold border-2 transition-colors ${
+                    className={`relative flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full text-xs font-bold border-2 transition-colors ${
                       isActive
                         ? 'bg-primary text-primary-foreground border-primary'
                         : isDone
