@@ -783,9 +783,14 @@ const Landing = () => {
           </Link>
         </Button>
 
-        {/* Fixed bottom nav — mobile-only floating glass pill with section links + log in + primary CTA */}
-        <nav className="sm:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none">
-          <div className="pointer-events-auto flex items-center gap-1 rounded-full border bg-background/70 backdrop-blur-xl shadow-lg px-1.5 py-1.5">
+        {/* Fixed bottom nav — mobile-only floating glass pill with section links + log in + primary CTA.
+            Hidden near the page bottom so it doesn't sit on top of (and swallow taps meant for) the footer links. */}
+        <nav
+          className={`sm:hidden fixed bottom-0 inset-x-0 z-50 flex justify-center px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pointer-events-none transition-opacity duration-200 ${
+            showScrollToBottom ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className={`flex items-center gap-1 rounded-full border bg-background/70 backdrop-blur-xl shadow-lg px-1.5 py-1.5 ${showScrollToBottom ? 'pointer-events-auto' : 'pointer-events-none'}`}>
             <a href="#how" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               How it works
             </a>

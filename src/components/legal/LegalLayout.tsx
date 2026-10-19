@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { PageSeo } from '@/components/seo/PageSeo';
+import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 
 export interface LegalSection {
   heading: string;
@@ -23,11 +24,15 @@ export const LegalLayout = ({ title, description, path, lastUpdated, notice, sec
     <PageSeo title={`${title} — KODI PAP`} description={description} path={path} noindex />
     <div className="min-h-screen px-4 sm:px-8 py-12 sm:py-16">
       <div className="max-w-2xl mx-auto">
+        <Link to={ROUTES.LANDING} className="inline-block">
+          <img src={kodiPapLogo} alt="KODI PAP" className="h-9 w-auto" />
+        </Link>
+
         <Link
           to={ROUTES.LANDING}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
-          <ArrowLeft className="h-4 w-4" /> KODI PAP
+          <ArrowLeft className="h-4 w-4" /> Back to home
         </Link>
 
         <h1 className="mt-6 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">{title}</h1>
