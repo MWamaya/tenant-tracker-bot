@@ -77,16 +77,17 @@ const Contact = () => {
       />
       <div className="min-h-screen px-4 sm:px-8 py-12 sm:py-16">
         <div className="max-w-2xl mx-auto">
-          <Link to={ROUTES.LANDING} className="inline-block">
-            <img src={kodiPapLogo} alt="KODI PAP" className="h-9 w-auto" />
-          </Link>
-
-          <Link
-            to={ROUTES.LANDING}
-            className="mt-4 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to home
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link
+              to={ROUTES.LANDING}
+              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back to home
+            </Link>
+            <Link to={ROUTES.LANDING} className="inline-block">
+              <img src={kodiPapLogo} alt="KODI PAP" className="h-9 w-auto" />
+            </Link>
+          </div>
 
           <h1 className="mt-6 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Contact & Support
