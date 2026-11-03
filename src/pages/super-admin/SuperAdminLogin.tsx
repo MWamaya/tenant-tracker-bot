@@ -46,8 +46,19 @@ const SuperAdminLogin = () => {
   const requestOtpOrProceed = async (): Promise<boolean> => {
     const { data, error } = await supabase.functions.invoke('super-admin-request-otp');
     if (error || (data && 'error' in data)) {
-      toast.error((data as { error?: string })?.error || error?.message || 'Could not start verification.');
-      await signOut();
+      const status = error?.context instanceof Response ? error.context.status : undefined;
+      toast.error(status === 429
+        ? 'Please wait 30 seconds before requesting another code. Your existing code still works.'
+        : (data as { error?: string })?.error || error?.message || 'Could not start verification.');
+      if (status === 401 || status === 403) {
+        await signOut();
+        setAwaitingOtp(false);
+        setOtpCode('');
+      } else {
+        // Cooldown and email delivery failures do not revoke this session.
+        setAwaitingOtp(true);
+      }
+      setPassword('');
       return false;
     }
     if (!(data as { required?: boolean })?.required) {

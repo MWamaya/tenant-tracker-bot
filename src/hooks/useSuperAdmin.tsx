@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, useRef, createContext, useContext, ReactNode } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -12,68 +12,66 @@ interface SuperAdminContextType {
 const SuperAdminContext = createContext<SuperAdminContextType | undefined>(undefined);
 
 export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [hasAdminRole, setHasAdminRole] = useState(false);
   const [loading, setLoading] = useState(true);
+  const requestSequence = useRef(0);
 
-  const checkSuperAdmin = async (): Promise<boolean> => {
-    setLoading(true);
-
-    // Fetch the current authenticated user directly to avoid stale context state
-    // right after a fresh signIn (the useAuth context may not have updated yet).
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
-    const activeUser = currentUser;
-
-    if (!activeUser) {
-      setIsSuperAdmin(false);
-      setHasAdminRole(false);
-      setLoading(false);
-      return false;
-    }
-
+  const refreshAuthorization = useCallback(async (blocking: boolean): Promise<boolean> => {
+    const request = ++requestSequence.current;
+    if (blocking) setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', activeUser.id)
-        .eq('role', 'SUPER_ADMIN')
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error checking super admin role:', error);
+      // Read current identity directly: auth context may lag a fresh sign-in.
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
+      let isAdmin = false;
+      let authorized = false;
+      if (currentUser) {
+        const { data, error } = await supabase.from('user_roles').select('role')
+          .eq('user_id', currentUser.id).eq('role', 'SUPER_ADMIN').maybeSingle();
+        if (error) throw error;
+        isAdmin = !!data;
+        if (isAdmin) {
+          const result = await supabase.rpc('has_role', { _user_id: currentUser.id, _role: 'SUPER_ADMIN' });
+          authorized = !result.error && result.data === true;
+        }
+      }
+      // Sign-out/session replacement must win over older network responses.
+      if (request === requestSequence.current) {
+        setHasAdminRole(isAdmin);
+        setIsSuperAdmin(authorized);
+        setLoading(false);
+      }
+      return isAdmin;
+    } catch (error) {
+      console.error('Error checking super admin authorization:', error);
+      if (request === requestSequence.current) {
         setIsSuperAdmin(false);
         setHasAdminRole(false);
         setLoading(false);
-        return false;
       }
-
-      const isAdmin = !!data;
-      setHasAdminRole(isAdmin);
-      const { data: authorized, error: authorizationError } = isAdmin
-        ? await supabase.rpc('has_role', { _user_id: activeUser.id, _role: 'SUPER_ADMIN' })
-        : { data: false, error: null };
-      setIsSuperAdmin(!authorizationError && authorized === true);
-      setLoading(false);
-      return isAdmin;
-    } catch (error) {
-      console.error('Error checking super admin role:', error);
-      setIsSuperAdmin(false);
-      setHasAdminRole(false);
-      setLoading(false);
       return false;
     }
-  };
+  }, []);
+
+  const checkSuperAdmin = useCallback(() => refreshAuthorization(true), [refreshAuthorization]);
 
   useEffect(() => {
-    checkSuperAdmin();
-    // Only the identity matters here — depending on the whole `user` object
-    // re-runs this (and flips the app-wide blocking `loading` flag) on every
-    // auth event, including a profile metadata update or a background token
-    // refresh, which briefly blanks the entire app behind a full-screen
-    // spinner for no real reason.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+    void checkSuperAdmin();
+    // Approval can expire or be revoked while the account ID stays unchanged.
+    // Background checks preserve the current page while awaiting the server.
+    const refresh = () => { void refreshAuthorization(false); };
+    const timer = user?.id ? setInterval(refresh, 60_000) : undefined;
+    window.addEventListener('focus', refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      // Invalidate the latest request generation; this ref is not a DOM node.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      requestSequence.current++;
+    };
+  }, [user?.id, session?.access_token, checkSuperAdmin, refreshAuthorization]);
 
   return (
     <SuperAdminContext.Provider value={{ isSuperAdmin, hasAdminRole, loading, checkSuperAdmin }}>

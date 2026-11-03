@@ -9,12 +9,12 @@ const stkPayload = {
   Body: { stkCallback: {
     CheckoutRequestID: 'checkout-unknown', MerchantRequestID: 'merchant', ResultCode: 0, ResultDesc: 'Success',
     CallbackMetadata: { Item: [
-      { Name: 'MpesaReceiptNumber', Value: 'ABC123DEF4' }, { Name: 'Amount', Value: 10000 },
+      { Name: 'PhoneNumber', Value: '254712345678' }, { Name: 'MpesaReceiptNumber', Value: 'ABC123DEF4' }, { Name: 'Amount', Value: 10000 },
     ] },
   } },
 };
 
-for (const scenario of ['unknown-shortcode', 'unknown-checkout', 'completed-subscription', 'mapped-checkout', 'amount-mismatch']) {
+for (const scenario of ['unknown-shortcode', 'unknown-checkout', 'completed-subscription', 'mapped-checkout', 'amount-mismatch', 'deleted-target', 'mapped-target']) {
   Deno.test(`callback ${scenario} uses only recorded ownership`, async () => {
     const keys = ['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
     const previous = keys.map((key) => Deno.env.get(key));
@@ -33,10 +33,18 @@ for (const scenario of ['unknown-shortcode', 'unknown-checkout', 'completed-subs
           ? { id: 'sub-1', landlord_id: 'landlord-1', status: 'completed' } : null,
       ));
       if (table === 'rent_mpesa_requests') return Promise.resolve(Response.json(
-        ['mapped-checkout', 'amount-mismatch'].includes(scenario) ? { landlord_id: 'landlord-1', amount: scenario === 'amount-mismatch' ? 1 : 10000 } : null,
+        ['mapped-checkout', 'amount-mismatch', 'deleted-target', 'mapped-target'].includes(scenario) ? { landlord_id: 'landlord-1', house_id: scenario === 'mapped-target' ? 'target-house' : null, tenant_id: scenario === 'mapped-target' ? 'target-tenant' : null, amount: scenario === 'amount-mismatch' ? 1 : 10000 } : null,
       ));
+      if (table === 'houses' && scenario === 'mapped-target') return Promise.resolve(Response.json({ id: 'target-house', expected_rent: 10000 }));
+      if (table === 'tenants' && scenario === 'mapped-target') return Promise.resolve(Response.json({ id: 'target-tenant', phone: '254700000000' }));
+      if (table === 'payments' && method === 'POST' && scenario === 'mapped-target') {
+        const row = JSON.parse(String(init?.body));
+        assertEquals([row.landlord_id, row.house_id, row.tenant_id], ['landlord-1', 'target-house', 'target-tenant']);
+      }
+      if (table === 'tenants' && scenario === 'deleted-target') return Promise.resolve(Response.json({ id: 'replacement-tenant', house_id: 'replacement-house', phone: '0712345678' }));
+      if (table === 'houses' && scenario === 'deleted-target') return Promise.resolve(Response.json({ id: 'replacement-house', expected_rent: 10000 }));
       if (table === 'profiles') return Promise.resolve(Response.json({ id: 'first-active-landlord' }));
-      if (table === 'mpesa_transactions' && method === 'POST') return Promise.resolve(Response.json({ id: 'tx-1' }));
+      if (table === 'mpesa_transactions' && method === 'POST') return Promise.resolve(Response.json({ ...JSON.parse(String(init?.body)), id: 'tx-1' }));
       return Promise.resolve(Response.json(null));
     }) as typeof fetch;
     try {
@@ -48,7 +56,7 @@ for (const scenario of ['unknown-shortcode', 'unknown-checkout', 'completed-subs
         method: 'POST', headers: { 'x-forwarded-for': '196.201.214.10' }, body: JSON.stringify(payload),
       }));
       assertEquals(response.status, 200);
-      assertEquals(financialWrites, scenario === 'mapped-checkout' ? ['mpesa_transactions'] : []);
+      assertEquals(financialWrites, scenario === 'mapped-target' ? ['mpesa_transactions', 'payments'] : ['mapped-checkout', 'deleted-target'].includes(scenario) ? ['mpesa_transactions'] : []);
     } finally {
       globalThis.fetch = originalFetch;
       keys.forEach((key, index) => previous[index] === undefined ? Deno.env.delete(key) : Deno.env.set(key, previous[index]!));

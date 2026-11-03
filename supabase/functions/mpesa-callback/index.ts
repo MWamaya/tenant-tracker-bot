@@ -444,7 +444,8 @@ async function processPayment(supabase: any, data: {
 
 async function attemptAutoMatch(supabase: any, mpesaTx: any, owner: PaymentOwner) {
   let match;
-  if (owner.houseId || owner.tenantId) {
+  // Checkout targets are authoritative even when deletion cleared both FKs.
+  if (owner.kind === 'checkout') {
     const { data: house } = owner.houseId ? await supabase.from('houses')
       .select('id, expected_rent').eq('id', owner.houseId).eq('landlord_id', owner.landlordId).maybeSingle()
       : { data: null };

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 export interface PaymentOwner {
+  kind: 'checkout' | 'c2b';
   landlordId: string;
   houseId?: string | null;
   tenantId?: string | null;
@@ -17,7 +18,7 @@ export async function resolvePaymentOwner(
       .eq('checkout_request_id', input.checkoutId).maybeSingle();
     if (error || !data) return null;
     return {
-      landlordId: data.landlord_id, houseId: data.house_id, tenantId: data.tenant_id,
+      kind: 'checkout', landlordId: data.landlord_id, houseId: data.house_id, tenantId: data.tenant_id,
       expectedAmount: Number(data.amount),
     };
   }
@@ -26,5 +27,5 @@ export async function resolvePaymentOwner(
     .select('landlord_id').eq('is_active', true)
     .or(`paybill_number.eq.${input.shortcode},till_number.eq.${input.shortcode}`).limit(2);
   if (error || !data || data.length !== 1) return null;
-  return { landlordId: data[0].landlord_id };
+  return { kind: 'c2b', landlordId: data[0].landlord_id };
 }
