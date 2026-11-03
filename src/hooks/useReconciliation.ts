@@ -3,12 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveLandlordId, useImpersonation, assertWritable } from '@/hooks/useImpersonation';
 import { toast } from 'sonner';
 
-// A queue item is either an existing payment with a missing house/tenant
-// (resend-inbound found a partial match) or an email_log that never became
-// a payment at all (resend-inbound found no match and had nothing to attach
-// a payment to). Both are surfaced the same way so the landlord can assign
-// a house to either from one screen.
-export type ReconciliationReason = 'no_house_match' | 'missing_house' | 'missing_tenant';
+// Existing payments missing a house/tenant and pending email evidence share
+// this queue. Email evidence requires bank confirmation before posting.
+export type ReconciliationReason = 'email_requires_confirmation' | 'no_house_match' | 'missing_house' | 'missing_tenant';
 
 export interface ReconciliationItem {
   source: 'payment' | 'email_log';
@@ -72,7 +69,7 @@ export const useReconciliation = () => {
         senderName: l.parsed_tenant_name,
         parsedHouseNo: l.parsed_house_no,
         date: l.parsed_date || l.created_at,
-        reason: 'no_house_match',
+        reason: 'email_requires_confirmation',
       }));
 
       return [...fromPayments, ...fromEmailLogs].sort(

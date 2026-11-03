@@ -3,8 +3,6 @@ import { createServiceClient } from '../_shared/supabase.ts';
 import { verifyResendWebhook } from '../_shared/verifyResendWebhook.ts';
 import { htmlToText, extractForwardedFrom } from '../_shared/emailText.ts';
 import { parseBankEmail } from '../_shared/bankParsers.ts';
-import { matchHouseAndTenant, updateHouseBalance } from '../_shared/paymentMatching.ts';
-import { autoTagDeposits } from '../_shared/depositAutoTag.ts';
 
 interface ResendReceivedWebhook {
   type: string;
@@ -150,8 +148,7 @@ Deno.serve(async (req) => {
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
   if (!resendApiKey) {
     console.error('RESEND_API_KEY not configured');
-    await markBaseLogProcessed('RESEND_API_KEY not configured');
-    return jsonResponse({ received: true });
+    return jsonResponse({ error: 'Email retrieval unavailable' }, 503);
   }
 
   const emailResponse = await fetch(`https://api.resend.com/emails/receiving/${emailId}`, {
@@ -161,8 +158,7 @@ Deno.serve(async (req) => {
   if (!emailResponse.ok) {
     const fetchError = await emailResponse.text();
     console.error('Failed to fetch email from Resend:', fetchError);
-    await markBaseLogProcessed(`Failed to fetch email from Resend: ${fetchError.slice(0, 500)}`);
-    return jsonResponse({ received: true });
+    return jsonResponse({ error: 'Email retrieval failed' }, 503);
   }
 
   const email = await emailResponse.json();
@@ -171,73 +167,26 @@ Deno.serve(async (req) => {
   const originalFrom = extractForwardedFrom(text);
   const parsed = parseBankEmail(text, originalFrom);
 
-  await markBaseLogProcessed();
-
-  if (!parsed) {
-    await supabase.from('email_logs').insert({
-      landlord_id: landlord.id,
-      raw_message: text,
-      status: 'failed',
-      error_message: 'Could not parse required fields from forwarded email',
-      resend_message_id: emailId,
-    });
-    return jsonResponse({ received: true });
-  }
-
-  const { data: emailLog, error: insertError } = await supabase
-    .from('email_logs')
-    .insert({
-      landlord_id: landlord.id,
-      raw_message: text,
-      parsed_amount: parsed.amount,
-      parsed_house_no: parsed.houseNo,
-      parsed_tenant_name: parsed.tenantName,
-      parsed_mpesa_ref: parsed.reference,
-      parsed_date: parsed.paymentDate,
-      status: 'pending',
-      resend_message_id: emailId,
-    })
-    .select()
-    .single();
-
-  if (insertError || !emailLog) {
-    console.error('Failed to insert email log:', insertError);
-    return jsonResponse({ received: true });
-  }
-
-  const match = await matchHouseAndTenant(supabase, {
-    landlordId: landlord.id,
-    houseNo: parsed.houseNo,
+  // Svix proves delivery by Resend, not authenticity of forwarded bank content.
+  // Parsing extracts evidence only. A landlord must confirm against their bank
+  // before the manual reconciliation endpoint can create a payment.
+  const { error: insertError } = await supabase.from('email_logs').insert({
+    landlord_id: landlord.id,
+    raw_message: text,
+    parsed_amount: parsed?.amount ?? null,
+    parsed_house_no: parsed?.houseNo ?? null,
+    parsed_tenant_name: parsed?.tenantName ?? null,
+    parsed_mpesa_ref: parsed?.reference ?? null,
+    parsed_date: parsed?.paymentDate ?? null,
+    status: parsed ? 'pending' : 'failed',
+    error_message: parsed ? null : 'Could not parse required fields from forwarded email',
+    resend_message_id: emailId,
   });
 
-  if (match.house || match.tenant) {
-    const { data: payment, error: paymentError } = await supabase
-      .from('payments')
-      .insert({
-        landlord_id: landlord.id,
-        house_id: match.house?.id,
-        tenant_id: match.tenant?.id,
-        amount: parsed.amount,
-        mpesa_ref: parsed.reference,
-        payment_date: parsed.paymentDate || new Date().toISOString(),
-        sender_name: parsed.tenantName,
-        payment_source: 'email',
-      })
-      .select()
-      .single();
-
-    if (!paymentError && payment) {
-      await supabase
-        .from('email_logs')
-        .update({ status: 'processed', payment_id: payment.id })
-        .eq('id', emailLog.id);
-
-      if (match.house) {
-        await updateHouseBalance(supabase, landlord.id, match.house.id, parsed.amount);
-        await autoTagDeposits(supabase, [match.house.id]);
-      }
-    }
+  if (insertError && insertError.code !== '23505') {
+    console.error('Failed to store email evidence:', insertError);
+    return jsonResponse({ error: 'Email evidence could not be saved' }, 503);
   }
-
+  await markBaseLogProcessed();
   return jsonResponse({ received: true });
 });

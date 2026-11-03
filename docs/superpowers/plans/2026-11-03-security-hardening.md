@@ -31,38 +31,38 @@
 
 **Files:** `supabase/functions/mpesa-auth/index.ts`, its handler and Deno test.
 **Interfaces:** Export a pure request handler returning HTTP 410 without accessing credentials or calling Safaricom.
-- [ ] Write tests for POST/GET/public-key requests: no access_token in response.
-- [ ] Run tests and observe failure before implementation.
-- [ ] Return a stable retired-endpoint error; keep server OAuth inside existing STK functions.
-- [ ] Run Deno tests and commit.
+- [x] Write tests for POST/GET/public-key requests: no access_token in response.
+- [x] Run tests and observe failure before implementation.
+- [x] Return a stable retired-endpoint error; keep server OAuth inside existing STK functions.
+- [x] Run Deno tests and commit.
 
 ### Task 2: Enforce session-bound admin OTP
 
 **Files:** New security migration and SQL integration test; OTP endpoints; admin endpoints; `useSuperAdmin`; admin login.
 **Interfaces:** `has_role(uuid, app_role)` retains signature but gates SUPER_ADMIN by session verification when enabled. Service-only `verify_super_admin_otp(user, session, hash)` atomically consumes a code and grants that session permission. Admin Edge Functions check user-scoped `has_role`.
-- [ ] Add SQL integration tests proving enabled OTP blocks raw password sessions, valid code unlocks only its session, invalid/expired/replayed codes fail, and settings cannot bypass enforcement.
-- [ ] Run against baseline and observe failures.
-- [ ] Add session verification storage, transactional verification, and database authorization enforcement.
-- [ ] Keep browser session through OTP; recheck authorization after success; scope issuance to authenticated session.
-- [ ] Test SQL and Edge Function boundaries; commit.
+- [x] Add SQL integration tests proving enabled OTP blocks raw password sessions, valid code unlocks only its session, invalid/expired/replayed codes fail, and settings cannot bypass enforcement.
+- [x] Run against baseline and observe failures.
+- [x] Add session verification storage, transactional verification, and database authorization enforcement.
+- [x] Keep browser session through OTP; recheck authorization after success; scope issuance to authenticated session.
+- [x] Test SQL and Edge Function boundaries; commit.
 
 ### Task 3: Resolve payment ownership explicitly
 
 **Files:** M-Pesa callback, rent STK request function, new request mapping migration, shared resolver and tests.
 **Interfaces:** Persist CheckoutRequestID -> landlord/house/tenant at initiation. C2B ownership requires exactly one configured payment source. Unknown ownership is logged for review without creating a landlord payment.
-- [ ] Add tests for unknown shortcode, duplicate shortcode, rent STK mapping, and unknown checkout ID.
-- [ ] Observe failures, implement deterministic resolution, then rerun tests.
-- [ ] Ensure known subscription IDs never fall through to rent processing after completion.
-- [ ] Commit.
+- [x] Add tests for unknown shortcode, duplicate shortcode, rent STK mapping, and unknown checkout ID.
+- [x] Observe failures, implement deterministic resolution, then rerun tests.
+- [x] Ensure known subscription IDs never fall through to rent processing after completion.
+- [x] Commit.
 
 ### Task 4: Treat email as reviewable payment evidence
 
 **Files:** Inbound email handler, bank parser/tests, manual reconciliation tests, deployment notes.
 **Interfaces:** Parsed email creates pending email_log only; manual reconciliation remains the explicit confirmation path.
-- [ ] Add tests proving forged bank branding cannot auto-create payment and legitimate forwarded content remains available for review.
-- [ ] Observe failures, implement evidence-only email ingestion, rerun tests.
-- [ ] Document behavior change, migration/deployment order, and remaining review priorities.
-- [ ] Commit and run complete frontend/backend suites, type check, build, and lint; report existing failures explicitly.
+- [x] Add tests proving forged bank branding cannot auto-create payment and legitimate forwarded content remains available for review.
+- [x] Observe failures, implement evidence-only email ingestion, rerun tests.
+- [x] Document behavior change, migration/deployment order, and remaining review priorities.
+- [x] Commit and run complete frontend/backend suites, type check, build, and lint; report existing failures explicitly.
 
 ## Following Batches
 
