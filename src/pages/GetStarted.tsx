@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -6,7 +6,7 @@ import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { supabase } from '@/integrations/supabase/client';
-import { PUBLIC_PLANS } from '@/lib/plans';
+import { PUBLIC_PLANS, calcPrepayTotal } from '@/lib/plans';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,13 @@ const GetStarted = () => {
   const [searchParams] = useSearchParams();
   const preselected = searchParams.get('plan');
   const plans = PUBLIC_PLANS;
+  const heading = useRef<HTMLHeadingElement>(null);
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>(searchParams.get('billing') === 'annual' ? 'annual' : 'monthly');
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    heading.current?.focus({ preventScroll: true });
+  }, []);
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -50,7 +57,7 @@ const GetStarted = () => {
 
     setIsSubmitting(true);
     const { data, error } = await supabase.functions.invoke('onboarding-submit', {
-      body: { fullName, email, phone, plan, website },
+      body: { fullName, email, phone, plan, billingPeriod, website },
     });
     setIsSubmitting(false);
 
@@ -83,19 +90,19 @@ const GetStarted = () => {
             <img src={kodiPapLogo} alt="KODI PAP" className="h-6 w-auto" />
           </div>
 
-          <h1 className="mt-6 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
+          <h1 ref={heading} tabIndex={-1} className="mt-6 text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
             Get started with KODI PAP
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Tell us a bit about yourself and pick a plan. Our team will reach out to set up
-            your account — no payment needed right now.
+            your account, usually within one business day. No payment needed right now.
           </p>
 
           {submitted ? (
             <div className="mt-8 rounded-xl border border-success/30 bg-success/10 px-5 py-4 text-sm text-foreground">
               Thanks, {fullName.split(' ')[0]} — your request is in. We'll reach out to{' '}
               <strong>{email}</strong> or <strong>{phone}</strong> soon to get you set up on
-              the {plan} plan.
+              the {plan} plan with {billingPeriod === 'annual' ? 'annual' : 'monthly'} billing.
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
@@ -117,6 +124,7 @@ const GetStarted = () => {
                   <Label htmlFor="fullName">Full name</Label>
                   <Input
                     id="fullName"
+                    autoComplete="name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Jane Wanjiru"
@@ -128,6 +136,7 @@ const GetStarted = () => {
                   <Label htmlFor="phone">Phone number</Label>
                   <Input
                     id="phone"
+                    autoComplete="tel"
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -142,6 +151,7 @@ const GetStarted = () => {
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
+                  autoComplete="email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -150,6 +160,21 @@ const GetStarted = () => {
                   required
                 />
               </div>
+
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium mb-2">Billing preference</legend>
+                <div className="flex gap-2">
+                  {(['monthly', 'annual'] as const).map((period) => (
+                    <Button key={period} type="button" variant={billingPeriod === period ? 'default' : 'outline'}
+                      aria-pressed={billingPeriod === period} className="min-h-11 flex-1" onClick={() => setBillingPeriod(period)}>
+                      {period === 'annual' ? 'Annual · save 20%' : 'Monthly'}
+                    </Button>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {billingPeriod === 'annual' ? 'Annual plans are paid upfront for 12 months. No payment is collected with this request.' : 'Choose a monthly plan. No payment is collected with this request.'}
+                </p>
+              </fieldset>
 
               <div className="space-y-2">
                 <Label>Plan</Label>
@@ -161,6 +186,7 @@ const GetStarted = () => {
                         key={p.name}
                         type="button"
                         onClick={() => setPlan(p.name)}
+                        aria-pressed={selected}
                         className={`relative text-left rounded-xl border p-4 transition-colors ${
                           selected
                             ? 'border-primary bg-primary/5 ring-2 ring-primary'
@@ -177,11 +203,11 @@ const GetStarted = () => {
                           {selected && <Check className="h-4 w-4 text-primary" />}
                         </div>
                         <div className="mt-1 text-sm text-muted-foreground">
-                          KES {p.price.toLocaleString()}
-                          <span className="text-xs"> /month</span>
+                          KES {calcPrepayTotal(p.price, billingPeriod === 'annual' ? 12 : 1).toLocaleString()}
+                          <span className="text-xs"> /{billingPeriod === 'annual' ? 'year' : 'month'}</span>
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {p.maxProperties === null ? 'Unlimited' : p.maxProperties} properties ·{' '}
+                          {p.maxProperties === null ? 'Unlimited' : p.maxProperties} {p.maxProperties === 1 ? 'property' : 'properties'} ·{' '}
                           {p.maxTenants === null ? 'Unlimited' : p.maxTenants} tenants
                         </div>
                         <ul className="mt-2 space-y-1">

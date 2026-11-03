@@ -779,6 +779,8 @@ export type Database = {
       }
       onboarding_requests: {
         Row: {
+          billing_period: string
+          landlord_id: string | null
           created_at: string
           email: string
           full_name: string
@@ -788,6 +790,8 @@ export type Database = {
           status: string
         }
         Insert: {
+          billing_period?: string
+          landlord_id?: string | null
           created_at?: string
           email: string
           full_name: string
@@ -797,6 +801,8 @@ export type Database = {
           status?: string
         }
         Update: {
+          billing_period?: string
+          landlord_id?: string | null
           created_at?: string
           email?: string
           full_name?: string

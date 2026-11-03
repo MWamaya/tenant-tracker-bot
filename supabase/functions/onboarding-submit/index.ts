@@ -33,6 +33,7 @@ interface OnboardingPayload {
   email?: unknown;
   phone?: unknown;
   plan?: unknown;
+  billingPeriod?: unknown;
   // Honeypot — real users never fill this in; bots usually do.
   website?: unknown;
 }
@@ -71,6 +72,10 @@ Deno.serve(async (req) => {
   if (!phone || phone.length > PHONE_MAX) {
     return jsonResponse({ error: 'Enter a valid phone number.' }, 400);
   }
+  const billingPeriod = body.billingPeriod === undefined ? 'monthly' : body.billingPeriod;
+  if (billingPeriod !== 'monthly' && billingPeriod !== 'annual') {
+    return jsonResponse({ error: 'Choose monthly or annual billing.' }, 400);
+  }
   if (!VALID_PLANS.has(plan)) {
     return jsonResponse({ error: 'Choose a plan.' }, 400);
   }
@@ -81,6 +86,7 @@ Deno.serve(async (req) => {
     email,
     phone,
     plan,
+    billing_period: billingPeriod,
   });
 
   if (insertError) {
@@ -106,14 +112,14 @@ Deno.serve(async (req) => {
     const notifyRecipients = [...new Set([SUPPORT_EMAIL, ...adminEmails])];
 
     const html = renderEmailLayout({
-      preheader: `New onboarding request from ${fullName} (${plan})`,
+      preheader: `New onboarding request from ${fullName} (${plan}, ${billingPeriod})`,
       bodyHtml: `
         <h2 style="margin:0 0 16px;font-size:18px;color:#0F172A;">New onboarding request</h2>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;">
           <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;width:90px;">Name</td><td style="padding:10px 16px;color:#0F172A;font-weight:600;">${escapeHtml(fullName)}</td></tr>
           <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;">Email</td><td style="padding:10px 16px;color:#0F172A;">${escapeHtml(email)}</td></tr>
           <tr style="border-bottom:1px solid #E2E8F0;"><td style="padding:10px 16px;color:#64748B;">Phone</td><td style="padding:10px 16px;color:#0F172A;">${escapeHtml(phone)}</td></tr>
-          <tr><td style="padding:10px 16px;color:#64748B;">Plan</td><td style="padding:10px 16px;"><span style="background-color:#16A34A1A;border:1px solid #16A34A40;color:#16A34A;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">${escapeHtml(plan)}</span></td></tr>
+          <tr><td style="padding:10px 16px;color:#64748B;">Plan</td><td style="padding:10px 16px;"><span style="background-color:#16A34A1A;border:1px solid #16A34A40;color:#16A34A;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:600;">${escapeHtml(plan)} · ${billingPeriod}</span></td></tr>
         </table>
         <p style="margin:20px 0 0;color:#64748B;font-size:13px;">Review and follow up from Super Admin → Onboarding Requests.</p>
       `,
@@ -129,7 +135,7 @@ Deno.serve(async (req) => {
         from: 'KODI PAP <noreply@kodipap.com>',
         to: notifyRecipients,
         reply_to: email,
-        subject: `New onboarding request: ${fullName} (${plan})`,
+        subject: `New onboarding request: ${fullName} (${plan}, ${billingPeriod})`,
         html,
       }),
     });
@@ -144,7 +150,7 @@ Deno.serve(async (req) => {
       preheader: "We've got your request and will be in touch shortly.",
       bodyHtml: `
         <h2 style="margin:0 0 16px;font-size:18px;color:#0F172A;">Thanks, ${escapeHtml(fullName.split(' ')[0] || fullName)} — we've got your request</h2>
-        <p style="margin:0 0 20px;">We received your interest in the <strong>${escapeHtml(plan)}</strong> plan. Our team will review it and reach out — usually within one business day — to get you set up.</p>
+        <p style="margin:0 0 20px;">We received your interest in the <strong>${escapeHtml(plan)}</strong> plan with <strong>${billingPeriod}</strong> billing. Our team will review it and reach out — usually within one business day — to get you set up.</p>
         <p style="margin:0;color:#64748B;font-size:13px;">Questions in the meantime? Just reply to this email.</p>
       `,
     });

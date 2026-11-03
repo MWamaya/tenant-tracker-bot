@@ -5,6 +5,7 @@ import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { format, subMonths, startOfMonth } from 'date-fns';
 
 export interface OnboardingRequest {
+  billing_period: string;
   id: string;
   full_name: string;
   email: string;
