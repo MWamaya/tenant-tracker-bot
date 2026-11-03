@@ -48,15 +48,13 @@ Deno.serve(async (req) => {
 
   const serviceClient = createServiceClient();
 
-  const { data: roleRow } = await serviceClient
-    .from('user_roles')
-    .select('role')
-    .eq('user_id', caller.id)
-    .eq('role', 'SUPER_ADMIN')
-    .maybeSingle();
-
-  if (!roleRow) {
-    return jsonResponse({ error: 'Forbidden' }, 403);
+  // Use the caller's JWT so Postgres enforces session-bound OTP.
+  const { data: authorized, error: authorizationError } = await userClient.rpc('has_role', {
+    _user_id: caller.id,
+    _role: 'SUPER_ADMIN',
+  });
+  if (authorizationError || authorized !== true) {
+    return jsonResponse({ error: 'Forbidden: verify your admin session first.' }, 403);
   }
 
   let body: CreateLandlordPayload;

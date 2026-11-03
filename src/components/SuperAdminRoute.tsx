@@ -10,7 +10,7 @@ interface SuperAdminRouteProps {
 
 const SuperAdminRoute = ({ children }: SuperAdminRouteProps) => {
   const { user, loading: authLoading } = useAuth();
-  const { isSuperAdmin, loading: roleLoading } = useSuperAdmin();
+  const { isSuperAdmin, hasAdminRole, loading: roleLoading } = useSuperAdmin();
 
   if (authLoading || roleLoading) {
     return (
@@ -25,7 +25,7 @@ const SuperAdminRoute = ({ children }: SuperAdminRouteProps) => {
   }
 
   if (!isSuperAdmin) {
-    return <Navigate to={ROUTES.AUTH} replace />;
+    return <Navigate to={hasAdminRole ? ROUTES.SUPER_ADMIN_LOGIN : ROUTES.AUTH} replace />;
   }
 
   return <>{children}</>;

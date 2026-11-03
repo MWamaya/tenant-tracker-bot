@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface SuperAdminContextType {
   isSuperAdmin: boolean;
+  hasAdminRole: boolean;
   loading: boolean;
   checkSuperAdmin: () => Promise<boolean>;
 }
@@ -13,6 +14,7 @@ const SuperAdminContext = createContext<SuperAdminContextType | undefined>(undef
 export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [hasAdminRole, setHasAdminRole] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const checkSuperAdmin = async (): Promise<boolean> => {
@@ -21,10 +23,11 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
     // Fetch the current authenticated user directly to avoid stale context state
     // right after a fresh signIn (the useAuth context may not have updated yet).
     const { data: { user: currentUser } } = await supabase.auth.getUser();
-    const activeUser = currentUser ?? user;
+    const activeUser = currentUser;
 
     if (!activeUser) {
       setIsSuperAdmin(false);
+      setHasAdminRole(false);
       setLoading(false);
       return false;
     }
@@ -40,17 +43,23 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error checking super admin role:', error);
         setIsSuperAdmin(false);
+        setHasAdminRole(false);
         setLoading(false);
         return false;
       }
 
       const isAdmin = !!data;
-      setIsSuperAdmin(isAdmin);
+      setHasAdminRole(isAdmin);
+      const { data: authorized, error: authorizationError } = isAdmin
+        ? await supabase.rpc('has_role', { _user_id: activeUser.id, _role: 'SUPER_ADMIN' })
+        : { data: false, error: null };
+      setIsSuperAdmin(!authorizationError && authorized === true);
       setLoading(false);
       return isAdmin;
     } catch (error) {
       console.error('Error checking super admin role:', error);
       setIsSuperAdmin(false);
+      setHasAdminRole(false);
       setLoading(false);
       return false;
     }
@@ -67,7 +76,7 @@ export const SuperAdminProvider = ({ children }: { children: ReactNode }) => {
   }, [user?.id]);
 
   return (
-    <SuperAdminContext.Provider value={{ isSuperAdmin, loading, checkSuperAdmin }}>
+    <SuperAdminContext.Provider value={{ isSuperAdmin, hasAdminRole, loading, checkSuperAdmin }}>
       {children}
     </SuperAdminContext.Provider>
   );

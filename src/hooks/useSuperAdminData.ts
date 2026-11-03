@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useSuperAdmin } from '@/hooks/useSuperAdmin';
 import { format, subMonths, startOfMonth } from 'date-fns';
 
 export interface OnboardingRequest {
@@ -1091,6 +1092,7 @@ export const useTwoFactorSettings = () => {
 
 export const useUpdateTwoFactorSettings = () => {
   const queryClient = useQueryClient();
+  const { checkSuperAdmin } = useSuperAdmin();
 
   return useMutation({
     mutationFn: async (settings: TwoFactorSettings) => {
@@ -1109,6 +1111,7 @@ export const useUpdateTwoFactorSettings = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['super-admin-two-factor-settings'] });
       toast.success('Two-factor authentication updated');
+      void checkSuperAdmin();
     },
     onError: (error: Error) => {
       toast.error(`Failed to update: ${error.message}`);
