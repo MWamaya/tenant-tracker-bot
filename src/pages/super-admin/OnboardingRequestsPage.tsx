@@ -108,7 +108,7 @@ const OnboardingRequestsPage = () => {
         cell: ({ row }) =>
           row.original.plan ? (
             <Badge variant="outline" className={STATUS_BADGE_CLASSES.info}>
-              {row.original.plan} · {row.original.billing_period === 'annual' ? 'Annual' : 'Monthly'}
+              {row.original.plan}
             </Badge>
           ) : (
             <span className="text-[#64748B] text-sm">Not chosen yet</span>
@@ -185,7 +185,6 @@ const OnboardingRequestsPage = () => {
     { id: 'Email', header: 'Email', accessor: (r) => r.email },
     { id: 'Phone', header: 'Phone', accessor: (r) => r.phone },
     { id: 'Plan', header: 'Plan', accessor: (r) => r.plan },
-    { id: 'Billing', header: 'Billing', accessor: (r) => r.billing_period },
     { id: 'Status', header: 'Status', accessor: (r) => r.status },
     { id: 'Created', header: 'Created', accessor: (r) => r.created_at },
   ];

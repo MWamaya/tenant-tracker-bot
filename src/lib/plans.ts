@@ -25,7 +25,7 @@ export const PUBLIC_PLANS: PublicPlan[] = [
     name: 'Starter',
     price: 1250,
     pricePerTenant: 50,
-    description: 'Track rent and tenant balances in one place',
+    description: 'Get every tenant off M-Pesa screenshots and onto autopilot',
     maxProperties: 1,
     maxTenants: 25,
     smsTokensIncluded: 50,
@@ -47,7 +47,7 @@ export const PUBLIC_PLANS: PublicPlan[] = [
     smsTokensIncluded: 150,
     features: [
       'Everything in Starter',
-      'Bank receipt review and reconciliation',
+      'Bank payment matching, not just M-Pesa',
       'Advanced reports & reconciliation',
       'Priority support',
     ],
