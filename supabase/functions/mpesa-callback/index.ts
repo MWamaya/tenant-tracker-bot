@@ -1,6 +1,7 @@
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient } from '../_shared/supabase.ts';
 import { matchHouseAndTenant, updateHouseBalance, clearMatchedEmailLog } from '../_shared/paymentMatching.ts';
+import { resolvePaymentOwner, PaymentOwner } from '../_shared/paymentOwnership.ts';
 import { autoTagDeposits } from '../_shared/depositAutoTag.ts';
 import { activateLandlordSubscription } from '../_shared/subscriptionActivation.ts';
 
@@ -171,17 +172,22 @@ async function handleSTKCallback(supabase: any, payload: STKCallbackPayload, web
   const callback = payload.Body.stkCallback;
 
   // A subscription STK push (mpesa-subscription-stk-push) records its
-  // CheckoutRequestID up front — if we find a pending row for it, this
+  // CheckoutRequestID up front — if we find any recorded row for it, this
   // callback is a landlord paying their own platform subscription, not a
   // tenant paying rent. Handle it separately and stop.
   const { data: subRequest } = await supabase
     .from('subscription_mpesa_requests')
     .select('*')
     .eq('checkout_request_id', callback.CheckoutRequestID)
-    .eq('status', 'pending')
     .maybeSingle();
 
   if (subRequest) {
+    if (subRequest.status !== 'pending') {
+      if (webhookLogId) await supabase.from('webhooks_log').update({
+        processed: true, error_message: 'Subscription callback already handled',
+      }).eq('id', webhookLogId);
+      return Response.json({ ResultCode: 0, ResultDesc: 'Accepted' }, { headers: corsHeaders });
+    }
     return await handleSubscriptionSTKCallback(supabase, callback, subRequest, webhookLogId);
   }
 
@@ -217,7 +223,7 @@ async function handleSTKCallback(supabase: any, payload: STKCallbackPayload, web
       transaction_id: transactionId,
       amount,
       phone: phone?.toString(),
-      bill_ref_number: callback.CheckoutRequestID,
+      checkout_request_id: callback.CheckoutRequestID,
       raw_payload: payload,
       webhook_log_id: webhookLogId,
     });
@@ -349,6 +355,7 @@ async function processPayment(supabase: any, data: {
   phone?: string;
   business_short_code?: string;
   bill_ref_number?: string;
+  checkout_request_id?: string;
   invoice_number?: string;
   org_account_balance?: number | null;
   third_party_trans_id?: string;
@@ -376,58 +383,19 @@ async function processPayment(supabase: any, data: {
     return;
   }
 
-  // Try to match to a landlord using payment source
-  let landlordId: string | null = null;
-  
-  if (data.business_short_code) {
-    const { data: source } = await supabase
-      .from('payment_sources')
-      .select('landlord_id')
-      .or(`paybill_number.eq.${data.business_short_code},till_number.eq.${data.business_short_code}`)
-      .eq('is_active', true)
-      .single();
-    
-    if (source) {
-      landlordId = source.landlord_id;
-    }
-  }
-
-  // If no landlord found by shortcode, try matching by bill reference (house number)
-  if (!landlordId && data.bill_ref_number) {
-    const { data: house } = await supabase
-      .from('houses')
-      .select('landlord_id, id')
-      .ilike('house_no', data.bill_ref_number)
-      .single();
-    
-    if (house) {
-      landlordId = house.landlord_id;
-    }
-  }
-
-  // Get first active landlord as fallback (for testing)
-  if (!landlordId) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('account_status', 'active')
-      .limit(1)
-      .single();
-    
-    if (profile) {
-      landlordId = profile.id;
-    }
-  }
-
-  if (!landlordId) {
-    console.error('Could not determine landlord for transaction:', data.transaction_id);
-    if (data.webhook_log_id) {
-      await supabase.from('webhooks_log')
-        .update({ processed: true, error_message: 'Could not determine landlord for transaction' })
-        .eq('id', data.webhook_log_id);
-    }
+  const owner = await resolvePaymentOwner(supabase, {
+    shortcode: data.business_short_code, checkoutId: data.checkout_request_id,
+  });
+  if (!owner || (owner.expectedAmount !== undefined && owner.expectedAmount !== data.amount)) {
+    // Keep the complete payload in the unresolved webhook queue for an operator.
+    // Never guess ownership from a globally searched house or an active profile.
+    if (data.webhook_log_id) await supabase.from('webhooks_log').update({
+      processed: false,
+      error_message: owner ? 'Rent checkout amount mismatch' : 'Unknown or ambiguous payment ownership',
+    }).eq('id', data.webhook_log_id);
     return;
   }
+  const landlordId = owner.landlordId;
 
   // Insert M-Pesa transaction
   const { data: mpesaTx, error: insertError } = await supabase
@@ -464,7 +432,7 @@ async function processPayment(supabase: any, data: {
   }
 
   // Attempt auto-matching
-  await attemptAutoMatch(supabase, mpesaTx);
+  await attemptAutoMatch(supabase, mpesaTx, owner);
 
   // Update webhook log as processed
   if (data.webhook_log_id) {
@@ -474,12 +442,23 @@ async function processPayment(supabase: any, data: {
   }
 }
 
-async function attemptAutoMatch(supabase: any, mpesaTx: any) {
-  const match = await matchHouseAndTenant(supabase, {
-    landlordId: mpesaTx.landlord_id,
-    houseNo: mpesaTx.bill_ref_number,
-    phone: mpesaTx.msisdn,
-  });
+async function attemptAutoMatch(supabase: any, mpesaTx: any, owner: PaymentOwner) {
+  let match;
+  if (owner.houseId || owner.tenantId) {
+    const { data: house } = owner.houseId ? await supabase.from('houses')
+      .select('id, expected_rent').eq('id', owner.houseId).eq('landlord_id', owner.landlordId).maybeSingle()
+      : { data: null };
+    const { data: tenant } = owner.tenantId ? await supabase.from('tenants')
+      .select('id, name, phone').eq('id', owner.tenantId).eq('landlord_id', owner.landlordId).maybeSingle()
+      : { data: null };
+    match = { house, tenant, confidence: 100 };
+  } else {
+    match = await matchHouseAndTenant(supabase, {
+      landlordId: mpesaTx.landlord_id,
+      houseNo: mpesaTx.bill_ref_number,
+      phone: mpesaTx.msisdn,
+    });
+  }
 
   if (!match.house && !match.tenant) return;
 
