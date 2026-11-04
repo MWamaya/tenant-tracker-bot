@@ -1,5 +1,6 @@
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient, getUser } from '../_shared/supabase.ts';
+import { withCallbackToken } from '../_shared/mpesaCallbackAuth.ts';
 
 // M-Pesa STK Push endpoints
 const MPESA_STK_URL = 'https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest';
@@ -133,7 +134,7 @@ Deno.serve(async (req) => {
       PartyA: formattedPhone,
       PartyB: shortcode,
       PhoneNumber: formattedPhone,
-      CallBackURL: callbackUrl || defaultCallbackUrl,
+      CallBackURL: withCallbackToken(callbackUrl || defaultCallbackUrl),
       AccountReference: account_reference,
       TransactionDesc: description || `Payment for ${account_reference}`,
     };

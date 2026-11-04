@@ -501,13 +501,13 @@ const DashboardMockup = () => {
       </div>
 
       {/* Mobile tab strip — sidebar is desktop-only */}
-      <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b">
+      <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b [mask-image:linear-gradient(to_right,black_88%,transparent)] pr-8">
         {DASHBOARD_TABS.map((tab, i) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActive(i)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+            className={`shrink-0 rounded-full px-3.5 py-2.5 text-xs font-semibold transition-colors ${
               active === i ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
             }`}
           >
@@ -736,14 +736,15 @@ const Landing = () => {
             independent of the nav pill so it never scrolls away. Desktop nav
             pill: links + sign up, centered. Mobile: colored log in/get
             started buttons, top-right. */}
+        <div aria-hidden className="sm:hidden fixed top-0 inset-x-0 h-16 z-40 border-b bg-background/85 backdrop-blur-xl" />
         <Link
           to={ROUTES.LANDING}
-          className="fixed top-4 left-4 sm:top-6 sm:left-8 z-50 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="fixed top-3 left-4 sm:top-6 sm:left-8 z-50 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <img src={kodiPapLogo} alt="KODI PAP" className="h-12 sm:h-14 w-auto drop-shadow" />
+          <img src={kodiPapLogo} alt="KODI PAP" className="h-10 sm:h-14 w-auto drop-shadow" />
         </Link>
 
-        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-end sm:justify-center pointer-events-none">
+        <header className="fixed top-[10px] sm:top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-end sm:justify-center pointer-events-none">
           <nav className="hidden sm:block pointer-events-auto w-fit rounded-full border bg-background/70 backdrop-blur-xl shadow-lg">
             <div className="flex items-center gap-2 px-2 py-1.5">
               <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -764,10 +765,10 @@ const Landing = () => {
           </nav>
 
           <div className="sm:hidden flex items-center gap-2 pointer-events-auto">
-            <Button asChild size="sm" variant="outline" className="rounded-full shadow-lg bg-background/80 backdrop-blur">
+            <Button asChild size="sm" variant="outline" className="h-11 rounded-full bg-background/80 backdrop-blur">
               <Link to={ROUTES.AUTH}>Log in</Link>
             </Button>
-            <Button asChild size="sm" className="rounded-full shadow-lg">
+            <Button asChild size="sm" className="h-11 rounded-full">
               <Link to={ROUTES.GET_STARTED}>Get started</Link>
             </Button>
           </div>
@@ -791,19 +792,19 @@ const Landing = () => {
           }`}
         >
           <div className={`flex items-center gap-1 rounded-full border bg-background/70 backdrop-blur-xl shadow-lg px-1.5 py-1.5 ${showScrollToBottom ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-            <a href="#how" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <a href="#how" className="px-3 py-3 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               How it works
             </a>
-            <a href="#features" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <a href="#features" className="px-3 py-3 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Features
             </a>
-            <a href="#pricing" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <a href="#pricing" className="px-3 py-3 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Pricing
             </a>
             {/* <Button asChild size="sm" variant="ghost" className="rounded-full">
               <Link to={ROUTES.AUTH}>Log in</Link>
             </Button> */}
-            <Button asChild size="sm" className="rounded-full gap-1">
+            <Button asChild size="sm" className="h-11 rounded-full gap-1">
               <Link to={ROUTES.GET_STARTED}>
                 Sign up <ArrowRight className="h-3.5 w-3.5" />
               </Link>
@@ -812,21 +813,22 @@ const Landing = () => {
         </nav>
 
         {/* Hero — text sits directly on the photo, no card behind it */}
-        <section className="relative min-h-screen flex items-center overflow-hidden">
+        <section className="relative sm:min-h-screen flex items-center overflow-hidden">
           <div className="absolute inset-0 -z-10">
             <HeroSlideshow />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-background/45 via-background/80 to-background sm:hidden" />
           </div>
 
-          <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-7xl mx-auto w-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+          <div className="px-4 sm:px-8 pt-24 pb-12 sm:py-16 max-w-7xl mx-auto w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               <div className="animate-slide-up">
                 <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-4 py-1.5 text-sm font-bold">
                   🇰🇪 Built for Kenyan landlords
                 </span>
 
-                <h1 className="mt-6 text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[0.97] text-foreground drop-shadow-sm">
+                <h1 className="mt-5 sm:mt-6 text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.02] sm:leading-[0.97] text-foreground drop-shadow-sm">
                   <TypedHeadline
                     lines={[
                       { text: 'Stop chasing rent.' },
@@ -835,7 +837,7 @@ const Landing = () => {
                   />
                 </h1>
 
-                <p className="mt-6 text-lg sm:text-xl text-foreground/80 max-w-xl drop-shadow-sm">
+                <p className="mt-4 sm:mt-6 text-base sm:text-xl text-foreground/80 max-w-xl drop-shadow-sm">
                   KODI PAP automatically matches M-Pesa and bank payments to your tenants,
                   tracks arrears, and gives you a clear view of your entire rental business.
                 </p>
@@ -845,27 +847,27 @@ const Landing = () => {
                   We never touch your money — it goes straight to your M-Pesa or bank
                 </div>
 
-                <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                  <Button asChild size="lg" className="gap-2 text-base px-7 py-6">
+                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3">
+                  <Button asChild size="lg" className="gap-2 text-base px-7 py-5 sm:py-6">
                     <Link to={ROUTES.GET_STARTED}>
                       Start managing your properties <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="bg-card/80 backdrop-blur text-base px-7 py-6">
+                  <Button asChild size="lg" variant="outline" className="bg-card/80 backdrop-blur text-base px-7 py-5 sm:py-6">
                     <a href="#how">See how it works</a>
                   </Button>
                 </div>
 
-                <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-foreground/80 drop-shadow-sm">
-                  <span className="font-semibold text-foreground">🇰🇪 Kenya-first</span>
+                <div className="hidden sm:flex mt-5 sm:mt-7 flex-wrap items-center gap-x-5 sm:gap-x-6 gap-y-2 text-sm text-foreground/80 drop-shadow-sm">
+                  <span className="hidden sm:inline font-semibold text-foreground">🇰🇪 Kenya-first</span>
                   <span className="flex items-center gap-1.5"><Smartphone className="h-4 w-4 text-success" /> M-Pesa</span>
                   <span className="flex items-center gap-1.5"><Landmark className="h-4 w-4 text-success" /> Bank payments</span>
                   <span className="flex items-center gap-1.5"><Bell className="h-4 w-4 text-success" /> Automated reminders</span>
-                  <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-success" /> We never hold your money</span>
+                  <span className="hidden sm:flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-success" /> We never hold your money</span>
                 </div>
               </div>
 
-              <Reveal className="relative">
+              <Reveal className="relative -mx-1 sm:mx-0 max-sm:max-h-[300px] max-sm:overflow-hidden max-sm:[mask-image:linear-gradient(to_bottom,black_55%,transparent)]">
                 <div className="absolute -inset-6 bg-primary/10 rounded-[2rem] -z-10 hidden sm:block blur-2xl" />
                 <DashboardMockup />
               </Reveal>
@@ -874,7 +876,7 @@ const Landing = () => {
         </section>
 
         {/* Why KODI PAP — before/after */}
-        <section id="proof" className="px-4 sm:px-8 py-16 sm:py-24 bg-foreground text-background">
+        <section id="proof" className="px-4 sm:px-8 py-12 sm:py-24 bg-foreground text-background">
           <div className="max-w-4xl mx-auto text-center">
             <Reveal>
               <Kicker className="text-success">A better way to collect rent</Kicker>
@@ -885,11 +887,11 @@ const Landing = () => {
               </p>
             </Reveal>
 
-            <div className="mt-10 grid grid-cols-1 sm:grid-cols-2 gap-5 text-left">
+            <div className="mt-8 sm:mt-10 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 text-left">
               <Reveal>
-                <div className="h-full rounded-3xl sm:rounded-2xl border border-background/20 bg-background/[0.08] p-6">
+                <div className="h-full rounded-3xl sm:rounded-2xl border border-background/20 bg-background/[0.08] p-5 sm:p-6">
                   <h3 className="font-semibold mb-4">Without KODI PAP</h3>
-                  <ul className="space-y-3">
+                  <ul className="space-y-2.5 sm:space-y-3">
                     {WITHOUT.map((item) => (
                       <li key={item} className="flex items-start gap-2.5 text-sm text-background/70">
                         <X className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
@@ -900,9 +902,9 @@ const Landing = () => {
                 </div>
               </Reveal>
               <Reveal delay={100}>
-                <div className="h-full rounded-3xl sm:rounded-2xl bg-gradient-to-br from-success to-success/80 p-6 shadow-2xl">
+                <div className="h-full rounded-3xl sm:rounded-2xl bg-gradient-to-br from-success to-success/80 p-5 sm:p-6 shadow-2xl">
                   <h3 className="font-semibold mb-4 text-success-foreground">With KODI PAP</h3>
-                  <ul className="space-y-3">
+                  <ul className="space-y-2.5 sm:space-y-3">
                     {WITH.map((item) => (
                       <li key={item} className="flex items-start gap-2.5 text-sm text-success-foreground/90">
                         <Check className="h-4 w-4 text-success-foreground mt-0.5 shrink-0" />
@@ -917,8 +919,8 @@ const Landing = () => {
         </section>
 
         {/* How it works */}
-        <section id="how" className="px-4 sm:px-8 py-16 sm:py-24 max-w-5xl mx-auto">
-          <Reveal className="text-center mb-10 sm:mb-14 max-w-xl mx-auto">
+        <section id="how" className="px-4 sm:px-8 py-12 sm:py-24 max-w-5xl mx-auto">
+          <Reveal className="text-center mb-8 sm:mb-14 max-w-xl mx-auto">
             <Kicker>How it works</Kicker>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
               From payment to record, automatically.
@@ -934,7 +936,7 @@ const Landing = () => {
         </section>
 
         {/* Showcase */}
-        {/* <section className="px-4 sm:px-8 py-16 sm:py-24 bg-muted/40">
+        {/* <section className="px-4 sm:px-8 py-12 sm:py-24 bg-muted/40">
           <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
             <Reveal>
               <Kicker>Your rental business at a glance</Kicker>
@@ -1002,9 +1004,9 @@ const Landing = () => {
         </section> */}
 
         {/* Features */}
-        <section id="features" className="px-4 sm:px-8 py-16 sm:py-24">
+        <section id="features" className="px-4 sm:px-8 py-12 sm:py-24">
           <div className="max-w-5xl mx-auto">
-            <Reveal className="text-center mb-10 sm:mb-14 max-w-xl mx-auto">
+            <Reveal className="text-center mb-8 sm:mb-14 max-w-xl mx-auto">
               <Kicker>Everything you need</Kicker>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
                 Run your rentals without the busywork.
@@ -1013,15 +1015,15 @@ const Landing = () => {
                 Focused tools for landlords who want less admin and more control.
               </p>
             </Reveal>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
               {FEATURES.map((feature, i) => (
                 <Reveal key={feature.title} delay={(i % 3) * 100}>
-                  <div className="h-full rounded-3xl sm:rounded-2xl border bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+                  <div className="h-full rounded-3xl sm:rounded-2xl border bg-card p-4 sm:p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1">
                     <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-primary/10 text-primary">
                       <feature.icon className="h-[18px] w-[18px]" />
                     </div>
-                    <h3 className="mt-3.5 font-semibold text-foreground">{feature.title}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">{feature.description}</p>
+                    <h3 className="mt-3 sm:mt-3.5 text-sm sm:text-base font-semibold text-foreground">{feature.title}</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">{feature.description}</p>
                   </div>
                 </Reveal>
               ))}
@@ -1030,8 +1032,8 @@ const Landing = () => {
         </section>
 
         {/* Pricing */}
-        <section id="pricing" className="px-4 sm:px-8 py-16 sm:py-24 bg-muted/40">
-          <Reveal className="text-center mb-10 sm:mb-14 max-w-xl mx-auto">
+        <section id="pricing" className="px-4 sm:px-8 py-12 sm:py-24 bg-muted/40">
+          <Reveal className="text-center mb-8 sm:mb-14 max-w-xl mx-auto">
             <Kicker>Simple pricing</Kicker>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
               Priced per tenant. Cheaper as you grow.
@@ -1066,13 +1068,13 @@ const Landing = () => {
             </button>
           </Reveal>
 
-          <div className="max-w-6xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="max-w-6xl mx-auto flex sm:grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-sm:overflow-x-auto max-sm:snap-x max-sm:snap-mandatory max-sm:-mx-4 max-sm:px-4 max-sm:pt-4 max-sm:pb-4 max-sm:scroll-px-4">
             {plans.map((plan, i) => {
               const months = billing === 'annual' ? 12 : 1;
               const total = calcPrepayTotal(plan.price, months);
               const effectiveMonthly = billing === 'annual' ? Math.round(total / 12) : plan.price;
               return (
-                  <Reveal key={plan.name} delay={i * 100}>
+                  <Reveal key={plan.name} delay={i * 100} className="max-sm:w-[82%] max-sm:shrink-0 max-sm:snap-start max-sm:!opacity-100 max-sm:!translate-y-0">
                     <div
                       className={`relative h-full rounded-3xl sm:rounded-2xl border bg-card p-6 shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${
                         plan.highlighted ? 'border-primary shadow-lg sm:scale-105' : ''
@@ -1132,7 +1134,7 @@ const Landing = () => {
               );
             })}
 
-            <Reveal delay={plans.length * 100}>
+            <Reveal delay={plans.length * 100} className="max-sm:w-[82%] max-sm:shrink-0 max-sm:snap-start max-sm:!opacity-100 max-sm:!translate-y-0">
               <div className="h-full rounded-3xl sm:rounded-2xl border border-dashed bg-card/50 p-6 flex flex-col">
                 <h3 className="font-semibold text-foreground">{ENTERPRISE_PLAN.name}</h3>
                 <p className="mt-1 text-xs text-muted-foreground">{ENTERPRISE_PLAN.description}</p>
@@ -1159,8 +1161,8 @@ const Landing = () => {
         </section>
 
         {/* FAQ */}
-        <section id="faq" className="px-4 sm:px-8 py-16 sm:py-24">
-          <Reveal className="text-center mb-10 sm:mb-14 max-w-xl mx-auto">
+        <section id="faq" className="px-4 sm:px-8 py-12 sm:py-24">
+          <Reveal className="text-center mb-8 sm:mb-14 max-w-xl mx-auto">
             <Kicker>Questions</Kicker>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-foreground">
               Frequently asked questions.
@@ -1179,7 +1181,7 @@ const Landing = () => {
         </section>
 
         {/* Final CTA */}
-        <section className="px-4 sm:px-8 py-16 sm:py-24 bg-gradient-to-br from-foreground to-primary">
+        <section className="px-4 sm:px-8 py-12 sm:py-24 bg-gradient-to-br from-foreground to-primary">
           <Reveal className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-background">
               Stop chasing rent.
@@ -1200,22 +1202,22 @@ const Landing = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <span>© {new Date().getFullYear()} KODI PAP. Built for Kenyan landlords. 🇰🇪</span>
             <div className="flex items-center gap-5">
-              <a href="#features" className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Features</a>
-              <a href="#pricing" className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Pricing</a>
-              <Link to={ROUTES.AUTH} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Log in</Link>
+              <a href="#features" className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Features</a>
+              <a href="#pricing" className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Pricing</a>
+              <Link to={ROUTES.AUTH} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Log in</Link>
             </div>
           </div>
           <div className="mt-5 pt-5 border-t flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2">
-            <Link to={ROUTES.PRIVACY_POLICY} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Privacy Policy</Link>
-            <Link to={ROUTES.TERMS_OF_USE} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Terms of Use</Link>
-            <Link to={ROUTES.COOKIE_POLICY} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cookie Policy</Link>
-            <Link to={ROUTES.REFUND_CANCELLATION} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Refund & Cancellation</Link>
-            <Link to={ROUTES.CONTACT} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Contact & Support</Link>
+            <Link to={ROUTES.PRIVACY_POLICY} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Privacy Policy</Link>
+            <Link to={ROUTES.TERMS_OF_USE} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Terms of Use</Link>
+            <Link to={ROUTES.COOKIE_POLICY} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cookie Policy</Link>
+            <Link to={ROUTES.REFUND_CANCELLATION} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Refund & Cancellation</Link>
+            <Link to={ROUTES.CONTACT} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Contact & Support</Link>
           </div>
         </footer>
 
         <div
-          className={`group fixed bottom-36 right-4 sm:bottom-20 sm:right-8 z-40 transition-all duration-200 ${
+          className={`group hidden sm:block fixed bottom-36 right-4 sm:bottom-20 sm:right-8 z-40 transition-all duration-200 ${
             showScrollToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
@@ -1233,7 +1235,7 @@ const Landing = () => {
         </div>
 
         <div
-          className={`group fixed bottom-24 right-4 sm:bottom-6 sm:right-8 z-40 transition-all duration-200 ${
+          className={`group hidden sm:block fixed bottom-24 right-4 sm:bottom-6 sm:right-8 z-40 transition-all duration-200 ${
             showScrollToBottom ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >

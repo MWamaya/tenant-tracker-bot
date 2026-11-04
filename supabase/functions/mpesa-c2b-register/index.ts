@@ -1,5 +1,6 @@
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { getUser } from '../_shared/supabase.ts';
+import { withCallbackToken } from '../_shared/mpesaCallbackAuth.ts';
 
 // M-Pesa C2B URL Registration
 // This registers confirmation and validation URLs with Safaricom
@@ -80,8 +81,8 @@ Deno.serve(async (req) => {
     const registerPayload = {
       ShortCode: body.shortcode,
       ResponseType: body.response_type || 'Completed',
-      ConfirmationURL: callbackUrl,
-      ValidationURL: callbackUrl,
+      ConfirmationURL: withCallbackToken(callbackUrl),
+      ValidationURL: withCallbackToken(callbackUrl),
     };
 
     const registerResponse = await fetch(registerUrl, {
