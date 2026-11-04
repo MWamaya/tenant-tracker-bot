@@ -29,9 +29,8 @@ const SuperAdminLogin = () => {
   const [isResetting, setIsResetting] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // Only populated once credentials pass and 2FA is required — the real
-  // session is dropped at that point, so this step exists outside the
-  // normal `user` session state.
+  // Retain the password session: the server grants it admin privileges
+  // only after its own OTP is verified.
   const [awaitingOtp, setAwaitingOtp] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -43,21 +42,30 @@ const SuperAdminLogin = () => {
     }
   }, [user, authLoading, roleLoading, isSuperAdmin, awaitingOtp, navigate]);
 
-  // After credentials verify, request an OTP while the fresh session's
-  // token is still valid. Returns true if the caller should proceed
-  // straight to the dashboard (2FA off), false if an OTP screen is next.
+  // OTP-off accounts may proceed; enabled accounts keep this session for verification.
   const requestOtpOrProceed = async (): Promise<boolean> => {
     const { data, error } = await supabase.functions.invoke('super-admin-request-otp');
     if (error || (data && 'error' in data)) {
-      toast.error((data as { error?: string })?.error || error?.message || 'Could not start verification.');
-      await signOut();
+      const status = error?.context instanceof Response ? error.context.status : undefined;
+      toast.error(status === 429
+        ? 'Please wait 30 seconds before requesting another code. Your existing code still works.'
+        : (data as { error?: string })?.error || error?.message || 'Could not start verification.');
+      if (status === 401 || status === 403) {
+        await signOut();
+        setAwaitingOtp(false);
+        setOtpCode('');
+      } else {
+        // Cooldown and email delivery failures do not revoke this session.
+        setAwaitingOtp(true);
+      }
+      setPassword('');
       return false;
     }
     if (!(data as { required?: boolean })?.required) {
       return true;
     }
-    await signOut();
     setAwaitingOtp(true);
+    setPassword('');
     toast.success('Enter the 6-digit code we emailed you');
     return false;
   };
@@ -132,7 +140,7 @@ const SuperAdminLogin = () => {
 
     setIsVerifyingOtp(true);
     const { data, error } = await supabase.functions.invoke('super-admin-verify-otp', {
-      body: { email, code: otpCode },
+      body: { code: otpCode },
     });
 
     if (error || !(data as { ok?: boolean })?.ok) {
@@ -142,14 +150,9 @@ const SuperAdminLogin = () => {
       return;
     }
 
-    // Code confirmed — re-establish the real session now.
-    const { error: signInError } = await signIn(email, password);
+    // Recheck database authorization without creating a different session.
+    await checkSuperAdmin();
     setIsVerifyingOtp(false);
-
-    if (signInError) {
-      toast.error(signInError.message);
-      return;
-    }
 
     toast.success('Welcome, Super Admin!');
     navigate(ROUTES.SUPER_ADMIN_ROOT);
@@ -157,18 +160,12 @@ const SuperAdminLogin = () => {
 
   const handleResendOtp = async () => {
     setIsResendingOtp(true);
-    const { error: signInError } = await signIn(email, password);
-    if (signInError) {
-      setIsResendingOtp(false);
-      toast.error('Could not resend — sign in again.');
-      setAwaitingOtp(false);
-      return;
-    }
     await requestOtpOrProceed();
     setIsResendingOtp(false);
   };
 
-  const handleBackToLogin = () => {
+  const handleBackToLogin = async () => {
+    await signOut();
     setAwaitingOtp(false);
     setOtpCode('');
     setPassword('');

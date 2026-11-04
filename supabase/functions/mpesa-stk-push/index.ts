@@ -32,11 +32,35 @@ Deno.serve(async (req) => {
     const { phone_number, amount, account_reference, description, tenant_id, house_id }: STKPushRequest = await req.json();
 
     // Validate required fields
-    if (!phone_number || !amount || !account_reference) {
+    if (typeof phone_number !== 'string' || typeof account_reference !== 'string' || !account_reference.trim() ||
+        typeof amount !== 'number' || !Number.isFinite(amount) || amount < 1 || !Number.isSafeInteger(Math.round(amount))) {
       return new Response(
         JSON.stringify({ error: 'Missing required fields: phone_number, amount, account_reference' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    const supabase = createServiceClient();
+    let resolvedHouseId = house_id || null;
+    let resolvedTenantId = tenant_id || null;
+    if (resolvedTenantId) {
+      const { data: tenant, error } = await supabase.from('tenants').select('id, house_id')
+        .eq('id', resolvedTenantId).eq('landlord_id', auth.user.id).is('moved_out_at', null).maybeSingle();
+      if (error || !tenant) return Response.json({ error: 'Tenant not found' }, { status: 404, headers: corsHeaders });
+      if (resolvedHouseId && tenant.house_id !== resolvedHouseId) {
+        return Response.json({ error: 'Tenant does not belong to this house' }, { status: 400, headers: corsHeaders });
+      }
+      resolvedHouseId = tenant.house_id;
+    }
+    if (resolvedHouseId) {
+      const { data: house, error } = await supabase.from('houses').select('id')
+        .eq('id', resolvedHouseId).eq('landlord_id', auth.user.id).maybeSingle();
+      if (error || !house) return Response.json({ error: 'House not found' }, { status: 404, headers: corsHeaders });
+      if (!resolvedTenantId) {
+        const { data: tenant } = await supabase.from('tenants').select('id')
+          .eq('house_id', resolvedHouseId).eq('landlord_id', auth.user.id).is('moved_out_at', null).maybeSingle();
+        resolvedTenantId = tenant?.id ?? null;
+      }
     }
 
     // Get M-Pesa credentials
@@ -126,7 +150,6 @@ Deno.serve(async (req) => {
     const stkResult = await stkResponse.json();
 
     // Log the STK Push request
-    const supabase = createServiceClient();
     await supabase.from('webhooks_log').insert({
       landlord_id: auth.user.id,
       webhook_type: 'stk_push_request',
@@ -151,6 +174,21 @@ Deno.serve(async (req) => {
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    if (!stkResult.CheckoutRequestID) {
+      return Response.json({ error: 'M-Pesa returned no checkout identity' }, { status: 502, headers: corsHeaders });
+    }
+    const { error: trackingError } = await supabase.from('rent_mpesa_requests').insert({
+      landlord_id: auth.user.id, house_id: resolvedHouseId, tenant_id: resolvedTenantId,
+      checkout_request_id: stkResult.CheckoutRequestID,
+      account_reference, amount: Math.round(amount),
+    });
+    if (trackingError) {
+      console.error('Rent checkout tracking failed:', trackingError.message);
+      return Response.json({ error: 'Payment prompt sent, but checkout tracking failed. Contact support before retrying.' }, {
+        status: 500, headers: corsHeaders,
+      });
     }
 
     return new Response(

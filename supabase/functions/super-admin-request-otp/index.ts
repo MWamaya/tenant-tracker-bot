@@ -1,12 +1,7 @@
-// supabase/functions/super-admin-request-otp/index.ts
-// Called right after password sign-in succeeds, while that session's
-// access token is still valid — the client drops the session immediately
-// after this call returns, so dashboard access only resumes once the code
-// is verified. If the caller doesn't have 2FA enabled, this is a no-op
-// that just reports that back (required: false) and the client proceeds
-// with the session it already has.
+// Issues email OTP for the current password-authenticated session.
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient, createUserClient } from '../_shared/supabase.ts';
+import { sessionIdFromVerifiedRequest } from '../_shared/adminSession.ts';
 import { renderEmailLayout } from '../_shared/emailLayout.ts';
 
 const OTP_TTL_MINUTES = 10;
@@ -49,6 +44,9 @@ Deno.serve(async (req) => {
   if (userError || !user || !user.email) {
     return jsonResponse({ error: 'Not authenticated' }, 401);
   }
+
+  const sessionId = sessionIdFromVerifiedRequest(req, user.id);
+  if (!sessionId) return jsonResponse({ error: 'A valid sign-in session is required.' }, 401);
 
   const serviceClient = createServiceClient();
 
@@ -97,6 +95,7 @@ Deno.serve(async (req) => {
 
   const { error: insertError } = await serviceClient.from('super_admin_otp_codes').insert({
     user_id: user.id,
+    session_id: sessionId,
     code_hash: codeHash,
     method: 'email',
     expires_at: expiresAt,

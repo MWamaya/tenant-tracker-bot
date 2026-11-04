@@ -27,6 +27,15 @@ Deno.serve(async (req) => {
       );
     }
 
+    const { data: authorized, error: authorizationError } = await auth.client.rpc('has_role', {
+      _user_id: auth.user.id, _role: 'SUPER_ADMIN',
+    });
+    if (authorizationError || authorized !== true) {
+      return Response.json({ error: 'Forbidden: verified admin access required.' }, {
+        status: 403, headers: corsHeaders,
+      });
+    }
+
     const body: RegisterRequest = await req.json();
 
     // Get M-Pesa credentials

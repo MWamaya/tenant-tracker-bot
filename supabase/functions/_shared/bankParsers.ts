@@ -53,7 +53,9 @@ interface BankParser {
   parse: (text: string) => ParsedPayment | null;
 }
 
-// Only one bank today (NCBA). match() accepts, in order of strength:
+// Format detection only: body text and forwarded headers are untrusted.
+// A successful parse does not verify payment or bank identity.
+// Only one bank today (NCBA). match() accepts these format hints:
 // (1) the immediate forwarded sender is on the real bank's domain
 // (ncbagroup.com); (2) the domain appears anywhere in the body (catches
 // multi-hop forwards where the outer forward header belongs to an

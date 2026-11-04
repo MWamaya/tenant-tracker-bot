@@ -40,6 +40,7 @@ import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/dates';
 
 const REASON_LABELS: Record<ReconciliationReason, string> = {
+  email_requires_confirmation: 'Confirm bank payment',
   no_house_match: 'No house match found',
   missing_house: 'Missing house',
   missing_tenant: 'Missing tenant',
@@ -94,6 +95,7 @@ const HousePicker = ({
 
 const Reconciliation = () => {
   const { items, isLoading, assign, dismiss } = useReconciliation();
+  const [confirmEmail, setConfirmEmail] = useState<{ item: ReconciliationItem; houseId: string } | null>(null);
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [dismissingId, setDismissingId] = useState<string | null>(null);
   const [confirmDismissItem, setConfirmDismissItem] = useState<ReconciliationItem | null>(null);
@@ -133,7 +135,7 @@ const Reconciliation = () => {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Needs Review</h1>
             <p className="text-muted-foreground mt-1">
-              Payments the system couldn't automatically match to a house
+              Payments and email receipts awaiting review
             </p>
           </div>
           {items.length > 0 && <Badge variant="secondary">{items.length} pending</Badge>}
@@ -152,10 +154,10 @@ const Reconciliation = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ListChecks className="h-5 w-5" />
-                Unmatched payments
+                Payments awaiting review
               </CardTitle>
               <CardDescription>
-                Pick the correct house for each payment below. The house's current tenant is attached automatically.
+                Check email receipts against your bank statement before confirming. Pick the correct house; its current tenant is attached automatically.
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 overflow-hidden">
@@ -197,7 +199,7 @@ const Reconciliation = () => {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <HousePicker
-                            onAssign={(houseId) => handleAssign(item, houseId)}
+                            onAssign={(houseId) => item.source === 'email_log' ? setConfirmEmail({ item, houseId }) : handleAssign(item, houseId)}
                             isAssigning={assigningId === item.id && assign.isPending}
                           />
                           <Button
@@ -225,6 +227,26 @@ const Reconciliation = () => {
           </Card>
         )}
       </div>
+
+      <AlertDialog open={!!confirmEmail} onOpenChange={(open) => !open && setConfirmEmail(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirm payment received?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Email content can be forged. Check your bank statement for KES {confirmEmail?.item.amount.toLocaleString()}
+              {' '}with reference {confirmEmail?.item.mpesaRef} before posting this payment.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              if (!confirmEmail) return;
+              handleAssign(confirmEmail.item, confirmEmail.houseId);
+              setConfirmEmail(null);
+            }}>I verified this in my bank</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={!!confirmDismissItem} onOpenChange={(open) => !open && setConfirmDismissItem(null)}>
         <AlertDialogContent>

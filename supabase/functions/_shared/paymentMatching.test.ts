@@ -20,6 +20,10 @@ function createMockSupabase(
         select: () => chain,
         eq: () => chain,
         ilike: () => chain,
+        is: (column: string, value: unknown) => {
+          assertEquals([table, column, value], ['tenants', 'moved_out_at', null]);
+          return chain;
+        },
         or: (filter: string) => {
           captures.or.push(filter);
           return chain;
