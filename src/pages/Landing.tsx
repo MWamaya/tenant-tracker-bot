@@ -501,13 +501,13 @@ const DashboardMockup = () => {
       </div>
 
       {/* Mobile tab strip — sidebar is desktop-only */}
-      <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b">
+      <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto px-3 py-2 border-b [mask-image:linear-gradient(to_right,black_88%,transparent)] pr-8">
         {DASHBOARD_TABS.map((tab, i) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActive(i)}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition-colors ${
+            className={`shrink-0 rounded-full px-3.5 py-2.5 text-xs font-semibold transition-colors ${
               active === i ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
             }`}
           >
@@ -736,14 +736,15 @@ const Landing = () => {
             independent of the nav pill so it never scrolls away. Desktop nav
             pill: links + sign up, centered. Mobile: colored log in/get
             started buttons, top-right. */}
+        <div aria-hidden className="sm:hidden fixed top-0 inset-x-0 h-16 z-40 border-b bg-background/85 backdrop-blur-xl" />
         <Link
           to={ROUTES.LANDING}
-          className="fixed top-4 left-4 sm:top-6 sm:left-8 z-50 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="fixed top-3 left-4 sm:top-6 sm:left-8 z-50 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <img src={kodiPapLogo} alt="KODI PAP" className="h-12 sm:h-14 w-auto drop-shadow" />
+          <img src={kodiPapLogo} alt="KODI PAP" className="h-10 sm:h-14 w-auto drop-shadow" />
         </Link>
 
-        <header className="fixed top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-end sm:justify-center pointer-events-none">
+        <header className="fixed top-[10px] sm:top-4 inset-x-4 sm:inset-x-0 z-50 flex items-center justify-end sm:justify-center pointer-events-none">
           <nav className="hidden sm:block pointer-events-auto w-fit rounded-full border bg-background/70 backdrop-blur-xl shadow-lg">
             <div className="flex items-center gap-2 px-2 py-1.5">
               <a href="#how" className="px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -764,10 +765,10 @@ const Landing = () => {
           </nav>
 
           <div className="sm:hidden flex items-center gap-2 pointer-events-auto">
-            <Button asChild size="sm" variant="outline" className="rounded-full shadow-lg bg-background/80 backdrop-blur">
+            <Button asChild size="sm" variant="outline" className="h-11 rounded-full bg-background/80 backdrop-blur">
               <Link to={ROUTES.AUTH}>Log in</Link>
             </Button>
-            <Button asChild size="sm" className="rounded-full shadow-lg">
+            <Button asChild size="sm" className="h-11 rounded-full">
               <Link to={ROUTES.GET_STARTED}>Get started</Link>
             </Button>
           </div>
@@ -791,19 +792,19 @@ const Landing = () => {
           }`}
         >
           <div className={`flex items-center gap-1 rounded-full border bg-background/70 backdrop-blur-xl shadow-lg px-1.5 py-1.5 ${showScrollToBottom ? 'pointer-events-auto' : 'pointer-events-none'}`}>
-            <a href="#how" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <a href="#how" className="px-3 py-3 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               How it works
             </a>
-            <a href="#features" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <a href="#features" className="px-3 py-3 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Features
             </a>
-            <a href="#pricing" className="px-3 py-2 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <a href="#pricing" className="px-3 py-3 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               Pricing
             </a>
             {/* <Button asChild size="sm" variant="ghost" className="rounded-full">
               <Link to={ROUTES.AUTH}>Log in</Link>
             </Button> */}
-            <Button asChild size="sm" className="rounded-full gap-1">
+            <Button asChild size="sm" className="h-11 rounded-full gap-1">
               <Link to={ROUTES.GET_STARTED}>
                 Sign up <ArrowRight className="h-3.5 w-3.5" />
               </Link>
@@ -812,21 +813,22 @@ const Landing = () => {
         </nav>
 
         {/* Hero — text sits directly on the photo, no card behind it */}
-        <section className="relative min-h-screen flex items-center overflow-hidden">
+        <section className="relative min-h-[100svh] flex items-center overflow-hidden">
           <div className="absolute inset-0 -z-10">
             <HeroSlideshow />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
+            <div className="absolute inset-0 bg-background/70 sm:hidden" />
           </div>
 
-          <div className="px-4 sm:px-8 pt-28 pb-16 sm:py-16 max-w-7xl mx-auto w-full">
+          <div className="px-4 sm:px-8 pt-24 pb-12 sm:py-16 max-w-7xl mx-auto w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
               <div className="animate-slide-up">
                 <span className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-card/90 backdrop-blur shadow-sm text-success px-4 py-1.5 text-sm font-bold">
                   🇰🇪 Built for Kenyan landlords
                 </span>
 
-                <h1 className="mt-6 text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[0.97] text-foreground drop-shadow-sm">
+                <h1 className="mt-5 sm:mt-6 text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.02] sm:leading-[0.97] text-foreground drop-shadow-sm">
                   <TypedHeadline
                     lines={[
                       { text: 'Stop chasing rent.' },
@@ -835,7 +837,7 @@ const Landing = () => {
                   />
                 </h1>
 
-                <p className="mt-6 text-lg sm:text-xl text-foreground/80 max-w-xl drop-shadow-sm">
+                <p className="mt-4 sm:mt-6 text-base sm:text-xl text-foreground/80 max-w-xl drop-shadow-sm">
                   KODI PAP automatically matches M-Pesa and bank payments to your tenants,
                   tracks arrears, and gives you a clear view of your entire rental business.
                 </p>
@@ -845,23 +847,23 @@ const Landing = () => {
                   We never touch your money — it goes straight to your M-Pesa or bank
                 </div>
 
-                <div className="mt-8 flex flex-col sm:flex-row gap-3">
-                  <Button asChild size="lg" className="gap-2 text-base px-7 py-6">
+                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3">
+                  <Button asChild size="lg" className="gap-2 text-base px-7 py-5 sm:py-6">
                     <Link to={ROUTES.GET_STARTED}>
                       Start managing your properties <ArrowRight className="h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button asChild size="lg" variant="outline" className="bg-card/80 backdrop-blur text-base px-7 py-6">
+                  <Button asChild size="lg" variant="outline" className="bg-card/80 backdrop-blur text-base px-7 py-5 sm:py-6">
                     <a href="#how">See how it works</a>
                   </Button>
                 </div>
 
-                <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-foreground/80 drop-shadow-sm">
-                  <span className="font-semibold text-foreground">🇰🇪 Kenya-first</span>
+                <div className="mt-5 sm:mt-7 flex flex-wrap items-center gap-x-5 sm:gap-x-6 gap-y-2 text-sm text-foreground/80 drop-shadow-sm">
+                  <span className="hidden sm:inline font-semibold text-foreground">🇰🇪 Kenya-first</span>
                   <span className="flex items-center gap-1.5"><Smartphone className="h-4 w-4 text-success" /> M-Pesa</span>
                   <span className="flex items-center gap-1.5"><Landmark className="h-4 w-4 text-success" /> Bank payments</span>
                   <span className="flex items-center gap-1.5"><Bell className="h-4 w-4 text-success" /> Automated reminders</span>
-                  <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-success" /> We never hold your money</span>
+                  <span className="hidden sm:flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-success" /> We never hold your money</span>
                 </div>
               </div>
 
@@ -1200,22 +1202,22 @@ const Landing = () => {
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <span>© {new Date().getFullYear()} KODI PAP. Built for Kenyan landlords. 🇰🇪</span>
             <div className="flex items-center gap-5">
-              <a href="#features" className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Features</a>
-              <a href="#pricing" className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Pricing</a>
-              <Link to={ROUTES.AUTH} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Log in</Link>
+              <a href="#features" className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Features</a>
+              <a href="#pricing" className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Pricing</a>
+              <Link to={ROUTES.AUTH} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Log in</Link>
             </div>
           </div>
           <div className="mt-5 pt-5 border-t flex flex-wrap items-center justify-center sm:justify-start gap-x-5 gap-y-2">
-            <Link to={ROUTES.PRIVACY_POLICY} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Privacy Policy</Link>
-            <Link to={ROUTES.TERMS_OF_USE} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Terms of Use</Link>
-            <Link to={ROUTES.COOKIE_POLICY} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cookie Policy</Link>
-            <Link to={ROUTES.REFUND_CANCELLATION} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Refund & Cancellation</Link>
-            <Link to={ROUTES.CONTACT} className="rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Contact & Support</Link>
+            <Link to={ROUTES.PRIVACY_POLICY} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Privacy Policy</Link>
+            <Link to={ROUTES.TERMS_OF_USE} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Terms of Use</Link>
+            <Link to={ROUTES.COOKIE_POLICY} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Cookie Policy</Link>
+            <Link to={ROUTES.REFUND_CANCELLATION} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Refund & Cancellation</Link>
+            <Link to={ROUTES.CONTACT} className="py-2 rounded-sm hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">Contact & Support</Link>
           </div>
         </footer>
 
         <div
-          className={`group fixed bottom-36 right-4 sm:bottom-20 sm:right-8 z-40 transition-all duration-200 ${
+          className={`group hidden sm:block fixed bottom-36 right-4 sm:bottom-20 sm:right-8 z-40 transition-all duration-200 ${
             showScrollToTop ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
@@ -1233,7 +1235,7 @@ const Landing = () => {
         </div>
 
         <div
-          className={`group fixed bottom-24 right-4 sm:bottom-6 sm:right-8 z-40 transition-all duration-200 ${
+          className={`group hidden sm:block fixed bottom-24 right-4 sm:bottom-6 sm:right-8 z-40 transition-all duration-200 ${
             showScrollToBottom ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'
           }`}
         >
