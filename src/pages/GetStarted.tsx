@@ -76,7 +76,7 @@ const GetStarted = () => {
           <div className="flex items-center justify-between">
             <Link
               to={ROUTES.LANDING}
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1.5 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" /> KODI PAP
             </Link>
@@ -117,6 +117,7 @@ const GetStarted = () => {
                   <Label htmlFor="fullName">Full name</Label>
                   <Input
                     id="fullName"
+                    autoComplete="name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Jane Wanjiru"
@@ -129,6 +130,8 @@ const GetStarted = () => {
                   <Input
                     id="phone"
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="07xx xxx xxx"
@@ -143,6 +146,7 @@ const GetStarted = () => {
                 <Input
                   id="email"
                   type="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
@@ -181,7 +185,8 @@ const GetStarted = () => {
                           <span className="text-xs"> /month</span>
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          {p.maxProperties === null ? 'Unlimited' : p.maxProperties} properties ·{' '}
+                          {p.maxProperties === null ? 'Unlimited' : p.maxProperties}{' '}
+                          {p.maxProperties === 1 ? 'property' : 'properties'} ·{' '}
                           {p.maxTenants === null ? 'Unlimited' : p.maxTenants} tenants
                         </div>
                         <ul className="mt-2 space-y-1">
@@ -204,7 +209,7 @@ const GetStarted = () => {
 
               <p className="text-xs text-muted-foreground">
                 Already have an account?{' '}
-                <Link to={ROUTES.AUTH} className="underline hover:no-underline">
+                <Link to={ROUTES.AUTH} className="inline-block py-2 underline hover:no-underline">
                   Log in
                 </Link>{' '}
                 instead.
