@@ -23,8 +23,6 @@ import {
 } from 'lucide-react';
 import { ROUTES } from '@/lib/routes';
 import { useInView } from '@/hooks/useInView';
-import heroImagePipelineStreet from '@/assets/new landings/Pipeline-Estate-i-Nairobi-Kenya-Afrika.jpg';
-import heroImagePipelineSunset from '@/assets/new landings/Pipeline-estate.jpg';
 import kodiPapLogo from '@/assets/kodi-pap-logo.png';
 import { PageSeo } from '@/components/seo/PageSeo';
 import { PUBLIC_PLANS, ENTERPRISE_PLAN, calcPrepayTotal, ANNUAL_DISCOUNT } from '@/lib/plans';
@@ -225,40 +223,6 @@ const Reveal = ({
     >
       {children}
     </div>
-  );
-};
-
-const HERO_SLIDES = [
-  { src: heroImagePipelineStreet, alt: 'Dense residential apartment blocks in Pipeline Estate, Nairobi' },
-  { src: heroImagePipelineSunset, alt: 'Pipeline Estate apartment blocks in Nairobi at sunset' },
-];
-
-/** Slow auto-crossfading background for the hero section. */
-const HeroSlideshow = () => {
-  const [active, setActive] = useState(0);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setActive((i) => (i + 1) % HERO_SLIDES.length);
-    }, 5000);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <>
-      {HERO_SLIDES.map((slide, i) => (
-        <img
-          key={slide.src}
-          src={slide.src}
-          alt={slide.alt}
-          width={1920}
-          height={1078}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
-            i === active ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      ))}
-    </>
   );
 };
 
@@ -814,13 +778,6 @@ const Landing = () => {
 
         {/* Hero — text sits directly on the photo, no card behind it */}
         <section className="relative sm:min-h-screen flex items-center overflow-hidden">
-          <div className="absolute inset-0 -z-10">
-            <HeroSlideshow />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_70%_60%_at_25%_45%,hsl(var(--background)/0.55),transparent_70%)]" />
-            <div className="absolute inset-0 bg-gradient-to-b from-background/45 via-background/80 to-background sm:hidden" />
-          </div>
-
           <div className="px-4 sm:px-8 pt-24 pb-12 sm:py-16 max-w-7xl mx-auto w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
               <div className="animate-slide-up">
