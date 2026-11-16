@@ -159,7 +159,7 @@ const Auth = () => {
 
         <Card className="border-border/50 shadow-lg">
           <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 h-11">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="signup">Sign Up</TabsTrigger>
             </TabsList>
@@ -213,7 +213,7 @@ const Auth = () => {
                     <Button
                       type="button"
                       variant="link"
-                      className="h-auto px-0 py-0 text-sm"
+                      className="h-auto px-0 py-2 text-sm"
                       disabled={isResetting}
                       onClick={handlePasswordReset}
                     >
@@ -335,7 +335,7 @@ const Auth = () => {
         <div className="text-center mt-3">
           <Link
             to={ROUTES.SUPER_ADMIN_LOGIN}
-            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+            className="inline-flex items-center gap-1.5 py-3 text-xs text-muted-foreground hover:text-primary transition-colors"
           >
             <Shield className="h-3.5 w-3.5" />
             Admin login

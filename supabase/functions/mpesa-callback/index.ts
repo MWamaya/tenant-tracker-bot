@@ -4,6 +4,7 @@ import { matchHouseAndTenant, updateHouseBalance, clearMatchedEmailLog } from '.
 import { resolvePaymentOwner, PaymentOwner } from '../_shared/paymentOwnership.ts';
 import { autoTagDeposits } from '../_shared/depositAutoTag.ts';
 import { activateLandlordSubscription } from '../_shared/subscriptionActivation.ts';
+import { authenticateCallback } from '../_shared/mpesaCallbackAuth.ts';
 
 // M-Pesa C2B and STK Push callback handler
 // This endpoint receives payment notifications from Safaricom
@@ -95,21 +96,22 @@ Deno.serve(async (req) => {
   const corsResponse = handleCors(req);
   if (corsResponse) return corsResponse;
 
-  // IP Whitelisting - Only allow Safaricom IPs
+  // The forwarded-for IP is client-controllable, so it is not authentication:
+  // the registered callback URL carries a shared secret (MPESA_CALLBACK_SECRET).
   const clientIP = getClientIP(req);
-  if (!isAllowedIP(clientIP)) {
-    console.warn(`Rejected request from unauthorized IP: ${clientIP}`);
-    
-    // Log the rejected attempt for security monitoring
+  const auth = authenticateCallback(req, isAllowedIP(clientIP));
+  if (!auth.ok) {
+    console.warn(`Rejected M-Pesa callback (${auth.reason}) from ${clientIP}`);
+
+    // Minimal record only: no headers or URL (the URL carries the secret).
     const supabaseForLog = createServiceClient();
     await supabaseForLog.from('webhooks_log').insert({
       webhook_type: 'mpesa_callback_rejected',
-      endpoint: req.url,
+      endpoint: 'mpesa-callback',
       method: req.method,
-      headers: Object.fromEntries(req.headers.entries()),
-      payload: { rejected_ip: clientIP, reason: 'IP not whitelisted' },
+      payload: { rejected_ip: clientIP, reason: auth.reason },
       processed: false,
-      error_message: `Rejected: IP ${clientIP} not in Safaricom whitelist`,
+      error_message: `Rejected: ${auth.reason}`,
     });
 
     return new Response(
@@ -133,7 +135,8 @@ Deno.serve(async (req) => {
       .from('webhooks_log')
       .insert({
         webhook_type: 'mpesa_callback',
-        endpoint: req.url,
+        // Strip the query string: it carries the callback secret.
+        endpoint: req.url.split('?')[0],
         method: req.method,
         headers: Object.fromEntries(req.headers.entries()),
         payload,
@@ -274,12 +277,31 @@ async function handleSubscriptionSTKCallback(
   const receiptNumber = getMetaValue('MpesaReceiptNumber') as string;
   const amount = getMetaValue('Amount') as number;
 
+  // Never activate on an amount we did not ask for; keep the log row open so
+  // an operator can reconcile the (possibly real) payment by hand.
+  if (Number(amount) !== Number(subRequest.amount)) {
+    await supabase
+      .from('subscription_mpesa_requests')
+      .update({
+        status: 'failed',
+        failure_reason: `Amount mismatch: expected ${subRequest.amount}, received ${amount}`,
+        mpesa_receipt_number: receiptNumber,
+      })
+      .eq('id', subRequest.id);
+    if (webhookLogId) await supabase.from('webhooks_log').update({
+      processed: false,
+      error_message: `Subscription amount mismatch: expected ${subRequest.amount}, received ${amount}`,
+    }).eq('id', webhookLogId);
+    return Response.json({ ResultCode: 0, ResultDesc: 'Accepted' }, { headers: corsHeaders });
+  }
+
+  let activationError: string | null = null;
   try {
     await activateLandlordSubscription(supabase, {
       landlordId: subRequest.landlord_id,
       planId: subRequest.plan_id,
       paymentReference: receiptNumber || callback.CheckoutRequestID,
-      amountPaid: amount ?? subRequest.amount,
+      amountPaid: amount,
       months: subRequest.months,
     });
 
@@ -289,6 +311,7 @@ async function handleSubscriptionSTKCallback(
       .eq('id', subRequest.id);
   } catch (error) {
     console.error('Failed to activate subscription after M-Pesa payment:', error);
+    activationError = error instanceof Error ? error.message : 'Activation failed';
     await supabase
       .from('subscription_mpesa_requests')
       .update({
@@ -299,9 +322,13 @@ async function handleSubscriptionSTKCallback(
       .eq('id', subRequest.id);
   }
 
+  // The landlord has paid: if activation failed, leave the log row
+  // unprocessed so it stays in the operator queue instead of looking done.
   if (webhookLogId) {
     await supabase.from('webhooks_log')
-      .update({ processed: true })
+      .update(activationError
+        ? { processed: false, error_message: `Paid but activation failed: ${activationError}` }
+        : { processed: true })
       .eq('id', webhookLogId);
   }
 
@@ -371,7 +398,7 @@ async function processPayment(supabase: any, data: {
     .from('mpesa_transactions')
     .select('id')
     .eq('transaction_id', data.transaction_id)
-    .single();
+    .maybeSingle();
 
   if (existing) {
     console.log('Duplicate transaction:', data.transaction_id);
@@ -422,6 +449,15 @@ async function processPayment(supabase: any, data: {
     .single();
 
   if (insertError) {
+    // 23505: a concurrent retry won the race past the check above.
+    if (insertError.code === '23505') {
+      if (data.webhook_log_id) {
+        await supabase.from('webhooks_log')
+          .update({ processed: true, error_message: 'Duplicate transaction' })
+          .eq('id', data.webhook_log_id);
+      }
+      return;
+    }
     console.error('Failed to insert mpesa transaction:', insertError);
     if (data.webhook_log_id) {
       await supabase.from('webhooks_log')

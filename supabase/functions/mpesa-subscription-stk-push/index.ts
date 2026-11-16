@@ -1,5 +1,6 @@
 import { corsHeaders, handleCors } from '../_shared/cors.ts';
 import { createServiceClient, getUser } from '../_shared/supabase.ts';
+import { withCallbackToken } from '../_shared/mpesaCallbackAuth.ts';
 import { activateLandlordSubscription } from '../_shared/subscriptionActivation.ts';
 
 // Landlord-initiated STK Push to pay for their own KODI PAP subscription
@@ -148,7 +149,7 @@ Deno.serve(async (req) => {
       PartyA: formattedPhone,
       PartyB: shortcode,
       PhoneNumber: formattedPhone,
-      CallBackURL: callbackUrl || defaultCallbackUrl,
+      CallBackURL: withCallbackToken(callbackUrl || defaultCallbackUrl),
       AccountReference: accountReference,
       TransactionDesc: months > 1
         ? `KODI PAP ${plan.name} subscription (${months} months)`

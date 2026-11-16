@@ -80,7 +80,7 @@ const Contact = () => {
           <div className="flex items-center justify-between">
             <Link
               to={ROUTES.LANDING}
-              className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1.5 py-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               <ArrowLeft className="h-4 w-4" /> Back to home
             </Link>
